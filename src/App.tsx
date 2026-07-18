@@ -569,8 +569,8 @@ function App() {
       title: `${section.title} aprobado`,
 
       text: `${subjectsNotApproved.length} ${subjectsNotApproved.length === 1
-          ? 'materia fue actualizada'
-          : 'materias fueron actualizadas'
+        ? 'materia fue actualizada'
+        : 'materias fueron actualizadas'
         }.`,
 
       showConfirmButton: false,
@@ -881,16 +881,6 @@ function App() {
           </div>
 
           <div className="curriculum-grid">
-            <DegreeRequirementsCard
-              requirements={degreeRequirements}
-              requirementStatuses={
-                degreeRequirementStatuses
-              }
-              onStatusChange={
-                handleDegreeRequirementStatusChange
-              }
-            />
-
             {filteredCurriculum.map((section) => (
               <SemesterCard
                 key={section.id}
@@ -907,6 +897,18 @@ function App() {
             ))}
           </div>
         </section>
+
+        {activeSectionId === 'all' && (
+          <DegreeRequirementsCard
+            requirements={degreeRequirements}
+            requirementStatuses={
+              degreeRequirementStatuses
+            }
+            onStatusChange={
+              handleDegreeRequirementStatusChange
+            }
+          />
+        )}
       </main>
     </div>
   )

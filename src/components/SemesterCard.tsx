@@ -27,6 +27,36 @@ function SemesterCard({
     0,
   )
 
+  const approvedSubjectsCount = section.subjects.filter(
+    (subject) =>
+      subjectStatuses[subject.code] === 'approved',
+  ).length
+
+  const approvedSemesterCredits = section.subjects.reduce(
+    (total, subject) => {
+      const isApproved =
+        subjectStatuses[subject.code] === 'approved'
+
+      return isApproved
+        ? total + subject.credits
+        : total
+    },
+    0,
+  )
+
+  const semesterProgressPercentage =
+    semesterCredits === 0
+      ? 0
+      : Math.round(
+        (approvedSemesterCredits /
+          semesterCredits) *
+        100,
+      )
+
+  const isSemesterCompleted =
+    section.subjects.length > 0 &&
+    approvedSubjectsCount === section.subjects.length
+
   const isAdditionalSection =
     section.semester === undefined
 
@@ -113,7 +143,10 @@ function SemesterCard({
   return (
     <article
       className={`semester-card ${isAdditionalSection
-          ? 'semester-card--additional'
+        ? 'semester-card--additional'
+        : ''
+        } ${isSemesterCompleted
+          ? 'semester-card--completed'
           : ''
         }`}
     >
@@ -155,6 +188,68 @@ function SemesterCard({
           )}
         </div>
       </header>
+
+      <section
+        className="semester-progress"
+        aria-label={`Progreso de ${section.title}`}
+      >
+        <div className="semester-progress__heading">
+          <div>
+            <span className="semester-progress__label">
+              Progreso del semestre
+            </span>
+
+            <strong className="semester-progress__percentage">
+              {semesterProgressPercentage} %
+            </strong>
+          </div>
+
+          {isSemesterCompleted && (
+            <span className="semester-progress__completed">
+              ✓ Completado
+            </span>
+          )}
+        </div>
+
+        <div
+          className="semester-progress__bar"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={semesterProgressPercentage}
+          aria-label={`${semesterProgressPercentage} por ciento completado`}
+        >
+          <div
+            className="semester-progress__bar-value"
+            style={{
+              width: `${semesterProgressPercentage}%`,
+            }}
+          />
+        </div>
+
+        <div className="semester-progress__statistics">
+          <div className="semester-progress__statistic">
+            <strong>
+              {approvedSemesterCredits} / {semesterCredits}
+            </strong>
+
+            <span>créditos aprobados</span>
+          </div>
+
+          <div className="semester-progress__divider" />
+
+          <div className="semester-progress__statistic">
+            <strong>
+              {approvedSubjectsCount} /{' '}
+              {section.subjects.length}
+            </strong>
+
+            <span>materias aprobadas</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="subject-list"></div>
 
       <div className="subject-list">
         {section.subjects.map((subject: Subject) => {
@@ -198,8 +293,8 @@ function SemesterCard({
           return (
             <article
               className={`subject-card subject-card--${currentStatus} ${isLocked
-                  ? 'subject-card--blocked'
-                  : ''
+                ? 'subject-card--blocked'
+                : ''
                 }`}
               key={subject.code}
             >
@@ -212,8 +307,8 @@ function SemesterCard({
 
                     <span
                       className={`subject-card__status ${isLocked
-                          ? 'subject-card__status--blocked'
-                          : `subject-card__status--${currentStatus}`
+                        ? 'subject-card__status--blocked'
+                        : `subject-card__status--${currentStatus}`
                         }`}
                     >
                       {isLocked
@@ -266,8 +361,8 @@ function SemesterCard({
               >
                 <button
                   className={`status-selector__button ${currentStatus === 'pending'
-                      ? 'status-selector__button--active-pending'
-                      : ''
+                    ? 'status-selector__button--active-pending'
+                    : ''
                     }`}
                   type="button"
                   onClick={() =>
@@ -282,8 +377,8 @@ function SemesterCard({
 
                 <button
                   className={`status-selector__button ${currentStatus === 'in-progress'
-                      ? 'status-selector__button--active-progress'
-                      : ''
+                    ? 'status-selector__button--active-progress'
+                    : ''
                     }`}
                   type="button"
                   disabled={isLocked}
@@ -304,8 +399,8 @@ function SemesterCard({
 
                 <button
                   className={`status-selector__button ${currentStatus === 'approved'
-                      ? 'status-selector__button--active-approved'
-                      : ''
+                    ? 'status-selector__button--active-approved'
+                    : ''
                     }`}
                   type="button"
                   disabled={isLocked}
