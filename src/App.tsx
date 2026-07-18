@@ -1,11 +1,20 @@
 import Swal from 'sweetalert2'
+import 'sweetalert2/dist/sweetalert2.min.css'
 import './App.css'
+
+import DegreeRequirementsCard from './components/DegreeRequirementsCard'
 import SemesterCard from './components/SemesterCard'
+
 import { curriculum } from './data/curriculum'
+import { degreeRequirements } from './data/degreeRequirements'
 import { externalPrerequisiteNames } from './data/prerequisites'
+
 import { useLocalStorage } from './hooks/useLocalStorage'
+
 import type {
   CurriculumSection,
+  DegreeRequirement,
+  DegreeRequirementStatus,
   SubjectStatus,
 } from './types/curriculum'
 
@@ -19,6 +28,12 @@ const escapeHtml = (value: string) => {
 }
 
 function App() {
+  /*
+   * =====================================================
+   * INFORMACIÓN GENERAL DEL PENSUM
+   * =====================================================
+   */
+
   const allSubjects = curriculum.flatMap(
     (section) => section.subjects,
   )
@@ -29,6 +44,12 @@ function App() {
     (total, subject) => total + subject.credits,
     0,
   )
+
+  /*
+   * =====================================================
+   * ESTADOS DE LAS MATERIAS
+   * =====================================================
+   */
 
   const initialStatuses: Record<string, SubjectStatus> =
     Object.fromEntries(
@@ -46,10 +67,56 @@ function App() {
     initialStatuses,
   )
 
+  /*
+   * Se combinan los estados iniciales con los guardados.
+   *
+   * Así, si se agrega una materia nueva al pensum,
+   * comenzará automáticamente como pendiente.
+   */
   const subjectStatuses: Record<string, SubjectStatus> = {
     ...initialStatuses,
     ...savedSubjectStatuses,
   }
+
+  /*
+   * =====================================================
+   * ESTADOS DE LOS REQUISITOS DE GRADO
+   * =====================================================
+   */
+
+  const initialDegreeRequirementStatuses: Record<
+    string,
+    DegreeRequirementStatus
+  > = Object.fromEntries(
+    degreeRequirements.map((requirement) => [
+      requirement.code,
+      'pending' as DegreeRequirementStatus,
+    ]),
+  )
+
+  const [
+    savedDegreeRequirementStatuses,
+    setSavedDegreeRequirementStatuses,
+  ] = useLocalStorage<
+    Record<string, DegreeRequirementStatus>
+  >(
+    'pensum-degree-requirements',
+    initialDegreeRequirementStatuses,
+  )
+
+  const degreeRequirementStatuses: Record<
+    string,
+    DegreeRequirementStatus
+  > = {
+    ...initialDegreeRequirementStatuses,
+    ...savedDegreeRequirementStatuses,
+  }
+
+  /*
+   * =====================================================
+   * FILTRO POR SEMESTRE
+   * =====================================================
+   */
 
   const [
     selectedSectionId,
@@ -59,6 +126,11 @@ function App() {
     'all',
   )
 
+  /*
+   * Comprueba que el semestre guardado todavía exista.
+   *
+   * Si no existe, muestra todos los semestres.
+   */
   const selectedSectionExists =
     selectedSectionId === 'all' ||
     curriculum.some(
@@ -69,6 +141,12 @@ function App() {
     ? selectedSectionId
     : 'all'
 
+  /*
+   * =====================================================
+   * NOMBRES DE MATERIAS POR CÓDIGO
+   * =====================================================
+   */
+
   const subjectNamesByCode: Record<string, string> =
     Object.fromEntries(
       allSubjects.map((subject) => [
@@ -77,10 +155,20 @@ function App() {
       ]),
     )
 
+  /*
+   * También se agregan los requisitos externos que no
+   * pertenecen directamente a las 58 materias del pensum.
+   */
   const prerequisiteNamesByCode: Record<string, string> = {
     ...subjectNamesByCode,
     ...externalPrerequisiteNames,
   }
+
+  /*
+   * =====================================================
+   * CÁLCULOS DEL PROGRESO ACADÉMICO
+   * =====================================================
+   */
 
   const approvedSubjects = allSubjects.filter(
     (subject) =>
@@ -102,6 +190,14 @@ function App() {
       subjectStatuses[subject.code] === 'in-progress',
   ).length
 
+  const completedDegreeRequirements =
+    degreeRequirements.filter(
+      (requirement) =>
+        degreeRequirementStatuses[
+        requirement.code
+        ] === 'completed',
+    ).length
+
   const progressPercentage =
     totalCredits === 0
       ? 0
@@ -109,12 +205,24 @@ function App() {
         (approvedCredits / totalCredits) * 100,
       )
 
+  /*
+   * =====================================================
+   * PENSUM FILTRADO
+   * =====================================================
+   */
+
   const filteredCurriculum =
     activeSectionId === 'all'
       ? curriculum
       : curriculum.filter(
         (section) => section.id === activeSectionId,
       )
+
+  /*
+   * =====================================================
+   * CAMBIAR ESTADO DE UNA MATERIA
+   * =====================================================
+   */
 
   const handleStatusChange = (
     subjectCode: string,
@@ -127,143 +235,243 @@ function App() {
     }))
   }
 
+  /*
+   * =====================================================
+   * CAMBIAR ESTADO DE UN REQUISITO DE GRADO
+   * =====================================================
+   */
+
+  const handleDegreeRequirementStatusChange = async (
+    requirement: DegreeRequirement,
+    newStatus: DegreeRequirementStatus,
+  ) => {
+    const currentStatus =
+      degreeRequirementStatuses[requirement.code] ??
+      'pending'
+
+    if (currentStatus === newStatus) {
+      return
+    }
+
+    const isCompleting = newStatus === 'completed'
+
+    const result = await Swal.fire({
+      icon: isCompleting ? 'question' : 'warning',
+
+      title: isCompleting
+        ? '¿Marcar requisito como completado?'
+        : '¿Volver este requisito a pendiente?',
+
+      text: isCompleting
+        ? `Se marcará "${requirement.name}" como completado.`
+        : `Se quitará el estado completado de "${requirement.name}".`,
+
+      showCancelButton: true,
+
+      confirmButtonText: isCompleting
+        ? 'Sí, completar'
+        : 'Sí, volver a pendiente',
+
+      cancelButtonText: 'Cancelar',
+
+      confirmButtonColor: isCompleting
+        ? '#16a34a'
+        : '#f59e0b',
+
+      cancelButtonColor: '#64748b',
+
+      reverseButtons: true,
+      focusCancel: true,
+    })
+
+    if (!result.isConfirmed) {
+      return
+    }
+
+    setSavedDegreeRequirementStatuses(
+      (currentStatuses) => ({
+        ...initialDegreeRequirementStatuses,
+        ...currentStatuses,
+        [requirement.code]: newStatus,
+      }),
+    )
+
+    await Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: isCompleting ? 'success' : 'info',
+
+      title: isCompleting
+        ? 'Requisito completado'
+        : 'Requisito actualizado',
+
+      text: requirement.name,
+
+      showConfirmButton: false,
+      timer: 2200,
+      timerProgressBar: true,
+    })
+  }
+
+  /*
+   * =====================================================
+   * APROBAR TODAS LAS MATERIAS DE UN SEMESTRE
+   * =====================================================
+   */
+
   const handleApproveSection = async (
     section: CurriculumSection,
   ) => {
-    const blockedSubjects = section.subjects
-      .map((subject) => {
-        const currentStatus =
-          subjectStatuses[subject.code] ?? 'pending'
+    const blockedSubjects: Array<{
+      subject: (typeof section.subjects)[number]
+      missingPrerequisites: string[]
+    }> = []
 
-        if (currentStatus === 'approved') {
-          return null
-        }
+    /*
+     * Se buscan las materias bloqueadas y los requisitos
+     * que todavía no están aprobados.
+     */
+    section.subjects.forEach((subject) => {
+      const currentStatus =
+        subjectStatuses[subject.code] ?? 'pending'
 
-        const missingPrerequisites =
-          subject.prerequisites.filter(
-            (prerequisiteCode) => {
-              const prerequisiteStatus =
-                subjectStatuses[prerequisiteCode]
+      /*
+       * Una materia ya aprobada no necesita revisarse.
+       */
+      if (currentStatus === 'approved') {
+        return
+      }
 
-              /*
-               * Los requisitos externos no están guardados
-               * en subjectStatuses y no bloquean la materia.
-               */
-              return (
-                prerequisiteStatus !== undefined &&
-                prerequisiteStatus !== 'approved'
-              )
-            },
-          )
+      const missingPrerequisites =
+        subject.prerequisites.filter(
+          (prerequisiteCode) => {
+            const prerequisiteStatus =
+              subjectStatuses[prerequisiteCode]
 
-        if (missingPrerequisites.length === 0) {
-          return null
-        }
+            /*
+             * Los requisitos externos no aparecen dentro
+             * de subjectStatuses.
+             *
+             * Por eso se muestran, pero no bloquean
+             * permanentemente la materia.
+             */
+            return (
+              prerequisiteStatus !== undefined &&
+              prerequisiteStatus !== 'approved'
+            )
+          },
+        )
 
-        return {
+      if (missingPrerequisites.length > 0) {
+        blockedSubjects.push({
           subject,
           missingPrerequisites,
-        }
-      })
-      .filter(
-        (
-          blockedSubject,
-        ): blockedSubject is {
-          subject: (typeof section.subjects)[number]
-          missingPrerequisites: string[]
-        } => blockedSubject !== null,
-      )
+        })
+      }
+    })
 
+    /*
+     * Si existen materias bloqueadas, SweetAlert muestra
+     * cuáles son y qué prerrequisitos faltan.
+     */
     if (blockedSubjects.length > 0) {
       const blockedSubjectsHtml = blockedSubjects
         .map(({ subject, missingPrerequisites }) => {
-          const prerequisitesHtml = missingPrerequisites
-            .map((prerequisiteCode) => {
-              const prerequisiteName =
-                prerequisiteNamesByCode[
-                prerequisiteCode
-                ] ?? 'Materia no registrada'
+          const prerequisitesHtml =
+            missingPrerequisites
+              .map((prerequisiteCode) => {
+                const prerequisiteName =
+                  prerequisiteNamesByCode[
+                  prerequisiteCode
+                  ] ?? 'Materia no registrada'
 
-              const prerequisiteStatus =
-                subjectStatuses[prerequisiteCode] ??
-                'pending'
+                const prerequisiteStatus =
+                  subjectStatuses[
+                  prerequisiteCode
+                  ] ?? 'pending'
 
-              const statusLabel =
-                prerequisiteStatus === 'in-progress'
-                  ? 'En curso'
-                  : 'Pendiente'
+                const statusLabel =
+                  prerequisiteStatus === 'in-progress'
+                    ? 'En curso'
+                    : 'Pendiente'
 
-              return `
-              <li class="swal-requirement">
-                <span class="swal-requirement__code">
-                  ${escapeHtml(prerequisiteCode)}
-                </span>
+                return `
+                  <li class="swal-requirement">
+                    <span class="swal-requirement__code">
+                      ${escapeHtml(prerequisiteCode)}
+                    </span>
 
-                <span class="swal-requirement__information">
-                  <strong>
-                    ${escapeHtml(prerequisiteName)}
-                  </strong>
+                    <span class="swal-requirement__information">
+                      <strong>
+                        ${escapeHtml(prerequisiteName)}
+                      </strong>
 
-                  <small>
-                    Estado actual: ${statusLabel}
-                  </small>
-                </span>
-              </li>
-            `
-            })
-            .join('')
+                      <small>
+                        Estado actual: ${statusLabel}
+                      </small>
+                    </span>
+                  </li>
+                `
+              })
+              .join('')
 
           return `
-          <section class="swal-blocked-subject">
-            <div class="swal-blocked-subject__heading">
-              <span class="swal-blocked-subject__code">
-                ${escapeHtml(subject.code)}
-              </span>
+            <section class="swal-blocked-subject">
+              <div class="swal-blocked-subject__heading">
+                <span class="swal-blocked-subject__code">
+                  ${escapeHtml(subject.code)}
+                </span>
 
-              <strong>
-                ${escapeHtml(subject.name)}
-              </strong>
-            </div>
+                <strong>
+                  ${escapeHtml(subject.name)}
+                </strong>
+              </div>
 
-            <p>Necesita que apruebes:</p>
+              <p>Necesita que apruebes:</p>
 
-            <ul class="swal-requirements-list">
-              ${prerequisitesHtml}
-            </ul>
-          </section>
-        `
+              <ul class="swal-requirements-list">
+                ${prerequisitesHtml}
+              </ul>
+            </section>
+          `
         })
         .join('')
 
       await Swal.fire({
         icon: 'warning',
         title: 'No se puede aprobar todo todavía',
+
         html: `
-        <div class="swal-blocked-content">
-          <p class="swal-blocked-content__intro">
-            En <strong>${escapeHtml(section.title)}</strong>
-            hay
-            <strong>
-              ${blockedSubjects.length}
-              ${blockedSubjects.length === 1
+          <div class="swal-blocked-content">
+            <p class="swal-blocked-content__intro">
+              En
+              <strong>
+                ${escapeHtml(section.title)}
+              </strong>
+              hay
+              <strong>
+                ${blockedSubjects.length}
+                ${blockedSubjects.length === 1
             ? 'materia bloqueada'
             : 'materias bloqueadas'
           }
-            </strong>.
-          </p>
+              </strong>.
+            </p>
 
-          <div class="swal-blocked-list">
-            ${blockedSubjectsHtml}
+            <div class="swal-blocked-list">
+              ${blockedSubjectsHtml}
+            </div>
+
+            <p class="swal-blocked-content__footer">
+              Ningún estado fue modificado.
+            </p>
           </div>
+        `,
 
-          <p class="swal-blocked-content__footer">
-            Ningún estado fue modificado.
-          </p>
-        </div>
-      `,
         confirmButtonText: 'Entendido',
         confirmButtonColor: '#4f46e5',
         width: 680,
+
         customClass: {
           popup: 'swal-pensum-popup',
           htmlContainer: 'swal-pensum-container',
@@ -273,55 +481,66 @@ function App() {
       return
     }
 
-    const subjectsNotApproved = section.subjects.filter(
-      (subject) =>
-        subjectStatuses[subject.code] !== 'approved',
-    )
+    /*
+     * Solo se cuentan las materias que todavía no están
+     * aprobadas.
+     */
+    const subjectsNotApproved =
+      section.subjects.filter(
+        (subject) =>
+          subjectStatuses[subject.code] !== 'approved',
+      )
 
-    const creditsToApprove = subjectsNotApproved.reduce(
-      (total, subject) => total + subject.credits,
-      0,
-    )
+    const creditsToApprove =
+      subjectsNotApproved.reduce(
+        (total, subject) =>
+          total + subject.credits,
+        0,
+      )
 
     const result = await Swal.fire({
       icon: 'question',
       title: `¿Aprobar todo ${section.title}?`,
+
       html: `
-      <div class="swal-confirmation-content">
-        <p>
-          Se marcarán como aprobadas
-          <strong>
-            ${subjectsNotApproved.length}
-            ${subjectsNotApproved.length === 1
+        <div class="swal-confirmation-content">
+          <p>
+            Se marcarán como aprobadas
+            <strong>
+              ${subjectsNotApproved.length}
+              ${subjectsNotApproved.length === 1
           ? 'materia'
           : 'materias'
         }
-          </strong>.
-        </p>
+            </strong>.
+          </p>
 
-        <p>
-          Esto agregará
-          <strong>
-            ${creditsToApprove}
-            ${creditsToApprove === 1
+          <p>
+            Esto agregará
+            <strong>
+              ${creditsToApprove}
+              ${creditsToApprove === 1
           ? 'crédito'
           : 'créditos'
         }
-          </strong>
-          a tu progreso.
-        </p>
+            </strong>
+            a tu progreso.
+          </p>
 
-        <p>
-          Después podrás modificar cada materia
-          individualmente.
-        </p>
-      </div>
-    `,
+          <p>
+            Después podrás modificar cada materia
+            individualmente.
+          </p>
+        </div>
+      `,
+
       showCancelButton: true,
       confirmButtonText: 'Sí, aprobar todo',
       cancelButtonText: 'Cancelar',
+
       confirmButtonColor: '#16a34a',
       cancelButtonColor: '#64748b',
+
       reverseButtons: true,
       focusCancel: true,
     })
@@ -348,12 +567,23 @@ function App() {
       position: 'top-end',
       icon: 'success',
       title: `${section.title} aprobado`,
-      text: `${subjectsNotApproved.length} materias fueron actualizadas.`,
+
+      text: `${subjectsNotApproved.length} ${subjectsNotApproved.length === 1
+          ? 'materia fue actualizada'
+          : 'materias fueron actualizadas'
+        }.`,
+
       showConfirmButton: false,
       timer: 2400,
       timerProgressBar: true,
     })
   }
+
+  /*
+   * =====================================================
+   * REINICIAR TODO EL PROGRESO
+   * =====================================================
+   */
 
   const handleResetProgress = async () => {
     const changedSubjects = allSubjects.filter(
@@ -361,12 +591,23 @@ function App() {
         subjectStatuses[subject.code] !== 'pending',
     ).length
 
-    if (changedSubjects === 0) {
+    const changedDegreeRequirements =
+      degreeRequirements.filter(
+        (requirement) =>
+          degreeRequirementStatuses[
+          requirement.code
+          ] !== 'pending',
+      ).length
+
+    if (
+      changedSubjects === 0 &&
+      changedDegreeRequirements === 0
+    ) {
       await Swal.fire({
         icon: 'info',
         title: 'No hay progreso para reiniciar',
         text:
-          'Todas las materias ya se encuentran en estado pendiente.',
+          'Todas las materias y requisitos de grado se encuentran pendientes.',
         confirmButtonText: 'Entendido',
         confirmButtonColor: '#4f46e5',
       })
@@ -377,23 +618,51 @@ function App() {
     const result = await Swal.fire({
       icon: 'warning',
       title: '¿Reiniciar todo el progreso?',
+
       html: `
-        <p>
-          Se eliminarán los estados guardados de
-          <strong>${changedSubjects} materias</strong>.
-        </p>
-        <p>
-          Las materias volverán a aparecer como pendientes.
-        </p>
-        <p>
-          <strong>Esta acción no se puede deshacer.</strong>
-        </p>
+        <div class="swal-confirmation-content">
+          <p>
+            Se reiniciarán
+            <strong>
+              ${changedSubjects}
+              ${changedSubjects === 1
+          ? 'materia'
+          : 'materias'
+        }
+            </strong>.
+          </p>
+
+          <p>
+            También se reiniciarán
+            <strong>
+              ${changedDegreeRequirements}
+              ${changedDegreeRequirements === 1
+          ? 'requisito de grado'
+          : 'requisitos de grado'
+        }
+            </strong>.
+          </p>
+
+          <p>
+            Todos volverán al estado pendiente.
+          </p>
+
+          <p>
+            <strong>
+              Esta acción no se puede deshacer.
+            </strong>
+          </p>
+        </div>
       `,
+
       showCancelButton: true,
+
       confirmButtonText: 'Sí, reiniciar',
       cancelButtonText: 'Conservar progreso',
+
       confirmButtonColor: '#dc2626',
       cancelButtonColor: '#64748b',
+
       reverseButtons: true,
       focusCancel: true,
     })
@@ -403,17 +672,28 @@ function App() {
     }
 
     setSavedSubjectStatuses(initialStatuses)
+
+    setSavedDegreeRequirementStatuses(
+      initialDegreeRequirementStatuses,
+    )
+
     setSelectedSectionId('all')
 
     await Swal.fire({
       icon: 'success',
       title: 'Progreso reiniciado',
       text:
-        'Todas las materias volvieron al estado pendiente.',
+        'Todas las materias y requisitos de grado volvieron al estado pendiente.',
       confirmButtonText: 'Entendido',
       confirmButtonColor: '#4f46e5',
     })
   }
+
+  /*
+   * =====================================================
+   * INTERFAZ
+   * =====================================================
+   */
 
   return (
     <div className="app">
@@ -427,8 +707,9 @@ function App() {
             <h1>Mi pensum interactivo</h1>
 
             <p className="header__description">
-              Organiza tus materias, consulta los prerrequisitos
-              y lleva el control de tu avance académico.
+              Organiza tus materias, consulta los
+              prerrequisitos y lleva el control de tu
+              avance académico.
             </p>
           </div>
 
@@ -444,8 +725,14 @@ function App() {
       </header>
 
       <main className="main-content">
+        {/*
+         * =================================================
+         * RESUMEN ACADÉMICO
+         * =================================================
+         */}
+
         <section
-          className="summary"
+          className="summary summary--four"
           aria-label="Resumen académico"
         >
           <article className="summary-card">
@@ -470,7 +757,7 @@ function App() {
             </div>
 
             <span className="summary-card__detail">
-              De {totalSubjects} materias · {inProgressSubjects} en curso
+              Del programa completado
             </span>
           </article>
 
@@ -498,10 +785,36 @@ function App() {
             </strong>
 
             <span className="summary-card__detail">
-              {inProgressSubjects} materias en curso
+              {inProgressSubjects}{' '}
+              {inProgressSubjects === 1
+                ? 'materia en curso'
+                : 'materias en curso'}
+              {' · '}
+              {totalSubjects} materias en total
+            </span>
+          </article>
+
+          <article className="summary-card">
+            <span className="summary-card__label">
+              Requisitos de grado
+            </span>
+
+            <strong className="summary-card__value">
+              {completedDegreeRequirements} /{' '}
+              {degreeRequirements.length}
+            </strong>
+
+            <span className="summary-card__detail">
+              No suman créditos
             </span>
           </article>
         </section>
+
+        {/*
+         * =================================================
+         * PLAN DE ESTUDIOS
+         * =================================================
+         */}
 
         <section className="curriculum">
           <div className="section-heading">
@@ -526,7 +839,9 @@ function App() {
                 className="semester-filter__select"
                 value={activeSectionId}
                 onChange={(event) =>
-                  setSelectedSectionId(event.target.value)
+                  setSelectedSectionId(
+                    event.target.value,
+                  )
                 }
               >
                 <option value="all">
@@ -545,7 +860,10 @@ function App() {
             </div>
           </div>
 
-          <div className="status-legend">
+          <div
+            className="status-legend"
+            aria-label="Estados de las materias"
+          >
             <div className="status-legend__item">
               <span className="status-legend__dot status-legend__dot--pending" />
               Pendiente
@@ -563,6 +881,16 @@ function App() {
           </div>
 
           <div className="curriculum-grid">
+            <DegreeRequirementsCard
+              requirements={degreeRequirements}
+              requirementStatuses={
+                degreeRequirementStatuses
+              }
+              onStatusChange={
+                handleDegreeRequirementStatusChange
+              }
+            />
+
             {filteredCurriculum.map((section) => (
               <SemesterCard
                 key={section.id}
