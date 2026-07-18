@@ -40,25 +40,8 @@ function AcademicStatistics({
     return (
         <section
             className="academic-statistics"
-            aria-labelledby="academic-statistics-title"
+            aria-label="Resumen de estadísticas académicas"
         >
-            <header className="academic-statistics__header">
-                <div>
-                    <p className="section-heading__eyebrow">
-                        Análisis del progreso
-                    </p>
-
-                    <h2 id="academic-statistics-title">
-                        Estadísticas académicas
-                    </h2>
-
-                    <p>
-                        Resumen general calculado a partir del estado actual
-                        de tus materias.
-                    </p>
-                </div>
-            </header>
-
             <div className="academic-statistics__grid">
                 <article className="academic-statistic academic-statistic--approved">
                     <div

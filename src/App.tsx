@@ -3,6 +3,7 @@ import "sweetalert2/dist/sweetalert2.min.css";
 import "./App.css";
 
 import {
+  LuCheck,
   LuChevronDown,
   LuRotateCcw,
   LuSearch,
@@ -138,16 +139,10 @@ function App() {
     "",
   );
 
-  /*
-   * Comprueba que el semestre guardado todavía exista.
-   *
-   * Si no existe, muestra todos los semestres.
-   */
-  const selectedSectionExists =
-    selectedSectionId === "all" ||
-    semesterSections.some((section) => section.id === selectedSectionId);
-
-  const activeSectionId = selectedSectionExists ? selectedSectionId : "all";
+  const [showCompletedSemesters, setShowCompletedSemesters,] = useLocalStorage<boolean>(
+    "pensum-show-completed-semesters",
+    false,
+  );
 
   /*
    * =====================================================
@@ -344,6 +339,31 @@ function App() {
     (semester) => semester.isCompleted,
   ).length;
 
+  const completedSemesterIds = new Set(
+    semesterStatistics
+      .filter((semester) => semester.isCompleted)
+      .map((semester) => semester.id),
+  );
+
+  const semesterSectionsForDisplay =
+    showCompletedSemesters
+      ? semesterSections
+      : semesterSections.filter(
+        (section) =>
+          !completedSemesterIds.has(section.id),
+      );
+
+  const selectedSectionExists =
+    selectedSectionId === "all" ||
+    semesterSectionsForDisplay.some(
+      (section) =>
+        section.id === selectedSectionId,
+    );
+
+  const activeSectionId = selectedSectionExists
+    ? selectedSectionId
+    : "all";
+
   const strongestSemesterCandidate =
     semesterStatistics.reduce<
       (typeof semesterStatistics)[number] | null
@@ -387,8 +407,11 @@ function App() {
 
   const sectionsSelectedBySemester =
     activeSectionId === "all"
-      ? semesterSections
-      : semesterSections.filter((section) => section.id === activeSectionId);
+      ? semesterSectionsForDisplay
+      : semesterSectionsForDisplay.filter(
+        (section) =>
+          section.id === activeSectionId,
+      );
 
   const matchesStatusFilter = (subject: Subject) => {
     const currentStatus = subjectStatuses[subject.code] ?? "pending";
@@ -492,15 +515,98 @@ function App() {
     setSearchTerm("");
   };
 
-  const handleStatusChange = (
+  const showNextPendingSemesters = () => {
+    setShowCompletedSemesters(false);
+    setSelectedSectionId("all");
+    setSelectedStatusFilter("all");
+    setSearchTerm("");
+  };
+
+  const handleCompletedSemestersVisibility = (
+    shouldShow: boolean,
+  ) => {
+    setShowCompletedSemesters(shouldShow);
+
+    const selectedCompletedSemester =
+      selectedSectionId !== "all" &&
+      completedSemesterIds.has(selectedSectionId);
+
+    if (!shouldShow && selectedCompletedSemester) {
+      setSelectedSectionId("all");
+    }
+  };
+
+  const handleStatusChange = async (
     subjectCode: string,
     newStatus: SubjectStatus,
   ) => {
+    const currentStatus =
+      subjectStatuses[subjectCode] ?? "pending";
+
+    if (currentStatus === newStatus) {
+      return;
+    }
+
+    const subjectSemester = semesterSections.find(
+      (section) =>
+        section.subjects.some(
+          (subject) =>
+            subject.code === subjectCode,
+        ),
+    );
+
+    const completesSemester =
+      newStatus === "approved" &&
+      subjectSemester !== undefined &&
+      subjectSemester.subjects.every(
+        (subject) =>
+          subject.code === subjectCode ||
+          subjectStatuses[subject.code] ===
+          "approved",
+      );
+
     setSavedSubjectStatuses((currentStatuses) => ({
       ...initialStatuses,
       ...currentStatuses,
       [subjectCode]: newStatus,
     }));
+
+    if (!completesSemester || !subjectSemester) {
+      return;
+    }
+
+    await Swal.fire({
+      icon: "success",
+      title: `¡${subjectSemester.title} completado!`,
+      html: `
+      <div class="swal-confirmation-content">
+        <p>
+          Has aprobado todas las materias de
+          <strong>
+            ${escapeHtml(subjectSemester.title)}
+          </strong>.
+        </p>
+
+        <p>
+          Este semestre se ocultará para optimizar
+          el espacio y se mostrarán los semestres
+          que todavía tienes pendientes.
+        </p>
+
+        <p>
+          Puedes volver a verlo activando
+          <strong>
+            “Mostrar semestres completados”
+          </strong>.
+        </p>
+      </div>
+    `,
+      confirmButtonText: "Ver siguientes semestres",
+      confirmButtonColor: "#16a34a",
+      allowOutsideClick: false,
+    });
+
+    showNextPendingSemesters();
   };
 
   /*
@@ -802,17 +908,56 @@ function App() {
       return updatedStatuses;
     });
 
+    const isAcademicSemester =
+      section.semester !== undefined;
+
+    if (isAcademicSemester) {
+      await Swal.fire({
+        icon: "success",
+        title: `¡${section.title} completado!`,
+        html: `
+      <div class="swal-confirmation-content">
+        <p>
+          Todas las materias de
+          <strong>
+            ${escapeHtml(section.title)}
+          </strong>
+          fueron aprobadas.
+        </p>
+
+        <p>
+          Este semestre se ocultará y la vista
+          mostrará los siguientes semestres
+          pendientes.
+        </p>
+
+        <p>
+          Para consultarlo nuevamente, activa
+          <strong>
+            “Mostrar semestres completados”
+          </strong>.
+        </p>
+      </div>
+    `,
+        confirmButtonText: "Continuar",
+        confirmButtonColor: "#16a34a",
+        allowOutsideClick: false,
+      });
+
+      showNextPendingSemesters();
+
+      return;
+    }
+
     await Swal.fire({
       toast: true,
       position: "top-end",
       icon: "success",
       title: `${section.title} aprobado`,
-
       text: `${subjectsNotApproved.length} ${subjectsNotApproved.length === 1
         ? "materia fue actualizada"
         : "materias fueron actualizadas"
         }.`,
-
       showConfirmButton: false,
       timer: 2400,
       timerProgressBar: true,
@@ -907,6 +1052,7 @@ function App() {
     setSelectedSectionId("all");
     setSelectedStatusFilter("all");
     setSearchTerm("");
+    setShowCompletedSemesters(false);
 
     await Swal.fire({
       icon: "success",
@@ -1023,17 +1169,54 @@ function App() {
           </article>
         </section>
 
-        <AcademicStatistics
-          approvedSubjects={approvedSubjects.length}
-          totalSubjects={totalSubjects}
-          inProgressSubjects={inProgressSubjects}
-          blockedSubjects={blockedSubjectsCount}
-          remainingCredits={remainingCredits}
-          totalCredits={totalCredits}
-          completedSemesters={completedSemesters}
-          totalSemesters={semesterSections.length}
-          strongestSemester={strongestSemester}
-        />
+        <details className="academic-statistics-panel">
+          <summary className="academic-statistics-panel__summary">
+            <div className="academic-statistics-panel__copy">
+              <p className="section-heading__eyebrow">
+                Análisis del progreso
+              </p>
+
+              <h2>Estadísticas académicas</h2>
+
+              <p>
+                Consulta materias aprobadas, bloqueadas,
+                créditos restantes y avance por semestre.
+              </p>
+            </div>
+
+            <div
+              className="academic-statistics-panel__action"
+              aria-hidden="true"
+            >
+              <span className="academic-statistics-panel__state academic-statistics-panel__state--closed">
+                Mostrar
+              </span>
+
+              <span className="academic-statistics-panel__state academic-statistics-panel__state--open">
+                Ocultar
+              </span>
+
+              <LuChevronDown
+                className="academic-statistics-panel__chevron"
+                aria-hidden="true"
+              />
+            </div>
+          </summary>
+
+          <div className="academic-statistics-panel__content">
+            <AcademicStatistics
+              approvedSubjects={approvedSubjects.length}
+              totalSubjects={totalSubjects}
+              inProgressSubjects={inProgressSubjects}
+              blockedSubjects={blockedSubjectsCount}
+              remainingCredits={remainingCredits}
+              totalCredits={totalCredits}
+              completedSemesters={completedSemesters}
+              totalSemesters={semesterSections.length}
+              strongestSemester={strongestSemester}
+            />
+          </div>
+        </details>
 
         {/*
          * =================================================
@@ -1175,11 +1358,16 @@ function App() {
                 >
                   <option value="all">Todos los semestres</option>
 
-                  {semesterSections.map((section) => (
-                    <option value={section.id} key={section.id}>
-                      {section.title}
-                    </option>
-                  ))}
+                  {semesterSectionsForDisplay.map(
+                    (section) => (
+                      <option
+                        value={section.id}
+                        key={section.id}
+                      >
+                        {section.title}
+                      </option>
+                    ),
+                  )}
                 </select>
               </div>
 
@@ -1210,6 +1398,37 @@ function App() {
                   <option value="blocked">Bloqueadas</option>
                 </select>
               </div>
+
+              <label className="completed-semesters-toggle">
+                <input
+                  className="completed-semesters-toggle__input"
+                  type="checkbox"
+                  checked={showCompletedSemesters}
+                  onChange={(event) =>
+                    handleCompletedSemestersVisibility(
+                      event.target.checked,
+                    )
+                  }
+                />
+
+                <span
+                  className="completed-semesters-toggle__box"
+                  aria-hidden="true"
+                >
+                  <LuCheck />
+                </span>
+
+                <span className="completed-semesters-toggle__copy">
+                  <strong>
+                    Mostrar semestres completados
+                  </strong>
+
+                  <small>
+                    Incluye en la cuadrícula los semestres
+                    que ya tienen el 100 % aprobado.
+                  </small>
+                </span>
+              </label>
             </div>
           </div>
 

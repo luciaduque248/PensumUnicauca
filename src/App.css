@@ -1572,9 +1572,264 @@
 
 /*
  * =========================================================
+ * MOSTRAR SEMESTRES COMPLETADOS
+ * =========================================================
+ */
+
+.completed-semesters-toggle {
+  display: flex;
+  grid-column: 1 / -1;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background-color: rgba(239, 246, 255, 0.72);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.completed-semesters-toggle:hover {
+  border-color: #93c5fd;
+  background-color: #eff6ff;
+}
+
+.completed-semesters-toggle__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.completed-semesters-toggle__box {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 2px solid #94a3b8;
+  border-radius: 7px;
+  color: #ffffff;
+  background-color: #ffffff;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.completed-semesters-toggle__box svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transform: scale(0.7);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.completed-semesters-toggle__input:checked+.completed-semesters-toggle__box {
+  border-color: #16a34a;
+  background-color: #16a34a;
+}
+
+.completed-semesters-toggle__input:checked+.completed-semesters-toggle__box svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.completed-semesters-toggle__input:focus-visible+.completed-semesters-toggle__box {
+  outline: 3px solid rgba(59, 130, 246, 0.25);
+  outline-offset: 3px;
+}
+
+.completed-semesters-toggle__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.completed-semesters-toggle__copy strong {
+  color: #334155;
+  font-size: 0.75rem;
+}
+
+.completed-semesters-toggle__copy small {
+  color: #64748b;
+  font-size: 0.67rem;
+  line-height: 1.4;
+}
+
+/*
+ * =========================================================
+ * PANEL DESPLEGABLE DE ESTADÍSTICAS
+ * =========================================================
+ */
+
+.academic-statistics-panel {
+  margin-top: 42px;
+  overflow: hidden;
+  border: 1px solid #dbeafe;
+  border-radius: 26px;
+  background:
+    linear-gradient(145deg,
+      rgba(239, 246, 255, 0.72),
+      rgba(248, 250, 252, 0.96));
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+}
+
+.academic-statistics-panel__summary {
+  display: flex;
+  min-height: 126px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 26px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition:
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.academic-statistics-panel__summary::-webkit-details-marker {
+  display: none;
+}
+
+.academic-statistics-panel__summary::marker {
+  content: "";
+}
+
+.academic-statistics-panel__summary:hover {
+  background-color: rgba(255, 255, 255, 0.48);
+}
+
+.academic-statistics-panel__summary:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.25);
+  outline-offset: -3px;
+}
+
+.academic-statistics-panel[open] .academic-statistics-panel__summary {
+  border-bottom: 1px solid #dbeafe;
+  background-color: rgba(255, 255, 255, 0.38);
+}
+
+.academic-statistics-panel__copy {
+  min-width: 0;
+}
+
+.academic-statistics-panel__copy h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(1.35rem, 3vw, 2.05rem);
+  letter-spacing: -0.03em;
+}
+
+.academic-statistics-panel__copy>p:last-child {
+  max-width: 720px;
+  margin: 9px 0 0;
+  color: #64748b;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.academic-statistics-panel__action {
+  display: inline-flex;
+  min-width: 112px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px 13px;
+  border: 1px solid #bfdbfe;
+  border-radius: 13px;
+  color: #1d4ed8;
+  background-color: #eff6ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.academic-statistics-panel__state--open {
+  display: none;
+}
+
+.academic-statistics-panel[open] .academic-statistics-panel__state--closed {
+  display: none;
+}
+
+.academic-statistics-panel[open] .academic-statistics-panel__state--open {
+  display: inline;
+}
+
+.academic-statistics-panel__chevron {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  transition: transform 200ms ease;
+}
+
+.academic-statistics-panel[open] .academic-statistics-panel__chevron {
+  transform: rotate(180deg);
+}
+
+.academic-statistics-panel__content {
+  padding: 24px 26px 26px;
+}
+
+/*
+ * El componente interno conserva solamente
+ * las tarjetas, sin crear otro recuadro exterior.
+ */
+.academic-statistics-panel__content .academic-statistics {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/*
+ * =========================================================
  * 12. DISEÑO RESPONSIVO
  * =========================================================
  */
+
+@media (max-width: 620px) {
+  .academic-statistics-panel {
+    border-radius: 22px;
+  }
+
+  .academic-statistics-panel__summary {
+    min-height: 0;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .academic-statistics-panel__action {
+    min-width: 0;
+    align-self: flex-start;
+  }
+
+  .academic-statistics-panel__content {
+    padding: 20px;
+  }
+
+  .completed-semesters-toggle {
+    align-items: flex-start;
+  }
+}
 
 @media (max-width: 1050px) {
   .summary--four {
