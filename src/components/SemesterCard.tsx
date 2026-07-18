@@ -6,6 +6,7 @@ import type {
 
 interface SemesterCardProps {
   section: CurriculumSection
+  visibleSubjects: Subject[]
   prerequisiteNamesByCode: Record<string, string>
   subjectStatuses: Record<string, SubjectStatus>
   onStatusChange: (
@@ -17,6 +18,7 @@ interface SemesterCardProps {
 
 function SemesterCard({
   section,
+  visibleSubjects,
   prerequisiteNamesByCode,
   subjectStatuses,
   onStatusChange,
@@ -252,7 +254,7 @@ function SemesterCard({
       <div className="subject-list"></div>
 
       <div className="subject-list">
-        {section.subjects.map((subject: Subject) => {
+        {visibleSubjects.map((subject: Subject) => {
           const hasPrerequisites =
             subject.prerequisites.length > 0
 

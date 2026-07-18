@@ -15,8 +15,16 @@ import type {
   CurriculumSection,
   DegreeRequirement,
   DegreeRequirementStatus,
+  Subject,
   SubjectStatus,
 } from './types/curriculum'
+
+type SubjectFilter =
+  | 'all'
+  | 'pending'
+  | 'in-progress'
+  | 'approved'
+  | 'blocked'
 
 const escapeHtml = (value: string) => {
   return value
@@ -126,6 +134,22 @@ function App() {
     'all',
   )
 
+  const [
+    selectedStatusFilter,
+    setSelectedStatusFilter,
+  ] = useLocalStorage<SubjectFilter>(
+    'pensum-status-filter',
+    'all',
+  )
+
+  const [
+    searchTerm,
+    setSearchTerm,
+  ] = useLocalStorage<string>(
+    'pensum-search-term',
+    '',
+  )
+
   /*
    * Comprueba que el semestre guardado todavía exista.
    *
@@ -162,6 +186,49 @@ function App() {
   const prerequisiteNamesByCode: Record<string, string> = {
     ...subjectNamesByCode,
     ...externalPrerequisiteNames,
+  }
+
+  const normalizeSearchText = (value: string) => {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
+  }
+
+  const getMissingPrerequisites = (
+    subject: Subject,
+  ) => {
+    return subject.prerequisites.filter(
+      (prerequisiteCode) => {
+        const prerequisiteStatus =
+          subjectStatuses[prerequisiteCode]
+
+        /*
+         * Los requisitos externos no existen dentro
+         * de subjectStatuses y no bloquean la materia.
+         */
+        return (
+          prerequisiteStatus !== undefined &&
+          prerequisiteStatus !== 'approved'
+        )
+      },
+    )
+  }
+
+  const isSubjectLocked = (subject: Subject) => {
+    const currentStatus =
+      subjectStatuses[subject.code] ?? 'pending'
+
+    /*
+     * Una materia ya aprobada no vuelve a mostrarse
+     * como bloqueada.
+     */
+    if (currentStatus === 'approved') {
+      return false
+    }
+
+    return getMissingPrerequisites(subject).length > 0
   }
 
   /*
@@ -211,18 +278,111 @@ function App() {
    * =====================================================
    */
 
-  const filteredCurriculum =
+  const normalizedSearchTerm =
+    normalizeSearchText(searchTerm)
+
+  const sectionsSelectedBySemester =
     activeSectionId === 'all'
       ? curriculum
       : curriculum.filter(
-        (section) => section.id === activeSectionId,
+        (section) =>
+          section.id === activeSectionId,
       )
+
+  const matchesStatusFilter = (
+    subject: Subject,
+  ) => {
+    const currentStatus =
+      subjectStatuses[subject.code] ?? 'pending'
+
+    const subjectIsLocked =
+      isSubjectLocked(subject)
+
+    if (selectedStatusFilter === 'all') {
+      return true
+    }
+
+    if (selectedStatusFilter === 'blocked') {
+      return subjectIsLocked
+    }
+
+    /*
+     * Una materia bloqueada se muestra únicamente
+     * dentro del filtro "Bloqueadas".
+     *
+     * Así las categorías no se mezclan.
+     */
+    if (subjectIsLocked) {
+      return false
+    }
+
+    return currentStatus === selectedStatusFilter
+  }
+
+  const filteredSections =
+    sectionsSelectedBySemester
+      .map((section) => {
+        const visibleSubjects =
+          section.subjects.filter((subject) => {
+            const normalizedName =
+              normalizeSearchText(subject.name)
+
+            const normalizedCode =
+              normalizeSearchText(subject.code)
+
+            const matchesSearch =
+              normalizedSearchTerm === '' ||
+              normalizedName.includes(
+                normalizedSearchTerm,
+              ) ||
+              normalizedCode.includes(
+                normalizedSearchTerm,
+              )
+
+            return (
+              matchesSearch &&
+              matchesStatusFilter(subject)
+            )
+          })
+
+        return {
+          section,
+          visibleSubjects,
+        }
+      })
+      .filter(
+        ({ visibleSubjects }) =>
+          visibleSubjects.length > 0,
+      )
+
+  const visibleSubjectsCount =
+    filteredSections.reduce(
+      (total, { visibleSubjects }) =>
+        total + visibleSubjects.length,
+      0,
+    )
+
+  const hasActiveFilters =
+    activeSectionId !== 'all' ||
+    selectedStatusFilter !== 'all' ||
+    normalizedSearchTerm !== ''
+
+  const shouldShowDegreeRequirements =
+    activeSectionId === 'all' &&
+    selectedStatusFilter === 'all' &&
+    normalizedSearchTerm === ''
 
   /*
    * =====================================================
    * CAMBIAR ESTADO DE UNA MATERIA
    * =====================================================
    */
+
+  const handleClearFilters = () => {
+    setSelectedSectionId('all')
+    setSelectedStatusFilter('all')
+    setSearchTerm('')
+  }
 
   const handleStatusChange = (
     subjectCode: string,
@@ -678,6 +838,8 @@ function App() {
     )
 
     setSelectedSectionId('all')
+    setSelectedStatusFilter('all')
+    setSearchTerm('')
 
     await Swal.fire({
       icon: 'success',
@@ -817,53 +979,119 @@ function App() {
          */}
 
         <section className="curriculum">
-          <div className="section-heading">
-            <div>
+          <div className="section-heading section-heading--filters">
+            <div className="section-heading__information">
               <p className="section-heading__eyebrow">
                 Plan de estudios
               </p>
 
               <h2>Materias por semestre</h2>
+
+              <p className="section-heading__description">
+                Busca una materia o combina los filtros
+                para revisar tu progreso.
+              </p>
             </div>
 
-            <div className="semester-filter">
-              <label
-                className="semester-filter__label"
-                htmlFor="semester-filter"
-              >
-                Filtrar por semestre
-              </label>
+            <div
+              className="curriculum-filters"
+              aria-label="Filtros del pensum"
+            >
+              <div className="curriculum-filter curriculum-filter--search">
+                <label
+                  className="curriculum-filter__label"
+                  htmlFor="subject-search"
+                >
+                  Buscar materia
+                </label>
 
-              <select
-                id="semester-filter"
-                className="semester-filter__select"
-                value={activeSectionId}
-                onChange={(event) =>
-                  setSelectedSectionId(
-                    event.target.value,
-                  )
-                }
-              >
-                <option value="all">
-                  Todos los semestres
-                </option>
+                <input
+                  id="subject-search"
+                  className="curriculum-filter__input"
+                  type="search"
+                  value={searchTerm}
+                  placeholder="Nombre o código"
+                  autoComplete="off"
+                  onChange={(event) =>
+                    setSearchTerm(event.target.value)
+                  }
+                />
+              </div>
 
-                {curriculum.map((section) => (
-                  <option
-                    value={section.id}
-                    key={section.id}
-                  >
-                    {section.title}
+              <div className="curriculum-filter">
+                <label
+                  className="curriculum-filter__label"
+                  htmlFor="semester-filter"
+                >
+                  Semestre
+                </label>
+
+                <select
+                  id="semester-filter"
+                  className="curriculum-filter__select"
+                  value={activeSectionId}
+                  onChange={(event) =>
+                    setSelectedSectionId(event.target.value)
+                  }
+                >
+                  <option value="all">
+                    Todos los semestres
                   </option>
-                ))}
-              </select>
+
+                  {curriculum.map((section) => (
+                    <option
+                      value={section.id}
+                      key={section.id}
+                    >
+                      {section.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="curriculum-filter">
+                <label
+                  className="curriculum-filter__label"
+                  htmlFor="status-filter"
+                >
+                  Estado
+                </label>
+
+                <select
+                  id="status-filter"
+                  className="curriculum-filter__select"
+                  value={selectedStatusFilter}
+                  onChange={(event) =>
+                    setSelectedStatusFilter(
+                      event.target.value as SubjectFilter,
+                    )
+                  }
+                >
+                  <option value="all">
+                    Todas las materias
+                  </option>
+
+                  <option value="pending">
+                    Pendientes
+                  </option>
+
+                  <option value="in-progress">
+                    En curso
+                  </option>
+
+                  <option value="approved">
+                    Aprobadas
+                  </option>
+
+                  <option value="blocked">
+                    Bloqueadas
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div
-            className="status-legend"
-            aria-label="Estados de las materias"
-          >
+          <div className="status-legend" aria-label="Estados de las materias">
             <div className="status-legend__item">
               <span className="status-legend__dot status-legend__dot--pending" />
               Pendiente
@@ -880,25 +1108,74 @@ function App() {
             </div>
           </div>
 
-          <div className="curriculum-grid">
-            {filteredCurriculum.map((section) => (
-              <SemesterCard
-                key={section.id}
-                section={section}
-                prerequisiteNamesByCode={
-                  prerequisiteNamesByCode
-                }
-                subjectStatuses={subjectStatuses}
-                onStatusChange={handleStatusChange}
-                onApproveAll={() =>
-                  handleApproveSection(section)
-                }
-              />
-            ))}
+          <div className="filter-results">
+            <p className="filter-results__text">
+              Mostrando{' '}
+              <strong>{visibleSubjectsCount}</strong>{' '}
+              {visibleSubjectsCount === 1
+                ? 'materia'
+                : 'materias'}{' '}
+              de <strong>{totalSubjects}</strong>
+            </p>
+
+            {hasActiveFilters && (
+              <button
+                className="filter-results__clear"
+                type="button"
+                onClick={handleClearFilters}
+              >
+                Limpiar filtros
+              </button>
+            )}
           </div>
+
+          {filteredSections.length > 0 ? (
+            <div className="curriculum-grid">
+              {filteredSections.map(
+                ({ section, visibleSubjects }) => (
+                  <SemesterCard
+                    key={section.id}
+                    section={section}
+                    visibleSubjects={visibleSubjects}
+                    prerequisiteNamesByCode={
+                      prerequisiteNamesByCode
+                    }
+                    subjectStatuses={subjectStatuses}
+                    onStatusChange={handleStatusChange}
+                    onApproveAll={() =>
+                      handleApproveSection(section)
+                    }
+                  />
+                ),
+              )}
+            </div>
+          ) : (
+            <div className="curriculum-empty">
+              <div
+                className="curriculum-empty__icon"
+                aria-hidden="true"
+              >
+                ⌕
+              </div>
+
+              <h3>No encontramos materias</h3>
+
+              <p>
+                No hay materias que coincidan con la
+                búsqueda y los filtros seleccionados.
+              </p>
+
+              <button
+                type="button"
+                onClick={handleClearFilters}
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          )}
         </section>
 
-        {activeSectionId === 'all' && (
+        {shouldShowDegreeRequirements && (
           <DegreeRequirementsCard
             requirements={degreeRequirements}
             requirementStatuses={

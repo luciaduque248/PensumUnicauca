@@ -1243,6 +1243,15 @@
     align-self: flex-start;
   }
 
+  .curriculum-filters {
+    grid-template-columns: repeat(2,
+        minmax(0, 1fr));
+  }
+
+  .curriculum-filter--search {
+    grid-column: 1 / -1;
+  }
+
 }
 
 @media (max-width: 620px) {
@@ -1318,6 +1327,22 @@
     flex-direction: column;
   }
 
+  .curriculum-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .curriculum-filter--search {
+    grid-column: auto;
+  }
+
+  .filter-results {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filter-results__clear {
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1472,4 +1497,194 @@
   width: 1px;
   height: 31px;
   background-color: #e2e8f0;
+}
+
+.section-heading--filters {
+  align-items: flex-end;
+  gap: 32px;
+}
+
+.section-heading__information {
+  min-width: 250px;
+}
+
+.section-heading__information .section-heading__description {
+  max-width: 480px;
+  margin: 9px 0 0;
+}
+
+.curriculum-filters {
+  display: grid;
+  width: min(100%, 760px);
+  grid-template-columns:
+    minmax(220px, 1.4fr) minmax(170px, 1fr) minmax(170px, 1fr);
+  gap: 12px;
+}
+
+.curriculum-filter {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.curriculum-filter__label {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.curriculum-filter__input,
+.curriculum-filter__select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #cbd5e1;
+  border-radius: 13px;
+  color: #1e293b;
+  background-color: #ffffff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.curriculum-filter__input {
+  padding: 0 14px;
+}
+
+.curriculum-filter__select {
+  padding: 0 38px 0 14px;
+  cursor: pointer;
+}
+
+.curriculum-filter__input::placeholder {
+  color: #94a3b8;
+  font-weight: 550;
+}
+
+.curriculum-filter__input:hover,
+.curriculum-filter__select:hover {
+  border-color: #a5b4fc;
+}
+
+.curriculum-filter__input:focus,
+.curriculum-filter__select:focus {
+  border-color: #6366f1;
+  box-shadow:
+    0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+.filter-results {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: -6px 0 20px;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 13px;
+  background-color: rgba(255, 255, 255, 0.72);
+}
+
+.filter-results__text {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.filter-results__text strong {
+  color: #334155;
+}
+
+.filter-results__clear {
+  flex-shrink: 0;
+  padding: 7px 11px;
+  border: 1px solid #c7d2fe;
+  border-radius: 9px;
+  color: #4338ca;
+  background-color: #eef2ff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.filter-results__clear:hover {
+  transform: translateY(-1px);
+  border-color: #a5b4fc;
+  background-color: #e0e7ff;
+}
+
+.curriculum-empty {
+  display: flex;
+  min-height: 300px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 34px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 22px;
+  background-color: rgba(248, 250, 252, 0.85);
+  text-align: center;
+}
+
+.curriculum-empty__icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 18px;
+  color: #6366f1;
+  background-color: #eef2ff;
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.curriculum-empty h3 {
+  margin: 17px 0 7px;
+  color: #1e293b;
+  font-size: 1.05rem;
+}
+
+.curriculum-empty p {
+  max-width: 420px;
+  margin: 0;
+  color: #64748b;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.curriculum-empty button {
+  margin-top: 18px;
+  padding: 10px 15px;
+  border: 0;
+  border-radius: 11px;
+  color: #ffffff;
+  background-color: #4f46e5;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.curriculum-empty button:hover {
+  background-color: #4338ca;
+}
+
+@media (max-width: 1100px) {
+  .section-heading--filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .curriculum-filters {
+    width: 100%;
+  }
 }
