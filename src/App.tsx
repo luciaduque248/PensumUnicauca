@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import "./App.css";
@@ -8,6 +9,8 @@ import {
   LuRotateCcw,
   LuSearch,
   LuX,
+  LuMoon,
+  LuSun,
 } from "react-icons/lu";
 
 import AcademicStatistics from "./components/AcademicStatistics";
@@ -29,6 +32,7 @@ import type {
 } from "./types/curriculum";
 
 type SubjectFilter = "all" | "pending" | "in-progress" | "approved" | "blocked";
+type ThemeMode = "light" | "dark";
 
 const escapeHtml = (value: string) => {
   return value
@@ -138,6 +142,20 @@ function App() {
     "pensum-search-term",
     "",
   );
+
+  const [themeMode, setThemeMode] =
+    useLocalStorage<ThemeMode>(
+      "pensum-theme",
+      "light",
+    );
+
+  useEffect(() => {
+    document.documentElement.dataset.theme =
+      themeMode;
+
+    document.documentElement.style.colorScheme =
+      themeMode;
+  }, [themeMode]);
 
   const [showCompletedSemesters, setShowCompletedSemesters,] = useLocalStorage<boolean>(
     "pensum-show-completed-semesters",
@@ -502,6 +520,14 @@ function App() {
 
   const shouldShowRequirementsArea =
     shouldShowDegreeRequirements || shouldShowAdditionalRequirements;
+
+  const handleToggleTheme = () => {
+    setThemeMode((currentTheme) =>
+      currentTheme === "dark"
+        ? "light"
+        : "dark",
+    );
+  };
 
   /*
    * =====================================================
@@ -1086,18 +1112,54 @@ function App() {
             </p>
           </div>
 
-          <button
-            className="header__reset-button"
-            type="button"
-            onClick={handleResetProgress}
-          >
-            <LuRotateCcw
-              className="button-icon"
-              aria-hidden="true"
-            />
+          <div className="header__actions">
+            <button
+              className="header__theme-button"
+              type="button"
+              onClick={handleToggleTheme}
+              aria-label={
+                themeMode === "dark"
+                  ? "Activar modo claro"
+                  : "Activar modo oscuro"
+              }
+              title={
+                themeMode === "dark"
+                  ? "Activar modo claro"
+                  : "Activar modo oscuro"
+              }
+            >
+              {themeMode === "dark" ? (
+                <LuSun
+                  className="button-icon"
+                  aria-hidden="true"
+                />
+              ) : (
+                <LuMoon
+                  className="button-icon"
+                  aria-hidden="true"
+                />
+              )}
 
-            Reiniciar progreso
-          </button>
+              <span>
+                {themeMode === "dark"
+                  ? "Modo claro"
+                  : "Modo oscuro"}
+              </span>
+            </button>
+
+            <button
+              className="header__reset-button"
+              type="button"
+              onClick={handleResetProgress}
+            >
+              <LuRotateCcw
+                className="button-icon"
+                aria-hidden="true"
+              />
+
+              Reiniciar progreso
+            </button>
+          </div>
         </div>
       </header>
 
