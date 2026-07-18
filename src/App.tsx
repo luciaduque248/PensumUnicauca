@@ -9,6 +9,15 @@ import type {
   SubjectStatus,
 } from './types/curriculum'
 
+const escapeHtml = (value: string) => {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;')
+}
+
 function App() {
   const allSubjects = curriculum.flatMap(
     (section) => section.subjects,
@@ -121,56 +130,193 @@ function App() {
   const handleApproveSection = async (
     section: CurriculumSection,
   ) => {
-    const availableSubjects = section.subjects.filter(
-      (subject) => {
+    const blockedSubjects = section.subjects
+      .map((subject) => {
         const currentStatus =
           subjectStatuses[subject.code] ?? 'pending'
 
         if (currentStatus === 'approved') {
-          return true
+          return null
         }
 
-        return subject.prerequisites.every(
-          (prerequisiteCode) => {
-            const prerequisiteStatus =
-              subjectStatuses[prerequisiteCode]
+        const missingPrerequisites =
+          subject.prerequisites.filter(
+            (prerequisiteCode) => {
+              const prerequisiteStatus =
+                subjectStatuses[prerequisiteCode]
 
-            return (
-              prerequisiteStatus === undefined ||
-              prerequisiteStatus === 'approved'
-            )
-          },
-        )
-      },
-    )
+              /*
+               * Los requisitos externos no están guardados
+               * en subjectStatuses y no bloquean la materia.
+               */
+              return (
+                prerequisiteStatus !== undefined &&
+                prerequisiteStatus !== 'approved'
+              )
+            },
+          )
 
-    if (
-      availableSubjects.length !==
-      section.subjects.length
-    ) {
+        if (missingPrerequisites.length === 0) {
+          return null
+        }
+
+        return {
+          subject,
+          missingPrerequisites,
+        }
+      })
+      .filter(
+        (
+          blockedSubject,
+        ): blockedSubject is {
+          subject: (typeof section.subjects)[number]
+          missingPrerequisites: string[]
+        } => blockedSubject !== null,
+      )
+
+    if (blockedSubjects.length > 0) {
+      const blockedSubjectsHtml = blockedSubjects
+        .map(({ subject, missingPrerequisites }) => {
+          const prerequisitesHtml = missingPrerequisites
+            .map((prerequisiteCode) => {
+              const prerequisiteName =
+                prerequisiteNamesByCode[
+                prerequisiteCode
+                ] ?? 'Materia no registrada'
+
+              const prerequisiteStatus =
+                subjectStatuses[prerequisiteCode] ??
+                'pending'
+
+              const statusLabel =
+                prerequisiteStatus === 'in-progress'
+                  ? 'En curso'
+                  : 'Pendiente'
+
+              return `
+              <li class="swal-requirement">
+                <span class="swal-requirement__code">
+                  ${escapeHtml(prerequisiteCode)}
+                </span>
+
+                <span class="swal-requirement__information">
+                  <strong>
+                    ${escapeHtml(prerequisiteName)}
+                  </strong>
+
+                  <small>
+                    Estado actual: ${statusLabel}
+                  </small>
+                </span>
+              </li>
+            `
+            })
+            .join('')
+
+          return `
+          <section class="swal-blocked-subject">
+            <div class="swal-blocked-subject__heading">
+              <span class="swal-blocked-subject__code">
+                ${escapeHtml(subject.code)}
+              </span>
+
+              <strong>
+                ${escapeHtml(subject.name)}
+              </strong>
+            </div>
+
+            <p>Necesita que apruebes:</p>
+
+            <ul class="swal-requirements-list">
+              ${prerequisitesHtml}
+            </ul>
+          </section>
+        `
+        })
+        .join('')
+
       await Swal.fire({
         icon: 'warning',
-        title: 'Hay materias bloqueadas',
-        text:
-          'Debes aprobar primero los prerrequisitos antes de aprobar todo el semestre.',
+        title: 'No se puede aprobar todo todavía',
+        html: `
+        <div class="swal-blocked-content">
+          <p class="swal-blocked-content__intro">
+            En <strong>${escapeHtml(section.title)}</strong>
+            hay
+            <strong>
+              ${blockedSubjects.length}
+              ${blockedSubjects.length === 1
+            ? 'materia bloqueada'
+            : 'materias bloqueadas'
+          }
+            </strong>.
+          </p>
+
+          <div class="swal-blocked-list">
+            ${blockedSubjectsHtml}
+          </div>
+
+          <p class="swal-blocked-content__footer">
+            Ningún estado fue modificado.
+          </p>
+        </div>
+      `,
         confirmButtonText: 'Entendido',
         confirmButtonColor: '#4f46e5',
+        width: 680,
+        customClass: {
+          popup: 'swal-pensum-popup',
+          htmlContainer: 'swal-pensum-container',
+        },
       })
 
       return
     }
 
+    const subjectsNotApproved = section.subjects.filter(
+      (subject) =>
+        subjectStatuses[subject.code] !== 'approved',
+    )
+
+    const creditsToApprove = subjectsNotApproved.reduce(
+      (total, subject) => total + subject.credits,
+      0,
+    )
+
     const result = await Swal.fire({
       icon: 'question',
       title: `¿Aprobar todo ${section.title}?`,
       html: `
+      <div class="swal-confirmation-content">
         <p>
-          Se marcarán como aprobadas las
-          <strong>${section.subjects.length} materias</strong>
-          de este semestre.
+          Se marcarán como aprobadas
+          <strong>
+            ${subjectsNotApproved.length}
+            ${subjectsNotApproved.length === 1
+          ? 'materia'
+          : 'materias'
+        }
+          </strong>.
         </p>
-        <p>Esta acción puede modificarse posteriormente.</p>
-      `,
+
+        <p>
+          Esto agregará
+          <strong>
+            ${creditsToApprove}
+            ${creditsToApprove === 1
+          ? 'crédito'
+          : 'créditos'
+        }
+          </strong>
+          a tu progreso.
+        </p>
+
+        <p>
+          Después podrás modificar cada materia
+          individualmente.
+        </p>
+      </div>
+    `,
       showCancelButton: true,
       confirmButtonText: 'Sí, aprobar todo',
       cancelButtonText: 'Cancelar',
@@ -202,9 +348,9 @@ function App() {
       position: 'top-end',
       icon: 'success',
       title: `${section.title} aprobado`,
-      text: 'Las materias fueron actualizadas.',
+      text: `${subjectsNotApproved.length} materias fueron actualizadas.`,
       showConfirmButton: false,
-      timer: 2200,
+      timer: 2400,
       timerProgressBar: true,
     })
   }

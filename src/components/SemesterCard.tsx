@@ -112,11 +112,10 @@ function SemesterCard({
 
   return (
     <article
-      className={`semester-card ${
-        isAdditionalSection
+      className={`semester-card ${isAdditionalSection
           ? 'semester-card--additional'
           : ''
-      }`}
+        }`}
     >
       <header className="semester-card__header">
         <div>
@@ -140,20 +139,17 @@ function SemesterCard({
               className="semester-card__approve-button"
               type="button"
               onClick={onApproveAll}
-              disabled={
-                allSubjectsApproved ||
-                hasLockedSubjects
-              }
+              disabled={allSubjectsApproved}
               title={
                 hasLockedSubjects
-                  ? 'Primero debes completar los prerrequisitos de las materias bloqueadas.'
-                  : undefined
+                  ? 'Consulta qué prerrequisitos faltan para aprobar todo el semestre.'
+                  : 'Marcar todas las materias del semestre como aprobadas.'
               }
             >
               {allSubjectsApproved
                 ? 'Todo aprobado'
                 : hasLockedSubjects
-                  ? 'Completa requisitos'
+                  ? 'Revisar requisitos'
                   : 'Aprobar todo'}
             </button>
           )}
@@ -201,11 +197,10 @@ function SemesterCard({
 
           return (
             <article
-              className={`subject-card subject-card--${currentStatus} ${
-                isLocked
+              className={`subject-card subject-card--${currentStatus} ${isLocked
                   ? 'subject-card--blocked'
                   : ''
-              }`}
+                }`}
               key={subject.code}
             >
               <div className="subject-card__top">
@@ -216,17 +211,16 @@ function SemesterCard({
                     </span>
 
                     <span
-                      className={`subject-card__status ${
-                        isLocked
+                      className={`subject-card__status ${isLocked
                           ? 'subject-card__status--blocked'
                           : `subject-card__status--${currentStatus}`
-                      }`}
+                        }`}
                     >
                       {isLocked
                         ? 'Bloqueada'
                         : getStatusLabel(
-                            currentStatus,
-                          )}
+                          currentStatus,
+                        )}
                     </span>
                   </div>
 
@@ -271,11 +265,10 @@ function SemesterCard({
                 aria-label={`Estado de ${subject.name}`}
               >
                 <button
-                  className={`status-selector__button ${
-                    currentStatus === 'pending'
+                  className={`status-selector__button ${currentStatus === 'pending'
                       ? 'status-selector__button--active-pending'
                       : ''
-                  }`}
+                    }`}
                   type="button"
                   onClick={() =>
                     onStatusChange(
@@ -288,11 +281,10 @@ function SemesterCard({
                 </button>
 
                 <button
-                  className={`status-selector__button ${
-                    currentStatus === 'in-progress'
+                  className={`status-selector__button ${currentStatus === 'in-progress'
                       ? 'status-selector__button--active-progress'
                       : ''
-                  }`}
+                    }`}
                   type="button"
                   disabled={isLocked}
                   title={
@@ -311,11 +303,10 @@ function SemesterCard({
                 </button>
 
                 <button
-                  className={`status-selector__button ${
-                    currentStatus === 'approved'
+                  className={`status-selector__button ${currentStatus === 'approved'
                       ? 'status-selector__button--active-approved'
                       : ''
-                  }`}
+                    }`}
                   type="button"
                   disabled={isLocked}
                   title={
