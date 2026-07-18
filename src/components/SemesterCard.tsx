@@ -4,6 +4,15 @@ import type {
   SubjectStatus,
 } from '../types/curriculum'
 
+import {
+  LuArrowDown,
+  LuCheckCheck,
+  LuCircleAlert,
+  LuCircleCheck,
+  LuMinus,
+  LuPlus,
+} from "react-icons/lu";
+
 interface SemesterCardProps {
   section: CurriculumSection
   visibleSubjects: Subject[]
@@ -230,11 +239,22 @@ function SemesterCard({
                   : 'Marcar todas las materias del semestre como aprobadas.'
               }
             >
-              {allSubjectsApproved
-                ? 'Todo aprobado'
-                : hasLockedSubjects
-                  ? 'Revisar requisitos'
-                  : 'Aprobar todo'}
+              {allSubjectsApproved ? (
+                <>
+                  <LuCircleCheck aria-hidden="true" />
+                  Todo aprobado
+                </>
+              ) : hasLockedSubjects ? (
+                <>
+                  <LuCircleAlert aria-hidden="true" />
+                  Revisar requisitos
+                </>
+              ) : (
+                <>
+                  <LuCheckCheck aria-hidden="true" />
+                  Aprobar todo
+                </>
+              )}
             </button>
           )}
         </div>
@@ -257,7 +277,8 @@ function SemesterCard({
 
           {isSemesterCompleted && (
             <span className="semester-progress__completed">
-              ✓ Completado
+              <LuCircleCheck aria-hidden="true" />
+              Completado
             </span>
           )}
         </div>
@@ -480,6 +501,14 @@ function SemesterCard({
               {hasPrerequisites ? (
                 <details className="prerequisites">
                   <summary className="prerequisites__summary">
+                    <span
+                      className="prerequisites__toggle-icon"
+                      aria-hidden="true"
+                    >
+                      <LuPlus className="prerequisites__icon--closed" />
+                      <LuMinus className="prerequisites__icon--open" />
+                    </span>
+
                     <span>Ver prerrequisitos</span>
 
                     <span className="prerequisites__count">
@@ -532,6 +561,13 @@ function SemesterCard({
               {unlocksSubjects && (
                 <details className="unlocks">
                   <summary className="unlocks__summary">
+                    <span
+                      className="unlocks__toggle-icon"
+                      aria-hidden="true"
+                    >
+                      <LuArrowDown />
+                    </span>
+                    
                     <span>Materias que desbloquea</span>
 
                     <span className="unlocks__count">

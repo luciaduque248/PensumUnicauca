@@ -2,6 +2,13 @@ import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import "./App.css";
 
+import {
+  LuChevronDown,
+  LuRotateCcw,
+  LuSearch,
+  LuX,
+} from "react-icons/lu";
+
 import DegreeRequirementsCard from "./components/DegreeRequirementsCard";
 import SemesterCard from "./components/SemesterCard";
 
@@ -700,8 +707,8 @@ function App() {
       title: `${section.title} aprobado`,
 
       text: `${subjectsNotApproved.length} ${subjectsNotApproved.length === 1
-          ? "materia fue actualizada"
-          : "materias fueron actualizadas"
+        ? "materia fue actualizada"
+        : "materias fueron actualizadas"
         }.`,
 
       showConfirmButton: false,
@@ -836,7 +843,11 @@ function App() {
             type="button"
             onClick={handleResetProgress}
           >
-            <span aria-hidden="true">↻</span>
+            <LuRotateCcw
+              className="button-icon"
+              aria-hidden="true"
+            />
+
             Reiniciar progreso
           </button>
         </div>
@@ -920,53 +931,73 @@ function App() {
          */}
 
         {shouldShowRequirementsArea && (
-          <section
+          <details
             className="program-requirements"
             aria-labelledby="program-requirements-title"
           >
-            <header className="program-requirements__header">
-              <p className="section-heading__eyebrow">
-                Requisitos del programa
-              </p>
+            <summary className="program-requirements__summary">
+              <div className="program-requirements__summary-copy">
+                <p className="section-heading__eyebrow">
+                  Requisitos del programa
+                </p>
 
-              <h2 id="program-requirements-title">
-                Cierre académico y componente complementario
-              </h2>
+                <h2 id="program-requirements-title">
+                  Cierre académico y componente complementario
+                </h2>
 
-              <p>
-                En este bloque se agrupan los requisitos de grado y las materias
-                adicionales del plan de estudios. Se muestran en una sola
-                columna para evitar que sus tarjetas se estiren al compararse
-                con los semestres.
-              </p>
-            </header>
+                <p>
+                  Consulta los requisitos de grado y las materias adicionales
+                  del plan de estudios.
+                </p>
+              </div>
 
-            <div className="program-requirements__column">
-              {shouldShowDegreeRequirements && (
-                <DegreeRequirementsCard
-                  requirements={degreeRequirements}
-                  requirementStatuses={degreeRequirementStatuses}
-                  onStatusChange={handleDegreeRequirementStatusChange}
+              <div
+                className="program-requirements__summary-action"
+                aria-hidden="true"
+              >
+                <span className="program-requirements__state program-requirements__state--closed">
+                  Mostrar
+                </span>
+
+                <span className="program-requirements__state program-requirements__state--open">
+                  Ocultar
+                </span>
+
+                <LuChevronDown
+                  className="program-requirements__chevron"
+                  aria-hidden="true"
                 />
-              )}
+              </div>
+            </summary>
 
-              {shouldShowAdditionalRequirements &&
-                additionalRequirementsSection && (
-                  <SemesterCard
-                    key={additionalRequirementsSection.id}
-                    section={additionalRequirementsSection}
-                    visibleSubjects={filteredAdditionalSubjects}
-                    prerequisiteNamesByCode={prerequisiteNamesByCode}
-                    unlockedSubjectsByCode={unlockedSubjectsByCode}
-                    subjectStatuses={subjectStatuses}
-                    onStatusChange={handleStatusChange}
-                    onApproveAll={() =>
-                      handleApproveSection(additionalRequirementsSection)
-                    }
+            <div className="program-requirements__content">
+              <div className="program-requirements__column">
+                {shouldShowDegreeRequirements && (
+                  <DegreeRequirementsCard
+                    requirements={degreeRequirements}
+                    requirementStatuses={degreeRequirementStatuses}
+                    onStatusChange={handleDegreeRequirementStatusChange}
                   />
                 )}
+
+                {shouldShowAdditionalRequirements &&
+                  additionalRequirementsSection && (
+                    <SemesterCard
+                      key={additionalRequirementsSection.id}
+                      section={additionalRequirementsSection}
+                      visibleSubjects={filteredAdditionalSubjects}
+                      prerequisiteNamesByCode={prerequisiteNamesByCode}
+                      unlockedSubjectsByCode={unlockedSubjectsByCode}
+                      subjectStatuses={subjectStatuses}
+                      onStatusChange={handleStatusChange}
+                      onApproveAll={() =>
+                        handleApproveSection(additionalRequirementsSection)
+                      }
+                    />
+                  )}
+              </div>
             </div>
-          </section>
+          </details>
         )}
 
         {/*
@@ -997,15 +1028,24 @@ function App() {
                   Buscar materia
                 </label>
 
-                <input
-                  id="subject-search"
-                  className="curriculum-filter__input"
-                  type="search"
-                  value={searchTerm}
-                  placeholder="Nombre o código"
-                  autoComplete="off"
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                />
+                <div className="curriculum-filter__control">
+                  <LuSearch
+                    className="curriculum-filter__control-icon"
+                    aria-hidden="true"
+                  />
+
+                  <input
+                    id="subject-search"
+                    className="curriculum-filter__input"
+                    type="search"
+                    value={searchTerm}
+                    placeholder="Nombre o código"
+                    autoComplete="off"
+                    onChange={(event) =>
+                      setSearchTerm(event.target.value)
+                    }
+                  />
+                </div>
               </div>
 
               <div className="curriculum-filter">
@@ -1092,6 +1132,7 @@ function App() {
                 type="button"
                 onClick={handleClearFilters}
               >
+                <LuX aria-hidden="true" />
                 Limpiar filtros
               </button>
             )}
@@ -1116,8 +1157,11 @@ function App() {
 
           {visibleSubjectsCount === 0 && (
             <div className="curriculum-empty">
-              <div className="curriculum-empty__icon" aria-hidden="true">
-                ⌕
+              <div
+                className="curriculum-empty__icon"
+                aria-hidden="true"
+              >
+                <LuSearch />
               </div>
 
               <h3>No encontramos materias</h3>
@@ -1127,7 +1171,10 @@ function App() {
                 seleccionados.
               </p>
 
-              <button type="button" onClick={handleClearFilters}>
+              <button
+                type="button"
+                onClick={handleClearFilters}
+              >
                 Limpiar filtros
               </button>
             </div>
