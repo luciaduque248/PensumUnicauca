@@ -1,15 +1,15 @@
-import Swal from 'sweetalert2'
-import 'sweetalert2/dist/sweetalert2.min.css'
-import './App.css'
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
+import "./App.css";
 
-import DegreeRequirementsCard from './components/DegreeRequirementsCard'
-import SemesterCard from './components/SemesterCard'
+import DegreeRequirementsCard from "./components/DegreeRequirementsCard";
+import SemesterCard from "./components/SemesterCard";
 
-import { curriculum } from './data/curriculum'
-import { degreeRequirements } from './data/degreeRequirements'
-import { externalPrerequisiteNames } from './data/prerequisites'
+import { curriculum } from "./data/curriculum";
+import { degreeRequirements } from "./data/degreeRequirements";
+import { externalPrerequisiteNames } from "./data/prerequisites";
 
-import { useLocalStorage } from './hooks/useLocalStorage'
+import { useLocalStorage } from "./hooks/useLocalStorage";
 
 import type {
   CurriculumSection,
@@ -17,23 +17,18 @@ import type {
   DegreeRequirementStatus,
   Subject,
   SubjectStatus,
-} from './types/curriculum'
+} from "./types/curriculum";
 
-type SubjectFilter =
-  | 'all'
-  | 'pending'
-  | 'in-progress'
-  | 'approved'
-  | 'blocked'
+type SubjectFilter = "all" | "pending" | "in-progress" | "approved" | "blocked";
 
 const escapeHtml = (value: string) => {
   return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;')
-}
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+};
 
 function App() {
   /*
@@ -42,16 +37,27 @@ function App() {
    * =====================================================
    */
 
-  const allSubjects = curriculum.flatMap(
-    (section) => section.subjects,
-  )
+  const allSubjects = curriculum.flatMap((section) => section.subjects);
 
-  const totalSubjects = allSubjects.length
+  /*
+   * Los semestres académicos se muestran en la cuadrícula
+   * principal. El componente complementario se presenta
+   * aparte, junto con los requisitos de grado.
+   */
+  const semesterSections = curriculum.filter(
+    (section) => section.semester !== undefined,
+  );
+
+  const additionalRequirementsSection = curriculum.find(
+    (section) => section.semester === undefined,
+  );
+
+  const totalSubjects = allSubjects.length;
 
   const totalCredits = allSubjects.reduce(
     (total, subject) => total + subject.credits,
     0,
-  )
+  );
 
   /*
    * =====================================================
@@ -59,21 +65,13 @@ function App() {
    * =====================================================
    */
 
-  const initialStatuses: Record<string, SubjectStatus> =
-    Object.fromEntries(
-      allSubjects.map((subject) => [
-        subject.code,
-        'pending' as SubjectStatus,
-      ]),
-    )
+  const initialStatuses: Record<string, SubjectStatus> = Object.fromEntries(
+    allSubjects.map((subject) => [subject.code, "pending" as SubjectStatus]),
+  );
 
-  const [
-    savedSubjectStatuses,
-    setSavedSubjectStatuses,
-  ] = useLocalStorage<Record<string, SubjectStatus>>(
-    'pensum-subject-statuses',
-    initialStatuses,
-  )
+  const [savedSubjectStatuses, setSavedSubjectStatuses] = useLocalStorage<
+    Record<string, SubjectStatus>
+  >("pensum-subject-statuses", initialStatuses);
 
   /*
    * Se combinan los estados iniciales con los guardados.
@@ -84,7 +82,7 @@ function App() {
   const subjectStatuses: Record<string, SubjectStatus> = {
     ...initialStatuses,
     ...savedSubjectStatuses,
-  }
+  };
 
   /*
    * =====================================================
@@ -98,27 +96,20 @@ function App() {
   > = Object.fromEntries(
     degreeRequirements.map((requirement) => [
       requirement.code,
-      'pending' as DegreeRequirementStatus,
+      "pending" as DegreeRequirementStatus,
     ]),
-  )
+  );
 
-  const [
-    savedDegreeRequirementStatuses,
-    setSavedDegreeRequirementStatuses,
-  ] = useLocalStorage<
-    Record<string, DegreeRequirementStatus>
-  >(
-    'pensum-degree-requirements',
-    initialDegreeRequirementStatuses,
-  )
+  const [savedDegreeRequirementStatuses, setSavedDegreeRequirementStatuses] =
+    useLocalStorage<Record<string, DegreeRequirementStatus>>(
+      "pensum-degree-requirements",
+      initialDegreeRequirementStatuses,
+    );
 
-  const degreeRequirementStatuses: Record<
-    string,
-    DegreeRequirementStatus
-  > = {
+  const degreeRequirementStatuses: Record<string, DegreeRequirementStatus> = {
     ...initialDegreeRequirementStatuses,
     ...savedDegreeRequirementStatuses,
-  }
+  };
 
   /*
    * =====================================================
@@ -126,29 +117,18 @@ function App() {
    * =====================================================
    */
 
-  const [
-    selectedSectionId,
-    setSelectedSectionId,
-  ] = useLocalStorage<string>(
-    'pensum-selected-section',
-    'all',
-  )
+  const [selectedSectionId, setSelectedSectionId] = useLocalStorage<string>(
+    "pensum-selected-section",
+    "all",
+  );
 
-  const [
-    selectedStatusFilter,
-    setSelectedStatusFilter,
-  ] = useLocalStorage<SubjectFilter>(
-    'pensum-status-filter',
-    'all',
-  )
+  const [selectedStatusFilter, setSelectedStatusFilter] =
+    useLocalStorage<SubjectFilter>("pensum-status-filter", "all");
 
-  const [
-    searchTerm,
-    setSearchTerm,
-  ] = useLocalStorage<string>(
-    'pensum-search-term',
-    '',
-  )
+  const [searchTerm, setSearchTerm] = useLocalStorage<string>(
+    "pensum-search-term",
+    "",
+  );
 
   /*
    * Comprueba que el semestre guardado todavía exista.
@@ -156,14 +136,10 @@ function App() {
    * Si no existe, muestra todos los semestres.
    */
   const selectedSectionExists =
-    selectedSectionId === 'all' ||
-    curriculum.some(
-      (section) => section.id === selectedSectionId,
-    )
+    selectedSectionId === "all" ||
+    semesterSections.some((section) => section.id === selectedSectionId);
 
-  const activeSectionId = selectedSectionExists
-    ? selectedSectionId
-    : 'all'
+  const activeSectionId = selectedSectionExists ? selectedSectionId : "all";
 
   /*
    * =====================================================
@@ -171,13 +147,9 @@ function App() {
    * =====================================================
    */
 
-  const subjectNamesByCode: Record<string, string> =
-    Object.fromEntries(
-      allSubjects.map((subject) => [
-        subject.code,
-        subject.name,
-      ]),
-    )
+  const subjectNamesByCode: Record<string, string> = Object.fromEntries(
+    allSubjects.map((subject) => [subject.code, subject.name]),
+  );
 
   /*
    * También se agregan los requisitos externos que no
@@ -186,50 +158,84 @@ function App() {
   const prerequisiteNamesByCode: Record<string, string> = {
     ...subjectNamesByCode,
     ...externalPrerequisiteNames,
-  }
+  };
+
+  /*
+   * Conjunto de códigos que pertenecen al pensum.
+   *
+   * Esto permite ignorar requisitos externos como
+   * ENFA1CX al construir las relaciones inversas.
+   */
+  const internalSubjectCodes = new Set(
+    allSubjects.map((subject) => subject.code),
+  );
+
+  /*
+   * Relación inversa de prerrequisitos.
+   *
+   * Ejemplo:
+   *
+   * MAT101.1: [
+   *   Cálculo Integral,
+   * ]
+   *
+   * Significa que Cálculo Diferencial desbloquea
+   * Cálculo Integral.
+   */
+  const unlockedSubjectsByCode = allSubjects.reduce<Record<string, Subject[]>>(
+    (result, subject) => {
+      subject.prerequisites.forEach((prerequisiteCode) => {
+        if (!internalSubjectCodes.has(prerequisiteCode)) {
+          return;
+        }
+
+        if (!result[prerequisiteCode]) {
+          result[prerequisiteCode] = [];
+        }
+
+        result[prerequisiteCode].push(subject);
+      });
+
+      return result;
+    },
+    {},
+  );
 
   const normalizeSearchText = (value: string) => {
     return value
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
-      .trim()
-  }
+      .trim();
+  };
 
-  const getMissingPrerequisites = (
-    subject: Subject,
-  ) => {
-    return subject.prerequisites.filter(
-      (prerequisiteCode) => {
-        const prerequisiteStatus =
-          subjectStatuses[prerequisiteCode]
+  const getMissingPrerequisites = (subject: Subject) => {
+    return subject.prerequisites.filter((prerequisiteCode) => {
+      const prerequisiteStatus = subjectStatuses[prerequisiteCode];
 
-        /*
-         * Los requisitos externos no existen dentro
-         * de subjectStatuses y no bloquean la materia.
-         */
-        return (
-          prerequisiteStatus !== undefined &&
-          prerequisiteStatus !== 'approved'
-        )
-      },
-    )
-  }
+      /*
+       * Los requisitos externos no existen dentro
+       * de subjectStatuses y no bloquean la materia.
+       */
+      return (
+        prerequisiteStatus !== undefined && prerequisiteStatus !== "approved"
+      );
+    });
+  };
 
   const isSubjectLocked = (subject: Subject) => {
-    const currentStatus =
-      subjectStatuses[subject.code] ?? 'pending'
+    const currentStatus = subjectStatuses[subject.code] ?? "pending";
 
     /*
      * Una materia ya aprobada no vuelve a mostrarse
      * como bloqueada.
      */
-    if (currentStatus === 'approved') {
-      return false
+    if (currentStatus === "approved") {
+      return false;
     }
 
-    return getMissingPrerequisites(subject).length > 0
-  }
+    return getMissingPrerequisites(subject).length > 0;
+  };
 
   /*
    * =====================================================
@@ -238,39 +244,29 @@ function App() {
    */
 
   const approvedSubjects = allSubjects.filter(
-    (subject) =>
-      subjectStatuses[subject.code] === 'approved',
-  )
+    (subject) => subjectStatuses[subject.code] === "approved",
+  );
 
   const approvedCredits = approvedSubjects.reduce(
     (total, subject) => total + subject.credits,
     0,
-  )
+  );
 
   const pendingSubjects = allSubjects.filter(
-    (subject) =>
-      subjectStatuses[subject.code] === 'pending',
-  ).length
+    (subject) => subjectStatuses[subject.code] === "pending",
+  ).length;
 
   const inProgressSubjects = allSubjects.filter(
-    (subject) =>
-      subjectStatuses[subject.code] === 'in-progress',
-  ).length
+    (subject) => subjectStatuses[subject.code] === "in-progress",
+  ).length;
 
-  const completedDegreeRequirements =
-    degreeRequirements.filter(
-      (requirement) =>
-        degreeRequirementStatuses[
-        requirement.code
-        ] === 'completed',
-    ).length
+  const completedDegreeRequirements = degreeRequirements.filter(
+    (requirement) =>
+      degreeRequirementStatuses[requirement.code] === "completed",
+  ).length;
 
   const progressPercentage =
-    totalCredits === 0
-      ? 0
-      : Math.round(
-        (approvedCredits / totalCredits) * 100,
-      )
+    totalCredits === 0 ? 0 : Math.round((approvedCredits / totalCredits) * 100);
 
   /*
    * =====================================================
@@ -278,99 +274,102 @@ function App() {
    * =====================================================
    */
 
-  const normalizedSearchTerm =
-    normalizeSearchText(searchTerm)
+  const normalizedSearchTerm = normalizeSearchText(searchTerm);
 
   const sectionsSelectedBySemester =
-    activeSectionId === 'all'
-      ? curriculum
-      : curriculum.filter(
-        (section) =>
-          section.id === activeSectionId,
-      )
+    activeSectionId === "all"
+      ? semesterSections
+      : semesterSections.filter((section) => section.id === activeSectionId);
 
-  const matchesStatusFilter = (
-    subject: Subject,
-  ) => {
-    const currentStatus =
-      subjectStatuses[subject.code] ?? 'pending'
+  const matchesStatusFilter = (subject: Subject) => {
+    const currentStatus = subjectStatuses[subject.code] ?? "pending";
 
-    const subjectIsLocked =
-      isSubjectLocked(subject)
+    const subjectIsLocked = isSubjectLocked(subject);
 
-    if (selectedStatusFilter === 'all') {
-      return true
+    if (selectedStatusFilter === "all") {
+      return true;
     }
 
-    if (selectedStatusFilter === 'blocked') {
-      return subjectIsLocked
+    if (selectedStatusFilter === "blocked") {
+      return subjectIsLocked;
     }
 
     /*
      * Una materia bloqueada se muestra únicamente
      * dentro del filtro "Bloqueadas".
-     *
-     * Así las categorías no se mezclan.
      */
     if (subjectIsLocked) {
-      return false
+      return false;
     }
 
-    return currentStatus === selectedStatusFilter
-  }
+    return currentStatus === selectedStatusFilter;
+  };
 
-  const filteredSections =
-    sectionsSelectedBySemester
-      .map((section) => {
-        const visibleSubjects =
-          section.subjects.filter((subject) => {
-            const normalizedName =
-              normalizeSearchText(subject.name)
+  const matchesSearchFilter = (subject: Subject) => {
+    const normalizedName = normalizeSearchText(subject.name);
 
-            const normalizedCode =
-              normalizeSearchText(subject.code)
+    const normalizedCode = normalizeSearchText(subject.code);
 
-            const matchesSearch =
-              normalizedSearchTerm === '' ||
-              normalizedName.includes(
-                normalizedSearchTerm,
-              ) ||
-              normalizedCode.includes(
-                normalizedSearchTerm,
-              )
+    return (
+      normalizedSearchTerm === "" ||
+      normalizedName.includes(normalizedSearchTerm) ||
+      normalizedCode.includes(normalizedSearchTerm)
+    );
+  };
 
-            return (
-              matchesSearch &&
-              matchesStatusFilter(subject)
-            )
-          })
+  const matchesCurrentFilters = (subject: Subject) => {
+    return matchesSearchFilter(subject) && matchesStatusFilter(subject);
+  };
 
-        return {
-          section,
-          visibleSubjects,
-        }
-      })
-      .filter(
-        ({ visibleSubjects }) =>
-          visibleSubjects.length > 0,
-      )
+  /*
+   * La cuadrícula principal contiene únicamente
+   * los semestres numerados.
+   */
+  const filteredSections = sectionsSelectedBySemester
+    .map((section) => {
+      const visibleSubjects = section.subjects.filter(matchesCurrentFilters);
+
+      return {
+        section,
+        visibleSubjects,
+      };
+    })
+    .filter(({ visibleSubjects }) => visibleSubjects.length > 0);
+
+  /*
+   * Los requisitos adicionales se filtran con los mismos
+   * controles, pero se renderizan en el bloque de requisitos.
+   */
+  const filteredAdditionalSubjects =
+    activeSectionId === "all" && additionalRequirementsSection
+      ? additionalRequirementsSection.subjects.filter(matchesCurrentFilters)
+      : [];
+
+  const semesterVisibleSubjectsCount = filteredSections.reduce(
+    (total, { visibleSubjects }) => total + visibleSubjects.length,
+    0,
+  );
 
   const visibleSubjectsCount =
-    filteredSections.reduce(
-      (total, { visibleSubjects }) =>
-        total + visibleSubjects.length,
-      0,
-    )
+    semesterVisibleSubjectsCount + filteredAdditionalSubjects.length;
 
   const hasActiveFilters =
-    activeSectionId !== 'all' ||
-    selectedStatusFilter !== 'all' ||
-    normalizedSearchTerm !== ''
+    activeSectionId !== "all" ||
+    selectedStatusFilter !== "all" ||
+    normalizedSearchTerm !== "";
 
   const shouldShowDegreeRequirements =
-    activeSectionId === 'all' &&
-    selectedStatusFilter === 'all' &&
-    normalizedSearchTerm === ''
+    activeSectionId === "all" &&
+    selectedStatusFilter === "all" &&
+    normalizedSearchTerm === "";
+
+  const shouldShowAdditionalRequirements =
+    activeSectionId === "all" &&
+    additionalRequirementsSection !== undefined &&
+    filteredAdditionalSubjects.length > 0;
+
+  const shouldShowRequirementsArea =
+    shouldShowDegreeRequirements || shouldShowAdditionalRequirements;
 
   /*
    * =====================================================
@@ -379,10 +378,10 @@ function App() {
    */
 
   const handleClearFilters = () => {
-    setSelectedSectionId('all')
-    setSelectedStatusFilter('all')
-    setSearchTerm('')
-  }
+    setSelectedSectionId("all");
+    setSelectedStatusFilter("all");
+    setSearchTerm("");
+  };
 
   const handleStatusChange = (
     subjectCode: string,
@@ -392,8 +391,8 @@ function App() {
       ...initialStatuses,
       ...currentStatuses,
       [subjectCode]: newStatus,
-    }))
-  }
+    }));
+  };
 
   /*
    * =====================================================
@@ -406,21 +405,20 @@ function App() {
     newStatus: DegreeRequirementStatus,
   ) => {
     const currentStatus =
-      degreeRequirementStatuses[requirement.code] ??
-      'pending'
+      degreeRequirementStatuses[requirement.code] ?? "pending";
 
     if (currentStatus === newStatus) {
-      return
+      return;
     }
 
-    const isCompleting = newStatus === 'completed'
+    const isCompleting = newStatus === "completed";
 
     const result = await Swal.fire({
-      icon: isCompleting ? 'question' : 'warning',
+      icon: isCompleting ? "question" : "warning",
 
       title: isCompleting
-        ? '¿Marcar requisito como completado?'
-        : '¿Volver este requisito a pendiente?',
+        ? "¿Marcar requisito como completado?"
+        : "¿Volver este requisito a pendiente?",
 
       text: isCompleting
         ? `Se marcará "${requirement.name}" como completado.`
@@ -429,49 +427,43 @@ function App() {
       showCancelButton: true,
 
       confirmButtonText: isCompleting
-        ? 'Sí, completar'
-        : 'Sí, volver a pendiente',
+        ? "Sí, completar"
+        : "Sí, volver a pendiente",
 
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: "Cancelar",
 
-      confirmButtonColor: isCompleting
-        ? '#16a34a'
-        : '#f59e0b',
+      confirmButtonColor: isCompleting ? "#16a34a" : "#f59e0b",
 
-      cancelButtonColor: '#64748b',
+      cancelButtonColor: "#64748b",
 
       reverseButtons: true,
       focusCancel: true,
-    })
+    });
 
     if (!result.isConfirmed) {
-      return
+      return;
     }
 
-    setSavedDegreeRequirementStatuses(
-      (currentStatuses) => ({
-        ...initialDegreeRequirementStatuses,
-        ...currentStatuses,
-        [requirement.code]: newStatus,
-      }),
-    )
+    setSavedDegreeRequirementStatuses((currentStatuses) => ({
+      ...initialDegreeRequirementStatuses,
+      ...currentStatuses,
+      [requirement.code]: newStatus,
+    }));
 
     await Swal.fire({
       toast: true,
-      position: 'top-end',
-      icon: isCompleting ? 'success' : 'info',
+      position: "top-end",
+      icon: isCompleting ? "success" : "info",
 
-      title: isCompleting
-        ? 'Requisito completado'
-        : 'Requisito actualizado',
+      title: isCompleting ? "Requisito completado" : "Requisito actualizado",
 
       text: requirement.name,
 
       showConfirmButton: false,
       timer: 2200,
       timerProgressBar: true,
-    })
-  }
+    });
+  };
 
   /*
    * =====================================================
@@ -479,56 +471,51 @@ function App() {
    * =====================================================
    */
 
-  const handleApproveSection = async (
-    section: CurriculumSection,
-  ) => {
+  const handleApproveSection = async (section: CurriculumSection) => {
     const blockedSubjects: Array<{
-      subject: (typeof section.subjects)[number]
-      missingPrerequisites: string[]
-    }> = []
+      subject: (typeof section.subjects)[number];
+      missingPrerequisites: string[];
+    }> = [];
 
     /*
      * Se buscan las materias bloqueadas y los requisitos
      * que todavía no están aprobados.
      */
     section.subjects.forEach((subject) => {
-      const currentStatus =
-        subjectStatuses[subject.code] ?? 'pending'
+      const currentStatus = subjectStatuses[subject.code] ?? "pending";
 
       /*
        * Una materia ya aprobada no necesita revisarse.
        */
-      if (currentStatus === 'approved') {
-        return
+      if (currentStatus === "approved") {
+        return;
       }
 
-      const missingPrerequisites =
-        subject.prerequisites.filter(
-          (prerequisiteCode) => {
-            const prerequisiteStatus =
-              subjectStatuses[prerequisiteCode]
+      const missingPrerequisites = subject.prerequisites.filter(
+        (prerequisiteCode) => {
+          const prerequisiteStatus = subjectStatuses[prerequisiteCode];
 
-            /*
-             * Los requisitos externos no aparecen dentro
-             * de subjectStatuses.
-             *
-             * Por eso se muestran, pero no bloquean
-             * permanentemente la materia.
-             */
-            return (
-              prerequisiteStatus !== undefined &&
-              prerequisiteStatus !== 'approved'
-            )
-          },
-        )
+          /*
+           * Los requisitos externos no aparecen dentro
+           * de subjectStatuses.
+           *
+           * Por eso se muestran, pero no bloquean
+           * permanentemente la materia.
+           */
+          return (
+            prerequisiteStatus !== undefined &&
+            prerequisiteStatus !== "approved"
+          );
+        },
+      );
 
       if (missingPrerequisites.length > 0) {
         blockedSubjects.push({
           subject,
           missingPrerequisites,
-        })
+        });
       }
-    })
+    });
 
     /*
      * Si existen materias bloqueadas, SweetAlert muestra
@@ -537,25 +524,19 @@ function App() {
     if (blockedSubjects.length > 0) {
       const blockedSubjectsHtml = blockedSubjects
         .map(({ subject, missingPrerequisites }) => {
-          const prerequisitesHtml =
-            missingPrerequisites
-              .map((prerequisiteCode) => {
-                const prerequisiteName =
-                  prerequisiteNamesByCode[
-                  prerequisiteCode
-                  ] ?? 'Materia no registrada'
+          const prerequisitesHtml = missingPrerequisites
+            .map((prerequisiteCode) => {
+              const prerequisiteName =
+                prerequisiteNamesByCode[prerequisiteCode] ??
+                "Materia no registrada";
 
-                const prerequisiteStatus =
-                  subjectStatuses[
-                  prerequisiteCode
-                  ] ?? 'pending'
+              const prerequisiteStatus =
+                subjectStatuses[prerequisiteCode] ?? "pending";
 
-                const statusLabel =
-                  prerequisiteStatus === 'in-progress'
-                    ? 'En curso'
-                    : 'Pendiente'
+              const statusLabel =
+                prerequisiteStatus === "in-progress" ? "En curso" : "Pendiente";
 
-                return `
+              return `
                   <li class="swal-requirement">
                     <span class="swal-requirement__code">
                       ${escapeHtml(prerequisiteCode)}
@@ -571,9 +552,9 @@ function App() {
                       </small>
                     </span>
                   </li>
-                `
-              })
-              .join('')
+                `;
+            })
+            .join("");
 
           return `
             <section class="swal-blocked-subject">
@@ -593,13 +574,13 @@ function App() {
                 ${prerequisitesHtml}
               </ul>
             </section>
-          `
+          `;
         })
-        .join('')
+        .join("");
 
       await Swal.fire({
-        icon: 'warning',
-        title: 'No se puede aprobar todo todavía',
+        icon: "warning",
+        title: "No se puede aprobar todo todavía",
 
         html: `
           <div class="swal-blocked-content">
@@ -612,8 +593,8 @@ function App() {
               <strong>
                 ${blockedSubjects.length}
                 ${blockedSubjects.length === 1
-            ? 'materia bloqueada'
-            : 'materias bloqueadas'
+            ? "materia bloqueada"
+            : "materias bloqueadas"
           }
               </strong>.
             </p>
@@ -628,38 +609,34 @@ function App() {
           </div>
         `,
 
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#4f46e5',
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#4f46e5",
         width: 680,
 
         customClass: {
-          popup: 'swal-pensum-popup',
-          htmlContainer: 'swal-pensum-container',
+          popup: "swal-pensum-popup",
+          htmlContainer: "swal-pensum-container",
         },
-      })
+      });
 
-      return
+      return;
     }
 
     /*
      * Solo se cuentan las materias que todavía no están
      * aprobadas.
      */
-    const subjectsNotApproved =
-      section.subjects.filter(
-        (subject) =>
-          subjectStatuses[subject.code] !== 'approved',
-      )
+    const subjectsNotApproved = section.subjects.filter(
+      (subject) => subjectStatuses[subject.code] !== "approved",
+    );
 
-    const creditsToApprove =
-      subjectsNotApproved.reduce(
-        (total, subject) =>
-          total + subject.credits,
-        0,
-      )
+    const creditsToApprove = subjectsNotApproved.reduce(
+      (total, subject) => total + subject.credits,
+      0,
+    );
 
     const result = await Swal.fire({
-      icon: 'question',
+      icon: "question",
       title: `¿Aprobar todo ${section.title}?`,
 
       html: `
@@ -668,10 +645,7 @@ function App() {
             Se marcarán como aprobadas
             <strong>
               ${subjectsNotApproved.length}
-              ${subjectsNotApproved.length === 1
-          ? 'materia'
-          : 'materias'
-        }
+              ${subjectsNotApproved.length === 1 ? "materia" : "materias"}
             </strong>.
           </p>
 
@@ -679,10 +653,7 @@ function App() {
             Esto agregará
             <strong>
               ${creditsToApprove}
-              ${creditsToApprove === 1
-          ? 'crédito'
-          : 'créditos'
-        }
+              ${creditsToApprove === 1 ? "crédito" : "créditos"}
             </strong>
             a tu progreso.
           </p>
@@ -695,49 +666,49 @@ function App() {
       `,
 
       showCancelButton: true,
-      confirmButtonText: 'Sí, aprobar todo',
-      cancelButtonText: 'Cancelar',
+      confirmButtonText: "Sí, aprobar todo",
+      cancelButtonText: "Cancelar",
 
-      confirmButtonColor: '#16a34a',
-      cancelButtonColor: '#64748b',
+      confirmButtonColor: "#16a34a",
+      cancelButtonColor: "#64748b",
 
       reverseButtons: true,
       focusCancel: true,
-    })
+    });
 
     if (!result.isConfirmed) {
-      return
+      return;
     }
 
     setSavedSubjectStatuses((currentStatuses) => {
       const updatedStatuses = {
         ...initialStatuses,
         ...currentStatuses,
-      }
+      };
 
       section.subjects.forEach((subject) => {
-        updatedStatuses[subject.code] = 'approved'
-      })
+        updatedStatuses[subject.code] = "approved";
+      });
 
-      return updatedStatuses
-    })
+      return updatedStatuses;
+    });
 
     await Swal.fire({
       toast: true,
-      position: 'top-end',
-      icon: 'success',
+      position: "top-end",
+      icon: "success",
       title: `${section.title} aprobado`,
 
       text: `${subjectsNotApproved.length} ${subjectsNotApproved.length === 1
-        ? 'materia fue actualizada'
-        : 'materias fueron actualizadas'
+          ? "materia fue actualizada"
+          : "materias fueron actualizadas"
         }.`,
 
       showConfirmButton: false,
       timer: 2400,
       timerProgressBar: true,
-    })
-  }
+    });
+  };
 
   /*
    * =====================================================
@@ -747,37 +718,29 @@ function App() {
 
   const handleResetProgress = async () => {
     const changedSubjects = allSubjects.filter(
-      (subject) =>
-        subjectStatuses[subject.code] !== 'pending',
-    ).length
+      (subject) => subjectStatuses[subject.code] !== "pending",
+    ).length;
 
-    const changedDegreeRequirements =
-      degreeRequirements.filter(
-        (requirement) =>
-          degreeRequirementStatuses[
-          requirement.code
-          ] !== 'pending',
-      ).length
+    const changedDegreeRequirements = degreeRequirements.filter(
+      (requirement) =>
+        degreeRequirementStatuses[requirement.code] !== "pending",
+    ).length;
 
-    if (
-      changedSubjects === 0 &&
-      changedDegreeRequirements === 0
-    ) {
+    if (changedSubjects === 0 && changedDegreeRequirements === 0) {
       await Swal.fire({
-        icon: 'info',
-        title: 'No hay progreso para reiniciar',
-        text:
-          'Todas las materias y requisitos de grado se encuentran pendientes.',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#4f46e5',
-      })
+        icon: "info",
+        title: "No hay progreso para reiniciar",
+        text: "Todas las materias y requisitos de grado se encuentran pendientes.",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#4f46e5",
+      });
 
-      return
+      return;
     }
 
     const result = await Swal.fire({
-      icon: 'warning',
-      title: '¿Reiniciar todo el progreso?',
+      icon: "warning",
+      title: "¿Reiniciar todo el progreso?",
 
       html: `
         <div class="swal-confirmation-content">
@@ -785,10 +748,7 @@ function App() {
             Se reiniciarán
             <strong>
               ${changedSubjects}
-              ${changedSubjects === 1
-          ? 'materia'
-          : 'materias'
-        }
+              ${changedSubjects === 1 ? "materia" : "materias"}
             </strong>.
           </p>
 
@@ -797,8 +757,8 @@ function App() {
             <strong>
               ${changedDegreeRequirements}
               ${changedDegreeRequirements === 1
-          ? 'requisito de grado'
-          : 'requisitos de grado'
+          ? "requisito de grado"
+          : "requisitos de grado"
         }
             </strong>.
           </p>
@@ -817,39 +777,36 @@ function App() {
 
       showCancelButton: true,
 
-      confirmButtonText: 'Sí, reiniciar',
-      cancelButtonText: 'Conservar progreso',
+      confirmButtonText: "Sí, reiniciar",
+      cancelButtonText: "Conservar progreso",
 
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#64748b',
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
 
       reverseButtons: true,
       focusCancel: true,
-    })
+    });
 
     if (!result.isConfirmed) {
-      return
+      return;
     }
 
-    setSavedSubjectStatuses(initialStatuses)
+    setSavedSubjectStatuses(initialStatuses);
 
-    setSavedDegreeRequirementStatuses(
-      initialDegreeRequirementStatuses,
-    )
+    setSavedDegreeRequirementStatuses(initialDegreeRequirementStatuses);
 
-    setSelectedSectionId('all')
-    setSelectedStatusFilter('all')
-    setSearchTerm('')
+    setSelectedSectionId("all");
+    setSelectedStatusFilter("all");
+    setSearchTerm("");
 
     await Swal.fire({
-      icon: 'success',
-      title: 'Progreso reiniciado',
-      text:
-        'Todas las materias y requisitos de grado volvieron al estado pendiente.',
-      confirmButtonText: 'Entendido',
-      confirmButtonColor: '#4f46e5',
-    })
-  }
+      icon: "success",
+      title: "Progreso reiniciado",
+      text: "Todas las materias y requisitos de grado volvieron al estado pendiente.",
+      confirmButtonText: "Entendido",
+      confirmButtonColor: "#4f46e5",
+    });
+  };
 
   /*
    * =====================================================
@@ -869,9 +826,8 @@ function App() {
             <h1>Mi pensum interactivo</h1>
 
             <p className="header__description">
-              Organiza tus materias, consulta los
-              prerrequisitos y lleva el control de tu
-              avance académico.
+              Organiza tus materias, consulta los prerrequisitos y lleva el
+              control de tu avance académico.
             </p>
           </div>
 
@@ -898,9 +854,7 @@ function App() {
           aria-label="Resumen académico"
         >
           <article className="summary-card">
-            <span className="summary-card__label">
-              Progreso
-            </span>
+            <span className="summary-card__label">Progreso</span>
 
             <strong className="summary-card__value">
               {progressPercentage} %
@@ -924,53 +878,96 @@ function App() {
           </article>
 
           <article className="summary-card">
-            <span className="summary-card__label">
-              Créditos aprobados
-            </span>
+            <span className="summary-card__label">Créditos aprobados</span>
 
             <strong className="summary-card__value">
               {approvedCredits} / {totalCredits}
             </strong>
 
-            <span className="summary-card__detail">
-              Créditos acumulados
-            </span>
+            <span className="summary-card__detail">Créditos acumulados</span>
           </article>
 
           <article className="summary-card">
-            <span className="summary-card__label">
-              Materias pendientes
-            </span>
+            <span className="summary-card__label">Materias pendientes</span>
 
-            <strong className="summary-card__value">
-              {pendingSubjects}
-            </strong>
+            <strong className="summary-card__value">{pendingSubjects}</strong>
 
             <span className="summary-card__detail">
-              {inProgressSubjects}{' '}
+              {inProgressSubjects}{" "}
               {inProgressSubjects === 1
-                ? 'materia en curso'
-                : 'materias en curso'}
-              {' · '}
+                ? "materia en curso"
+                : "materias en curso"}
+              {" · "}
               {totalSubjects} materias en total
             </span>
           </article>
 
           <article className="summary-card">
-            <span className="summary-card__label">
-              Requisitos de grado
-            </span>
+            <span className="summary-card__label">Requisitos de grado</span>
 
             <strong className="summary-card__value">
-              {completedDegreeRequirements} /{' '}
-              {degreeRequirements.length}
+              {completedDegreeRequirements} / {degreeRequirements.length}
             </strong>
 
-            <span className="summary-card__detail">
-              No suman créditos
-            </span>
+            <span className="summary-card__detail">No suman créditos</span>
           </article>
         </section>
+
+        {/*
+         * =================================================
+         * REQUISITOS DEL PROGRAMA
+         * =================================================
+         */}
+
+        {shouldShowRequirementsArea && (
+          <section
+            className="program-requirements"
+            aria-labelledby="program-requirements-title"
+          >
+            <header className="program-requirements__header">
+              <p className="section-heading__eyebrow">
+                Requisitos del programa
+              </p>
+
+              <h2 id="program-requirements-title">
+                Cierre académico y componente complementario
+              </h2>
+
+              <p>
+                En este bloque se agrupan los requisitos de grado y las materias
+                adicionales del plan de estudios. Se muestran en una sola
+                columna para evitar que sus tarjetas se estiren al compararse
+                con los semestres.
+              </p>
+            </header>
+
+            <div className="program-requirements__column">
+              {shouldShowDegreeRequirements && (
+                <DegreeRequirementsCard
+                  requirements={degreeRequirements}
+                  requirementStatuses={degreeRequirementStatuses}
+                  onStatusChange={handleDegreeRequirementStatusChange}
+                />
+              )}
+
+              {shouldShowAdditionalRequirements &&
+                additionalRequirementsSection && (
+                  <SemesterCard
+                    key={additionalRequirementsSection.id}
+                    section={additionalRequirementsSection}
+                    visibleSubjects={filteredAdditionalSubjects}
+                    prerequisiteNamesByCode={prerequisiteNamesByCode}
+                    unlockedSubjectsByCode={unlockedSubjectsByCode}
+                    subjectStatuses={subjectStatuses}
+                    onStatusChange={handleStatusChange}
+                    onApproveAll={() =>
+                      handleApproveSection(additionalRequirementsSection)
+                    }
+                  />
+                )}
+            </div>
+          </section>
+        )}
 
         {/*
          * =================================================
@@ -981,22 +978,17 @@ function App() {
         <section className="curriculum">
           <div className="section-heading section-heading--filters">
             <div className="section-heading__information">
-              <p className="section-heading__eyebrow">
-                Plan de estudios
-              </p>
+              <p className="section-heading__eyebrow">Plan de estudios</p>
 
               <h2>Materias por semestre</h2>
 
               <p className="section-heading__description">
-                Busca una materia o combina los filtros
-                para revisar tu progreso.
+                Busca una materia o combina los filtros para revisar tu
+                progreso.
               </p>
             </div>
 
-            <div
-              className="curriculum-filters"
-              aria-label="Filtros del pensum"
-            >
+            <div className="curriculum-filters" aria-label="Filtros del pensum">
               <div className="curriculum-filter curriculum-filter--search">
                 <label
                   className="curriculum-filter__label"
@@ -1012,9 +1004,7 @@ function App() {
                   value={searchTerm}
                   placeholder="Nombre o código"
                   autoComplete="off"
-                  onChange={(event) =>
-                    setSearchTerm(event.target.value)
-                  }
+                  onChange={(event) => setSearchTerm(event.target.value)}
                 />
               </div>
 
@@ -1030,19 +1020,12 @@ function App() {
                   id="semester-filter"
                   className="curriculum-filter__select"
                   value={activeSectionId}
-                  onChange={(event) =>
-                    setSelectedSectionId(event.target.value)
-                  }
+                  onChange={(event) => setSelectedSectionId(event.target.value)}
                 >
-                  <option value="all">
-                    Todos los semestres
-                  </option>
+                  <option value="all">Todos los semestres</option>
 
-                  {curriculum.map((section) => (
-                    <option
-                      value={section.id}
-                      key={section.id}
-                    >
+                  {semesterSections.map((section) => (
+                    <option value={section.id} key={section.id}>
                       {section.title}
                     </option>
                   ))}
@@ -1062,30 +1045,18 @@ function App() {
                   className="curriculum-filter__select"
                   value={selectedStatusFilter}
                   onChange={(event) =>
-                    setSelectedStatusFilter(
-                      event.target.value as SubjectFilter,
-                    )
+                    setSelectedStatusFilter(event.target.value as SubjectFilter)
                   }
                 >
-                  <option value="all">
-                    Todas las materias
-                  </option>
+                  <option value="all">Todas las materias</option>
 
-                  <option value="pending">
-                    Pendientes
-                  </option>
+                  <option value="pending">Pendientes</option>
 
-                  <option value="in-progress">
-                    En curso
-                  </option>
+                  <option value="in-progress">En curso</option>
 
-                  <option value="approved">
-                    Aprobadas
-                  </option>
+                  <option value="approved">Aprobadas</option>
 
-                  <option value="blocked">
-                    Bloqueadas
-                  </option>
+                  <option value="blocked">Bloqueadas</option>
                 </select>
               </div>
             </div>
@@ -1110,12 +1081,9 @@ function App() {
 
           <div className="filter-results">
             <p className="filter-results__text">
-              Mostrando{' '}
-              <strong>{visibleSubjectsCount}</strong>{' '}
-              {visibleSubjectsCount === 1
-                ? 'materia'
-                : 'materias'}{' '}
-              de <strong>{totalSubjects}</strong>
+              Mostrando <strong>{visibleSubjectsCount}</strong>{" "}
+              {visibleSubjectsCount === 1 ? "materia" : "materias"} de{" "}
+              <strong>{totalSubjects}</strong>
             </p>
 
             {hasActiveFilters && (
@@ -1129,66 +1097,46 @@ function App() {
             )}
           </div>
 
-          {filteredSections.length > 0 ? (
+          {filteredSections.length > 0 && (
             <div className="curriculum-grid">
-              {filteredSections.map(
-                ({ section, visibleSubjects }) => (
-                  <SemesterCard
-                    key={section.id}
-                    section={section}
-                    visibleSubjects={visibleSubjects}
-                    prerequisiteNamesByCode={
-                      prerequisiteNamesByCode
-                    }
-                    subjectStatuses={subjectStatuses}
-                    onStatusChange={handleStatusChange}
-                    onApproveAll={() =>
-                      handleApproveSection(section)
-                    }
-                  />
-                ),
-              )}
+              {filteredSections.map(({ section, visibleSubjects }) => (
+                <SemesterCard
+                  key={section.id}
+                  section={section}
+                  visibleSubjects={visibleSubjects}
+                  prerequisiteNamesByCode={prerequisiteNamesByCode}
+                  unlockedSubjectsByCode={unlockedSubjectsByCode}
+                  subjectStatuses={subjectStatuses}
+                  onStatusChange={handleStatusChange}
+                  onApproveAll={() => handleApproveSection(section)}
+                />
+              ))}
             </div>
-          ) : (
+          )}
+
+          {visibleSubjectsCount === 0 && (
             <div className="curriculum-empty">
-              <div
-                className="curriculum-empty__icon"
-                aria-hidden="true"
-              >
+              <div className="curriculum-empty__icon" aria-hidden="true">
                 ⌕
               </div>
 
               <h3>No encontramos materias</h3>
 
               <p>
-                No hay materias que coincidan con la
-                búsqueda y los filtros seleccionados.
+                No hay materias que coincidan con la búsqueda y los filtros
+                seleccionados.
               </p>
 
-              <button
-                type="button"
-                onClick={handleClearFilters}
-              >
+              <button type="button" onClick={handleClearFilters}>
                 Limpiar filtros
               </button>
             </div>
           )}
         </section>
 
-        {shouldShowDegreeRequirements && (
-          <DegreeRequirementsCard
-            requirements={degreeRequirements}
-            requirementStatuses={
-              degreeRequirementStatuses
-            }
-            onStatusChange={
-              handleDegreeRequirementStatusChange
-            }
-          />
-        )}
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

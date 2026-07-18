@@ -8,6 +8,7 @@ interface SemesterCardProps {
   section: CurriculumSection
   visibleSubjects: Subject[]
   prerequisiteNamesByCode: Record<string, string>
+  unlockedSubjectsByCode: Record<string, Subject[]>
   subjectStatuses: Record<string, SubjectStatus>
   onStatusChange: (
     subjectCode: string,
@@ -20,6 +21,7 @@ function SemesterCard({
   section,
   visibleSubjects,
   prerequisiteNamesByCode,
+  unlockedSubjectsByCode,
   subjectStatuses,
   onStatusChange,
   onApproveAll,
@@ -142,6 +144,53 @@ function SemesterCard({
     return status
   }
 
+  const getUnlockedSubjectState = (
+    unlockedSubject: Subject,
+  ) => {
+    const currentStatus =
+      subjectStatuses[unlockedSubject.code] ??
+      'pending'
+
+    if (currentStatus === 'approved') {
+      return {
+        label: 'Aprobada',
+        className: 'approved',
+      }
+    }
+
+    const missingPrerequisites =
+      unlockedSubject.prerequisites.filter(
+        (prerequisiteCode) => {
+          const prerequisiteStatus =
+            subjectStatuses[prerequisiteCode]
+
+          return (
+            prerequisiteStatus !== undefined &&
+            prerequisiteStatus !== 'approved'
+          )
+        },
+      )
+
+    if (missingPrerequisites.length > 0) {
+      return {
+        label: 'Bloqueada',
+        className: 'blocked',
+      }
+    }
+
+    if (currentStatus === 'in-progress') {
+      return {
+        label: 'En curso',
+        className: 'in-progress',
+      }
+    }
+
+    return {
+      label: 'Disponible',
+      className: 'available',
+    }
+  }
+
   return (
     <article
       className={`semester-card ${isAdditionalSection
@@ -260,6 +309,12 @@ function SemesterCard({
 
           const currentStatus =
             subjectStatuses[subject.code] ?? 'pending'
+
+          const unlockedSubjects =
+            unlockedSubjectsByCode[subject.code] ?? []
+
+          const unlocksSubjects =
+            unlockedSubjects.length > 0
 
           const missingPrerequisites =
             subject.prerequisites.filter(
@@ -472,6 +527,52 @@ function SemesterCard({
                 <p className="subject-card__no-prerequisites">
                   Sin prerrequisitos
                 </p>
+              )}
+
+              {unlocksSubjects && (
+                <details className="unlocks">
+                  <summary className="unlocks__summary">
+                    <span>Materias que desbloquea</span>
+
+                    <span className="unlocks__count">
+                      {unlockedSubjects.length}
+                    </span>
+                  </summary>
+
+                  <ul className="unlocks__list">
+                    {unlockedSubjects.map(
+                      (unlockedSubject) => {
+                        const unlockedSubjectState =
+                          getUnlockedSubjectState(
+                            unlockedSubject,
+                          )
+
+                        return (
+                          <li
+                            className="unlocks__item"
+                            key={unlockedSubject.code}
+                          >
+                            <div className="unlocks__information">
+                              <span className="unlocks__code">
+                                {unlockedSubject.code}
+                              </span>
+
+                              <span className="unlocks__name">
+                                {unlockedSubject.name}
+                              </span>
+                            </div>
+
+                            <span
+                              className={`unlocks__status unlocks__status--${unlockedSubjectState.className}`}
+                            >
+                              {unlockedSubjectState.label}
+                            </span>
+                          </li>
+                        )
+                      },
+                    )}
+                  </ul>
+                </details>
               )}
             </article>
           )
