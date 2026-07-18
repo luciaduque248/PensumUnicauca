@@ -1389,6 +1389,189 @@
 
 /*
  * =========================================================
+ * ESTADÍSTICAS ACADÉMICAS
+ * =========================================================
+ */
+
+.academic-statistics {
+  margin-top: 42px;
+  padding: 26px;
+  border: 1px solid #e2e8f0;
+  border-radius: 26px;
+  background:
+    linear-gradient(145deg,
+      rgba(255, 255, 255, 0.98),
+      rgba(248, 250, 252, 0.96));
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+}
+
+.academic-statistics__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+
+.academic-statistics__header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  letter-spacing: -0.03em;
+}
+
+.academic-statistics__header>div>p:last-child {
+  max-width: 650px;
+  margin: 9px 0 0;
+  color: #64748b;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.academic-statistics__grid {
+  display: grid;
+  grid-template-columns: repeat(3,
+      minmax(0, 1fr));
+  gap: 14px;
+}
+
+.academic-statistic {
+  --stat-color: #4338ca;
+  --stat-background: #eef2ff;
+  --stat-border: #c7d2fe;
+
+  display: flex;
+  min-width: 0;
+  min-height: 140px;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--stat-border);
+  border-radius: 18px;
+  background-color: #ffffff;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.academic-statistic:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+}
+
+.academic-statistic--approved {
+  --stat-color: #15803d;
+  --stat-background: #dcfce7;
+  --stat-border: #bbf7d0;
+}
+
+.academic-statistic--progress {
+  --stat-color: #b45309;
+  --stat-background: #fef3c7;
+  --stat-border: #fde68a;
+}
+
+.academic-statistic--blocked {
+  --stat-color: #be123c;
+  --stat-background: #ffe4e6;
+  --stat-border: #fecdd3;
+}
+
+.academic-statistic--credits {
+  --stat-color: #4338ca;
+  --stat-background: #e0e7ff;
+  --stat-border: #c7d2fe;
+}
+
+.academic-statistic--semesters {
+  --stat-color: #7e22ce;
+  --stat-background: #f3e8ff;
+  --stat-border: #e9d5ff;
+}
+
+.academic-statistic--strongest {
+  --stat-color: #0369a1;
+  --stat-background: #e0f2fe;
+  --stat-border: #bae6fd;
+}
+
+.academic-statistic__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--stat-color);
+  background-color: var(--stat-background);
+}
+
+.academic-statistic__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.academic-statistic__information {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.academic-statistic__label {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.academic-statistic__value {
+  margin-top: 9px;
+  color: #0f172a;
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.academic-statistic__value--text {
+  overflow-wrap: anywhere;
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.academic-statistic__detail {
+  margin-top: auto;
+  padding-top: 12px;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+@media (max-width: 950px) {
+  .academic-statistics__grid {
+    grid-template-columns: repeat(2,
+        minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 580px) {
+  .academic-statistics {
+    padding: 20px;
+    border-radius: 22px;
+  }
+
+  .academic-statistics__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .academic-statistic {
+    min-height: 125px;
+  }
+}
+
+/*
+ * =========================================================
  * 12. DISEÑO RESPONSIVO
  * =========================================================
  */

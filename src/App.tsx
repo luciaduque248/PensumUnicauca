@@ -9,6 +9,7 @@ import {
   LuX,
 } from "react-icons/lu";
 
+import AcademicStatistics from "./components/AcademicStatistics";
 import DegreeRequirementsCard from "./components/DegreeRequirementsCard";
 import SemesterCard from "./components/SemesterCard";
 
@@ -267,6 +268,10 @@ function App() {
     (subject) => subjectStatuses[subject.code] === "in-progress",
   ).length;
 
+  const blockedSubjectsCount = allSubjects.filter(
+    (subject) => isSubjectLocked(subject),
+  ).length;
+
   const completedDegreeRequirements = degreeRequirements.filter(
     (requirement) =>
       degreeRequirementStatuses[requirement.code] === "completed",
@@ -274,6 +279,103 @@ function App() {
 
   const progressPercentage =
     totalCredits === 0 ? 0 : Math.round((approvedCredits / totalCredits) * 100);
+
+  const remainingCredits = Math.max(
+    totalCredits - approvedCredits,
+    0,
+  );
+
+  const semesterStatistics = semesterSections.map(
+    (section) => {
+      const semesterCredits = section.subjects.reduce(
+        (total, subject) => total + subject.credits,
+        0,
+      );
+
+      const approvedSemesterSubjects =
+        section.subjects.filter(
+          (subject) =>
+            subjectStatuses[subject.code] ===
+            "approved",
+        ).length;
+
+      const approvedSemesterCredits =
+        section.subjects.reduce(
+          (total, subject) => {
+            const isApproved =
+              subjectStatuses[subject.code] ===
+              "approved";
+
+            return isApproved
+              ? total + subject.credits
+              : total;
+          },
+          0,
+        );
+
+      const percentage =
+        semesterCredits === 0
+          ? 0
+          : Math.round(
+            (approvedSemesterCredits /
+              semesterCredits) *
+            100,
+          );
+
+      const isCompleted =
+        section.subjects.length > 0 &&
+        approvedSemesterSubjects ===
+        section.subjects.length;
+
+      return {
+        id: section.id,
+        title: section.title,
+        approvedSubjects: approvedSemesterSubjects,
+        totalSubjects: section.subjects.length,
+        approvedCredits: approvedSemesterCredits,
+        totalCredits: semesterCredits,
+        percentage,
+        isCompleted,
+      };
+    },
+  );
+
+  const completedSemesters = semesterStatistics.filter(
+    (semester) => semester.isCompleted,
+  ).length;
+
+  const strongestSemesterCandidate =
+    semesterStatistics.reduce<
+      (typeof semesterStatistics)[number] | null
+    >((strongestSemester, currentSemester) => {
+      if (strongestSemester === null) {
+        return currentSemester;
+      }
+
+      if (
+        currentSemester.percentage >
+        strongestSemester.percentage
+      ) {
+        return currentSemester;
+      }
+
+      if (
+        currentSemester.percentage ===
+        strongestSemester.percentage &&
+        currentSemester.approvedCredits >
+        strongestSemester.approvedCredits
+      ) {
+        return currentSemester;
+      }
+
+      return strongestSemester;
+    }, null);
+
+  const strongestSemester =
+    strongestSemesterCandidate !== null &&
+      strongestSemesterCandidate.approvedCredits > 0
+      ? strongestSemesterCandidate
+      : null;
 
   /*
    * =====================================================
@@ -860,10 +962,7 @@ function App() {
          * =================================================
          */}
 
-        <section
-          className="summary summary--four"
-          aria-label="Resumen académico"
-        >
+        <section className="summary summary--four" aria-label="Resumen académico">
           <article className="summary-card">
             <span className="summary-card__label">Progreso</span>
 
@@ -923,6 +1022,18 @@ function App() {
             <span className="summary-card__detail">No suman créditos</span>
           </article>
         </section>
+
+        <AcademicStatistics
+          approvedSubjects={approvedSubjects.length}
+          totalSubjects={totalSubjects}
+          inProgressSubjects={inProgressSubjects}
+          blockedSubjects={blockedSubjectsCount}
+          remainingCredits={remainingCredits}
+          totalCredits={totalCredits}
+          completedSemesters={completedSemesters}
+          totalSemesters={semesterSections.length}
+          strongestSemester={strongestSemester}
+        />
 
         {/*
          * =================================================
