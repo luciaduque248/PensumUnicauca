@@ -253,32 +253,99 @@ const findOfferRows = (
 
 const readAcademicOfferWorkbook = (
     fileBuffer: ArrayBuffer,
-) => {
-    try {
-        return XLSX.read(fileBuffer);
-    } catch (error) {
-        const originalMessage =
-            error instanceof Error
-                ? error.message
-                : "";
+    extension: "xls" | "xlsx",
+): XLSX.WorkBook => {
+    /*
+     * Primer intento:
+     * lectura normal del archivo.
+     */
+    const readAttempts: Array<
+        () => XLSX.WorkBook
+    > = [
+            () =>
+                XLSX.read(fileBuffer, {
+                    type: "array",
+                }),
+        ];
 
-        const isProtectedFile =
-            /password-protected|password protected|encrypted|password/i.test(
-                originalMessage,
-            );
-
-        if (isProtectedFile) {
-            throw new Error(
-                "Este archivo XLS utiliza una protección antigua que el lector web no puede abrir. Usa el archivo OfertaFIET en formato XLSX. También puedes abrir el archivo en Excel o LibreOffice y guardarlo como XLSX sin contraseña, siempre que conserve la tabla de la oferta académica.",
-            );
-        }
-
-        throw new Error(
-            originalMessage
-                ? `No fue posible leer el archivo: ${originalMessage}`
-                : "No fue posible leer el archivo seleccionado.",
+    /*
+     * Algunos archivos XLS antiguos marcados
+     * como solo lectura usan internamente esta
+     * contraseña estándar.
+     *
+     * Este segundo intento no afecta los XLS
+     * normales.
+     */
+    if (extension === "xls") {
+        readAttempts.push(
+            () =>
+                XLSX.read(fileBuffer, {
+                    type: "array",
+                    password:
+                        "VelvetSweatshop",
+                }),
         );
     }
+
+    let lastError: unknown;
+
+    for (
+        const readAttempt of
+        readAttempts
+    ) {
+        try {
+            return readAttempt();
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    const originalMessage =
+        lastError instanceof Error
+            ? lastError.message
+            : "";
+
+    const isProtectedFile =
+        /password-protected|password protected|encrypted|password|encryption/i.test(
+            originalMessage,
+        );
+
+    if (isProtectedFile) {
+        throw new Error(
+            "El archivo XLS está protegido con un método que el lector web no puede descifrar. Para importarlo, ábrelo en Google Sheets, Excel o LibreOffice y guárdalo como XLSX sin contraseña. También puedes compartir la versión de Google Sheets mediante un enlace público.",
+        );
+    }
+
+    throw new Error(
+        originalMessage
+            ? `No fue posible leer el archivo: ${originalMessage}`
+            : "No fue posible leer el archivo seleccionado.",
+    );
+};
+
+const convertLegacyWorkbookToXlsx = (
+    workbook: XLSX.WorkBook,
+): XLSX.WorkBook => {
+    /*
+     * El libro XLS ya fue leído correctamente.
+     * Ahora se genera una versión XLSX en memoria.
+     *
+     * No se descarga ningún archivo en el
+     * dispositivo del usuario.
+     */
+    const convertedBuffer =
+        XLSX.write(workbook, {
+            type: "array",
+            bookType: "xlsx",
+            compression: true,
+        });
+
+    return XLSX.read(
+        convertedBuffer,
+        {
+            type: "array",
+        },
+    );
 };
 
 export const parseAcademicOfferBuffer =
@@ -301,10 +368,36 @@ export const parseAcademicOfferBuffer =
             );
         }
 
-        const workbook =
+        const supportedExtension =
+            extension as
+            | "xls"
+            | "xlsx";
+
+        const sourceWorkbook =
             readAcademicOfferWorkbook(
                 fileBuffer,
+                supportedExtension,
             );
+
+        /*
+         * Cuando el archivo original es XLS y se pudo
+         * abrir, se convierte automáticamente a XLSX
+         * antes de procesar las hojas.
+         */
+        const workbook =
+            supportedExtension === "xls"
+                ? convertLegacyWorkbookToXlsx(
+                    sourceWorkbook,
+                )
+                : sourceWorkbook;
+
+        const normalizedFileName =
+            supportedExtension === "xls"
+                ? fileName.replace(
+                    /\.xls$/i,
+                    ".xlsx",
+                )
+                : fileName;
 
         const rows =
             findOfferRows(workbook);
@@ -478,7 +571,8 @@ export const parseAcademicOfferBuffer =
         return {
             version: 1,
 
-            fileName,
+            fileName:
+                normalizedFileName,
 
             importedAt:
                 new Date()

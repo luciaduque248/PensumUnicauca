@@ -437,9 +437,9 @@ function AcademicOfferImportCard({
                 <div className="academic-offer-import__methods">
                     <button
                         className={`academic-offer-import__method-button ${importMethod ===
-                                "device"
-                                ? "academic-offer-import__method-button--active"
-                                : ""
+                            "device"
+                            ? "academic-offer-import__method-button--active"
+                            : ""
                             }`}
                         type="button"
                         aria-pressed={
@@ -461,9 +461,9 @@ function AcademicOfferImportCard({
 
                     <button
                         className={`academic-offer-import__method-button ${importMethod ===
-                                "drive"
-                                ? "academic-offer-import__method-button--active"
-                                : ""
+                            "drive"
+                            ? "academic-offer-import__method-button--active"
+                            : ""
                             }`}
                         type="button"
                         aria-pressed={
@@ -580,7 +580,7 @@ function AcademicOfferImportCard({
                             </label>
 
                             <button
-                                className="academic-offer-import__button"
+                                className="academic-offer-import__button academic-offer-import__button--drive"
                                 type="submit"
                                 disabled={
                                     isImporting
