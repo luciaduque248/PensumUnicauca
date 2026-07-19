@@ -28,6 +28,32 @@ import type {
     ImportedAcademicOffer,
 } from "../types/schedule";
 
+const escapeHtml = (value: string): string =>
+    value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+const formatImportErrorMessage = (
+    message: string,
+): string => {
+    const escapedMessage =
+        escapeHtml(message);
+
+    return escapedMessage
+        .replace(
+            "Formato requerido: .xlsx",
+            "<strong>Formato requerido:</strong> .xlsx",
+        )
+        .replace(
+            "Formato subido: .xls",
+            "<strong>Formato subido:</strong> .xls",
+        )
+        .replace(/\n/g, "<br>");
+};
+
 interface AcademicOfferImportCardProps {
     importedOffer:
     | ImportedAcademicOffer
@@ -387,18 +413,9 @@ function AcademicOfferImportCard({
 
             await Swal.fire({
                 icon: "error",
-
-                title:
-                    "No se pudo importar el archivo",
-
-                text:
-                    errorMessage,
-
-                confirmButtonText:
-                    "Entendido",
-
-                confirmButtonColor:
-                    "#dc2626",
+                title: "No se pudo importar el archivo",
+                html: formatImportErrorMessage( errorMessage,),
+                confirmButtonText: "Entendido",
             });
         };
 
