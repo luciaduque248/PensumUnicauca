@@ -1,54 +1,83 @@
-const MAX_FILE_SIZE_BYTES =
-    4_000_000;
-
 interface DriveRequestBody {
     url?: unknown;
 }
 
-interface DriveReference {
+interface GoogleFileReference {
     fileId: string;
-    isGoogleSpreadsheet: boolean;
+    isSpreadsheet: boolean;
 }
 
-const getDriveReference = (
+const MAX_RESPONSE_SIZE_BYTES =
+    4_000_000;
+
+const createJsonResponse = (
+    message: string,
+    status: number,
+    details?: string,
+) => {
+    return Response.json(
+        {
+            message,
+            details,
+        },
+        {
+            status,
+            headers: {
+                "Cache-Control": "no-store",
+            },
+        },
+    );
+};
+
+const extractGoogleFileReference = (
     rawUrl: string,
-): DriveReference => {
+): GoogleFileReference => {
     let parsedUrl: URL;
 
     try {
-        parsedUrl =
-            new URL(rawUrl);
+        parsedUrl = new URL(
+            rawUrl,
+        );
     } catch {
         throw new Error(
-            "El enlace de Google Drive no es válido.",
+            "El enlace ingresado no es válido.",
         );
     }
 
-    const allowedHosts = [
-        "drive.google.com",
-        "docs.google.com",
-    ];
+    const hostname =
+        parsedUrl.hostname
+            .toLowerCase()
+            .replace(/^www\./, "");
 
-    if (
-        !allowedHosts.includes(
-            parsedUrl.hostname,
-        )
-    ) {
+    const isGoogleDrive =
+        hostname ===
+        "drive.google.com" ||
+        hostname ===
+        "docs.google.com";
+
+    if (!isGoogleDrive) {
         throw new Error(
             "Solo se permiten enlaces de Google Drive o Google Sheets.",
         );
     }
 
-    const isGoogleSpreadsheet =
-        parsedUrl.hostname ===
-        "docs.google.com" &&
-        parsedUrl.pathname.includes(
-            "/spreadsheets/",
+    const spreadsheetMatch =
+        parsedUrl.pathname.match(
+            /\/spreadsheets\/(?:u\/\d+\/)?d\/([a-zA-Z0-9_-]+)/,
         );
 
-    const filePathMatch =
+    if (spreadsheetMatch?.[1]) {
+        return {
+            fileId:
+                spreadsheetMatch[1],
+
+            isSpreadsheet: true,
+        };
+    }
+
+    const driveFileMatch =
         parsedUrl.pathname.match(
-            /\/(?:file\/d|spreadsheets\/d)\/([a-zA-Z0-9_-]+)/,
+            /\/file\/d\/([a-zA-Z0-9_-]+)/,
         );
 
     const queryFileId =
@@ -57,7 +86,7 @@ const getDriveReference = (
         );
 
     const fileId =
-        filePathMatch?.[1] ??
+        driveFileMatch?.[1] ??
         queryFileId ??
         "";
 
@@ -67,318 +96,307 @@ const getDriveReference = (
         )
     ) {
         throw new Error(
-            "No fue posible identificar el archivo dentro del enlace de Google Drive.",
+            "No fue posible identificar el archivo dentro del enlace.",
         );
     }
 
     return {
         fileId,
-        isGoogleSpreadsheet,
+        isSpreadsheet: false,
     };
 };
 
-const getDownloadUrl = ({
-    fileId,
-    isGoogleSpreadsheet,
-}: DriveReference) => {
-    if (isGoogleSpreadsheet) {
-        return (
-            "https://docs.google.com/spreadsheets/d/" +
-            encodeURIComponent(fileId) +
-            "/export?format=xlsx"
-        );
-    }
-
-    return (
-        "https://drive.google.com/uc" +
-        "?export=download" +
-        "&confirm=t" +
-        `&id=${encodeURIComponent(
-            fileId,
-        )}`
-    );
-};
-
-const getFileNameFromDisposition = (
-    contentDisposition: string | null,
-    fallbackFileName: string,
+const createDownloadUrls = (
+    reference:
+        GoogleFileReference,
 ) => {
-    if (!contentDisposition) {
-        return fallbackFileName;
-    }
-
-    const encodedMatch =
-        contentDisposition.match(
-            /filename\*=UTF-8''([^;]+)/i,
+    const encodedFileId =
+        encodeURIComponent(
+            reference.fileId,
         );
 
-    if (encodedMatch?.[1]) {
-        try {
-            return decodeURIComponent(
-                encodedMatch[1],
-            );
-        } catch {
-            return fallbackFileName;
-        }
+    if (
+        reference.isSpreadsheet
+    ) {
+        return [
+            /*
+             * Exportación principal de una hoja
+             * nativa de Google Sheets.
+             */
+            `https://docs.google.com/spreadsheets/d/${encodedFileId}/export?format=xlsx`,
+
+            /*
+             * Alternativa para algunos enlaces
+             * compartidos o abiertos en htmlview.
+             */
+            `https://docs.google.com/spreadsheets/d/${encodedFileId}/export?format=xlsx&gid=0`,
+        ];
     }
 
-    const simpleMatch =
-        contentDisposition.match(
-            /filename="?([^";]+)"?/i,
+    return [
+        /*
+         * Archivo Excel almacenado directamente
+         * dentro de Google Drive.
+         */
+        `https://drive.usercontent.google.com/download?id=${encodedFileId}&export=download&confirm=t`,
+
+        `https://drive.google.com/uc?export=download&id=${encodedFileId}&confirm=t`,
+    ];
+};
+
+const isHtmlResponse = (
+    contentType: string,
+    buffer: ArrayBuffer,
+) => {
+    if (
+        contentType.includes(
+            "text/html",
+        )
+    ) {
+        return true;
+    }
+
+    const initialBytes =
+        new Uint8Array(
+            buffer.slice(0, 80),
         );
+
+    const initialText =
+        new TextDecoder()
+            .decode(initialBytes)
+            .trimStart()
+            .toLowerCase();
 
     return (
-        simpleMatch?.[1]?.trim() ||
-        fallbackFileName
+        initialText.startsWith(
+            "<!doctype html",
+        ) ||
+        initialText.startsWith(
+            "<html",
+        )
     );
 };
 
-export default {
-    async fetch(
-        request: Request,
-    ): Promise<Response> {
-        if (
-            request.method !== "POST"
-        ) {
-            return Response.json(
-                {
-                    message:
-                        "Método no permitido.",
-                },
-                {
-                    status: 405,
-                    headers: {
-                        Allow: "POST",
-                    },
-                },
+const getReadableErrorDetails = (
+    contentType: string,
+    buffer: ArrayBuffer,
+) => {
+    const isReadableText =
+        contentType.includes(
+            "text/",
+        ) ||
+        contentType.includes(
+            "application/json",
+        );
+
+    if (!isReadableText) {
+        return "";
+    }
+
+    try {
+        return new TextDecoder()
+            .decode(
+                buffer.slice(
+                    0,
+                    600,
+                ),
+            )
+            .replace(
+                /\s+/g,
+                " ",
+            )
+            .trim();
+    } catch {
+        return "";
+    }
+};
+
+/*
+ * Vercel reconoce este archivo como:
+ *
+ * POST /api/drive-file
+ */
+export async function POST(
+    request: Request,
+): Promise<Response> {
+    let body: DriveRequestBody;
+
+    try {
+        body =
+            (await request.json()) as
+            DriveRequestBody;
+    } catch {
+        return createJsonResponse(
+            "La solicitud no contiene información válida.",
+            400,
+        );
+    }
+
+    const driveUrl =
+        typeof body.url ===
+            "string"
+            ? body.url.trim()
+            : "";
+
+    if (driveUrl === "") {
+        return createJsonResponse(
+            "Debes ingresar el enlace de Google Drive.",
+            400,
+        );
+    }
+
+    let reference:
+        GoogleFileReference;
+
+    try {
+        reference =
+            extractGoogleFileReference(
+                driveUrl,
             );
-        }
+    } catch (error) {
+        return createJsonResponse(
+            error instanceof Error
+                ? error.message
+                : "El enlace de Google Drive no es válido.",
+            400,
+        );
+    }
 
-        let body: DriveRequestBody;
+    const downloadUrls =
+        createDownloadUrls(
+            reference,
+        );
 
+    const failedAttempts:
+        string[] = [];
+
+    for (
+        const downloadUrl of
+        downloadUrls
+    ) {
         try {
-            body =
-                (await request.json()) as
-                DriveRequestBody;
-        } catch {
-            return Response.json(
-                {
-                    message:
-                        "La solicitud no contiene datos válidos.",
-                },
-                {
-                    status: 400,
-                },
-            );
-        }
-
-        const driveUrl =
-            typeof body.url === "string"
-                ? body.url.trim()
-                : "";
-
-        if (driveUrl === "") {
-            return Response.json(
-                {
-                    message:
-                        "Debes ingresar el enlace de Google Drive.",
-                },
-                {
-                    status: 400,
-                },
-            );
-        }
-
-        let driveReference:
-            DriveReference;
-
-        try {
-            driveReference =
-                getDriveReference(
-                    driveUrl,
-                );
-        } catch (error) {
-            return Response.json(
-                {
-                    message:
-                        error instanceof Error
-                            ? error.message
-                            : "El enlace de Drive no es válido.",
-                },
-                {
-                    status: 400,
-                },
-            );
-        }
-
-        const downloadUrl =
-            getDownloadUrl(
-                driveReference,
-            );
-
-        let driveResponse:
-            Response;
-
-        try {
-            driveResponse =
+            const driveResponse =
                 await fetch(
                     downloadUrl,
                     {
                         method: "GET",
                         redirect: "follow",
+
                         headers: {
                             Accept:
-                                "application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, application/octet-stream",
+
+                            /*
+                             * Evita que algunos servicios
+                             * respondan como si la solicitud
+                             * viniera de un cliente desconocido.
+                             */
+                            "User-Agent":
+                                "Mozilla/5.0 Pensum-Interactivo",
                         },
                     },
                 );
-        } catch {
-            return Response.json(
-                {
-                    message:
-                        "No fue posible conectarse con Google Drive.",
-                },
-                {
-                    status: 502,
-                },
+
+            const contentType =
+                driveResponse.headers
+                    .get("content-type")
+                    ?.toLowerCase() ??
+                "";
+
+            const fileBuffer =
+                await driveResponse
+                    .arrayBuffer();
+
+            const responseIsHtml =
+                isHtmlResponse(
+                    contentType,
+                    fileBuffer,
+                );
+
+            if (
+                driveResponse.ok &&
+                !responseIsHtml &&
+                fileBuffer.byteLength >
+                0
+            ) {
+                if (
+                    fileBuffer.byteLength >
+                    MAX_RESPONSE_SIZE_BYTES
+                ) {
+                    return createJsonResponse(
+                        "El archivo convertido supera el tamaño permitido para descargarlo mediante esta función.",
+                        413,
+                        "Usa el archivo OfertaFIET en formato XLSX o una versión reducida del horario.",
+                    );
+                }
+
+                return new Response(
+                    fileBuffer,
+                    {
+                        status: 200,
+
+                        headers: {
+                            "Content-Type":
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+
+                            "Content-Disposition":
+                                'attachment; filename="OfertaFIET-Drive.xlsx"',
+
+                            "X-File-Name":
+                                encodeURIComponent(
+                                    "OfertaFIET-Drive.xlsx",
+                                ),
+
+                            "Cache-Control":
+                                "no-store",
+                        },
+                    },
+                );
+            }
+
+            const readableDetails =
+                getReadableErrorDetails(
+                    contentType,
+                    fileBuffer,
+                );
+
+            failedAttempts.push(
+                [
+                    `Estado ${driveResponse.status}`,
+                    contentType ||
+                    "sin tipo de contenido",
+                    responseIsHtml
+                        ? "Google devolvió una página HTML"
+                        : "",
+                    readableDetails,
+                ]
+                    .filter(Boolean)
+                    .join(" · "),
+            );
+        } catch (error) {
+            failedAttempts.push(
+                error instanceof Error
+                    ? error.message
+                    : "Fallo de conexión con Google.",
             );
         }
+    }
 
-        if (!driveResponse.ok) {
-            return Response.json(
-                {
-                    message:
-                        "Google Drive no permitió descargar el archivo. Revisa que esté compartido como Cualquier persona con el enlace.",
-                },
-                {
-                    status: 400,
-                },
-            );
-        }
-
-        const contentType =
-            driveResponse.headers
-                .get("content-type")
-                ?.toLowerCase() ??
-            "";
-
-        /*
-         * Cuando Drive devuelve una página HTML,
-         * normalmente significa que el archivo requiere
-         * iniciar sesión, solicitar acceso o confirmar
-         * una descarga no disponible públicamente.
-         */
-        if (
-            contentType.includes(
-                "text/html",
-            )
-        ) {
-            return Response.json(
-                {
-                    message:
-                        "Google Drive devolvió una página de acceso en lugar del archivo. Cambia el permiso a Cualquier persona con el enlace y asegúrate de enlazar directamente el archivo.",
-                },
-                {
-                    status: 400,
-                },
-            );
-        }
-
-        const declaredFileSize =
-            Number(
-                driveResponse.headers.get(
-                    "content-length",
-                ),
-            );
-
-        if (
-            Number.isFinite(
-                declaredFileSize,
-            ) &&
-            declaredFileSize >
-            MAX_FILE_SIZE_BYTES
-        ) {
-            return Response.json(
-                {
-                    message:
-                        "El archivo supera el tamaño permitido para importarlo mediante el enlace. Usa el archivo OfertaFIET XLSX o súbelo directamente desde el dispositivo.",
-                },
-                {
-                    status: 413,
-                },
-            );
-        }
-
-        const fileBuffer =
-            await driveResponse.arrayBuffer();
-
-        if (
-            fileBuffer.byteLength >
-            MAX_FILE_SIZE_BYTES
-        ) {
-            return Response.json(
-                {
-                    message:
-                        "El archivo supera el tamaño permitido para importarlo mediante el enlace. Usa el archivo OfertaFIET XLSX o súbelo directamente desde el dispositivo.",
-                },
-                {
-                    status: 413,
-                },
-            );
-        }
-
-        if (
-            fileBuffer.byteLength === 0
-        ) {
-            return Response.json(
-                {
-                    message:
-                        "El archivo descargado desde Drive está vacío.",
-                },
-                {
-                    status: 400,
-                },
-            );
-        }
-
-        const fallbackFileName =
-            driveReference
-                .isGoogleSpreadsheet
-                ? "OfertaFIET-Google-Sheets.xlsx"
-                : "OfertaFIET-Drive.xlsx";
-
-        const fileName =
-            getFileNameFromDisposition(
-                driveResponse.headers.get(
-                    "content-disposition",
-                ),
-                fallbackFileName,
-            );
-
-        return new Response(
-            fileBuffer,
-            {
-                status: 200,
-                headers: {
-                    "Content-Type":
-                        "application/octet-stream",
-
-                    "Content-Disposition":
-                        `attachment; filename="${fallbackFileName}"`,
-
-                    /*
-                     * Se codifica porque los encabezados HTTP
-                     * no admiten todos los caracteres Unicode.
-                     */
-                    "X-File-Name":
-                        encodeURIComponent(
-                            fileName,
-                        ),
-
-                    "Cache-Control":
-                        "no-store",
-                },
-            },
-        );
-    },
-};
+    return createJsonResponse(
+        "Google permite visualizar el archivo, pero no permitió descargarlo o exportarlo como XLSX.",
+        400,
+        [
+            "Revisa que el archivo esté compartido como “Cualquier persona con el enlace”.",
+            "Activa la opción que permite a los lectores descargar, imprimir y copiar.",
+            "También puedes abrirlo en Google Sheets y crear una copia nativa mediante Archivo → Guardar como Hojas de cálculo de Google.",
+            failedAttempts.length >
+                0
+                ? `Detalle técnico: ${failedAttempts.join(
+                    " | ",
+                )}`
+                : "",
+        ]
+            .filter(Boolean)
+            .join(" "),
+    );
+}

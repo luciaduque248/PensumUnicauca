@@ -296,20 +296,49 @@ function AcademicOfferImportCard({
                     );
 
                 if (!response.ok) {
-                    const responseData =
-                        (await response
-                            .json()
-                            .catch(
-                                () => null,
-                            )) as
-                        | {
-                            message?: string;
+                    const responseText =
+                        await response.text();
+
+                    let responseMessage =
+                        "No fue posible descargar el archivo desde Google Drive.";
+
+                    try {
+                        const responseData =
+                            JSON.parse(
+                                responseText,
+                            ) as {
+                                message?: string;
+                                details?: string;
+                            };
+
+                        responseMessage = [
+                            responseData.message,
+                            responseData.details,
+                        ]
+                            .filter(Boolean)
+                            .join(" ");
+                    } catch {
+                        if (
+                            responseText.trim() !==
+                            ""
+                        ) {
+                            responseMessage =
+                                responseText
+                                    .replace(
+                                        /<[^>]+>/g,
+                                        " ",
+                                    )
+                                    .replace(
+                                        /\s+/g,
+                                        " ",
+                                    )
+                                    .trim()
+                                    .slice(0, 500);
                         }
-                        | null;
+                    }
 
                     throw new Error(
-                        responseData?.message ??
-                        "No fue posible descargar el archivo desde Google Drive.",
+                        responseMessage,
                     );
                 }
 
@@ -507,8 +536,8 @@ function AcademicOfferImportCard({
                                     </strong>
 
                                     <span>
-                                        Recomendado:
-                                        OfertaFIET en formato
+                                        La OfertaFIET 
+                                        solo se permite en formato:
                                         .xlsx.
                                     </span>
                                 </div>
