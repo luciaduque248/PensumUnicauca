@@ -129,7 +129,7 @@ function AcademicOfferImportCard({
                         "¿Reemplazar la oferta importada?",
 
                     text:
-                        "El nuevo archivo reemplazará el catálogo de materias y grupos. Las materias que agregaste desde la oferta se actualizarán automáticamente por código y grupo, incluyendo horario, docente y salón. Las materias manuales no cambiarán. Si un grupo ya no aparece en la nueva oferta, se conservará su horario actual y se mostrará una advertencia.",
+                        "El nuevo archivo reemplazará la oferta actual. Las materias que agregaste desde la oferta se compararán por código y grupo. Si cambió el horario, docente o salón, tu horario se actualizará automáticamente y al finalizar se mostrará un resumen detallado.",
 
                     showCancelButton:
                         true,
@@ -278,7 +278,8 @@ function AcademicOfferImportCard({
                 ImportedAcademicOffer,
         ) => {
             const isReplacement =
-                importedOffer !== null;
+                importedOffer !==
+                null;
 
             const importResult =
                 await onImportOffer(
@@ -293,112 +294,311 @@ function AcademicOfferImportCard({
                     ),
                 ).size;
 
-            const resultMessages: string[] = [
-                `Se encontraron ${importedSubjectCount} materias y ${parsedOffer.groups.length} grupos para el periodo ${parsedOffer.period}.`,
-            ];
+            /*
+             * Primera importación:
+             * todavía no existe un horario anterior
+             * con el cual comparar.
+             */
+            if (
+                !isReplacement
+            ) {
+                await Swal.fire({
+                    icon:
+                        "success",
 
-            if (isReplacement) {
-                if (
-                    importResult.updatedSubjects >
-                    0
-                ) {
-                    resultMessages.push(
-                        `${importResult.updatedSubjects} ${importResult.updatedSubjects ===
-                            1
-                            ? "materia fue actualizada automáticamente"
-                            : "materias fueron actualizadas automáticamente"
-                        } con los nuevos horarios, docentes y salones.`,
-                    );
-                }
+                    title:
+                        "Oferta académica importada",
 
-                if (
-                    importResult.unchangedSubjects >
-                    0
-                ) {
-                    resultMessages.push(
-                        `${importResult.unchangedSubjects} ${importResult.unchangedSubjects ===
-                            1
-                            ? "materia no presentó cambios"
-                            : "materias no presentaron cambios"
-                        }.`,
-                    );
-                }
+                    text:
+                        `Se encontraron ${importedSubjectCount} materias y ${parsedOffer.groups.length} grupos para el periodo ${parsedOffer.period}.`,
 
-                if (
-                    importResult
-                        .unmatchedSubjects
-                        .length >
-                    0
-                ) {
-                    const visibleSubjects =
-                        importResult
-                            .unmatchedSubjects
-                            .slice(
-                                0,
-                                5,
-                            )
-                            .join(", ");
+                    confirmButtonText:
+                        "Continuar",
 
-                    const remainingCount =
-                        importResult
-                            .unmatchedSubjects
-                            .length - 5;
+                    confirmButtonColor:
+                        "#16a34a",
+                });
 
-                    resultMessages.push(
-                        `No se encontró una coincidencia en la nueva oferta para: ${visibleSubjects}${remainingCount > 0
-                            ? ` y ${remainingCount} más`
-                            : ""
-                        }. Sus horarios anteriores se conservaron.`,
-                    );
-                }
-
-                if (
-                    importResult.conflictCount >
-                    0
-                ) {
-                    resultMessages.push(
-                        `Después de la actualización se detectaron ${importResult.conflictCount} ${importResult.conflictCount ===
-                            1
-                            ? "cruce de horario"
-                            : "cruces de horario"
-                        }. Revisa la distribución semanal antes de confirmar.`,
-                    );
-                }
+                return;
             }
 
-            const hasWarnings =
+            const hasChanges =
+                importResult
+                    .subjectChanges
+                    .length >
+                0;
+
+            const hasUnmatchedSubjects =
                 importResult
                     .unmatchedSubjects
                     .length >
-                0 ||
-                importResult.conflictCount >
                 0;
+
+            const hasConflicts =
+                importResult
+                    .conflictCount >
+                0;
+
+            const changeDetailsHtml =
+                importResult
+                    .subjectChanges
+                    .map(
+                        (
+                            subjectChange,
+                        ) => {
+                            const fieldsHtml =
+                                subjectChange
+                                    .changes
+                                    .map(
+                                        (
+                                            fieldChange,
+                                        ) => `
+                                        <li class="swal-offer-change__field">
+                                            <strong>
+                                                ${escapeHtml(
+                                            fieldChange.label,
+                                        )}
+                                            </strong>
+
+                                            <span>
+                                                <b>Antes:</b>
+                                                ${escapeHtml(
+                                            fieldChange.before,
+                                        )}
+                                            </span>
+
+                                            <span>
+                                                <b>Ahora:</b>
+                                                ${escapeHtml(
+                                            fieldChange.after,
+                                        )}
+                                            </span>
+                                        </li>
+                                    `,
+                                    )
+                                    .join("");
+
+                            return `
+                            <article class="swal-offer-change">
+                                <header class="swal-offer-change__header">
+                                    <strong>
+                                        ${escapeHtml(
+                                subjectChange.subjectName,
+                            )}
+                                    </strong>
+
+                                    <span>
+                                        Grupo ${escapeHtml(
+                                subjectChange.group ||
+                                "sin grupo",
+                            )}
+                                    </span>
+                                </header>
+
+                                <ul class="swal-offer-change__fields">
+                                    ${fieldsHtml}
+                                </ul>
+                            </article>
+                        `;
+                        },
+                    )
+                    .join("");
+
+            const unmatchedSubjectsHtml =
+                hasUnmatchedSubjects
+                    ? `
+                    <section class="swal-offer-update__warning">
+                        <strong>
+                            Grupos no encontrados en el nuevo archivo
+                        </strong>
+
+                        <p>
+                            No fueron modificados y conservaron su
+                            horario anterior:
+                        </p>
+
+                        <ul>
+                            ${importResult
+                        .unmatchedSubjects
+                        .map(
+                            (
+                                subject,
+                            ) => `
+                                        <li>
+                                            ${escapeHtml(
+                                subject,
+                            )}
+                                        </li>
+                                    `,
+                        )
+                        .join("")}
+                        </ul>
+                    </section>
+                `
+                    : "";
+
+            const conflictsHtml =
+                hasConflicts
+                    ? `
+                    <section class="swal-offer-update__warning">
+                        <strong>
+                            Cruces detectados
+                        </strong>
+
+                        <p>
+                            Después de actualizar el horario se
+                            encontraron ${importResult.conflictCount}
+                            ${importResult.conflictCount ===
+                        1
+                        ? "cruce"
+                        : "cruces"
+                    }.
+                            Revisa la cuadrícula semanal antes de
+                            confirmar.
+                        </p>
+                    </section>
+                `
+                    : "";
+
+            /*
+             * El archivo fue reemplazado, pero ninguna
+             * materia que ya estaba en el horario cambió.
+             */
+            if (
+                !hasChanges
+            ) {
+                await Swal.fire({
+                    icon:
+                        hasUnmatchedSubjects ||
+                            hasConflicts
+                            ? "warning"
+                            : "success",
+
+                    title:
+                        hasUnmatchedSubjects ||
+                            hasConflicts
+                            ? "Oferta reemplazada con observaciones"
+                            : "Oferta reemplazada sin cambios en tu horario",
+
+                    html: `
+                    <div class="swal-offer-update">
+                        <p class="swal-offer-update__intro">
+                            El nuevo archivo fue procesado correctamente.
+                        </p>
+
+                        <section class="swal-offer-update__no-changes">
+                            <strong>
+                                Tu horario no sufrió cambios
+                            </strong>
+
+                            <p>
+                                Los horarios, docentes y salones de las
+                                materias que ya habías agregado siguen
+                                siendo iguales.
+                            </p>
+
+                            ${importResult.unchangedSubjects >
+                            0
+                            ? `
+                                        <small>
+                                            ${importResult.unchangedSubjects}
+                                            ${importResult.unchangedSubjects ===
+                                1
+                                ? "materia revisada sin cambios"
+                                : "materias revisadas sin cambios"
+                            }.
+                                        </small>
+                                    `
+                            : ""
+                        }
+                        </section>
+
+                        ${unmatchedSubjectsHtml}
+                        ${conflictsHtml}
+                    </div>
+                `,
+
+                    confirmButtonText:
+                        "Continuar",
+
+                    confirmButtonColor:
+                        hasUnmatchedSubjects ||
+                            hasConflicts
+                            ? "#f59e0b"
+                            : "#16a34a",
+                });
+
+                return;
+            }
 
             await Swal.fire({
                 icon:
-                    hasWarnings
+                    hasUnmatchedSubjects ||
+                        hasConflicts
                         ? "warning"
                         : "success",
 
                 title:
-                    hasWarnings
-                        ? "Oferta reemplazada con observaciones"
-                        : isReplacement
-                            ? "Oferta y horario actualizados"
-                            : "Oferta académica importada",
+                    hasUnmatchedSubjects ||
+                        hasConflicts
+                        ? "Horario actualizado con observaciones"
+                        : "Tu horario fue actualizado",
 
-                text:
-                    resultMessages.join(
-                        " ",
-                    ),
+                html: `
+                <div class="swal-offer-update">
+                    <p class="swal-offer-update__intro">
+                        Se reemplazó la oferta académica y se
+                        actualizaron automáticamente
+                        <strong>
+                            ${importResult.updatedSubjects}
+                            ${importResult.updatedSubjects ===
+                        1
+                        ? "materia"
+                        : "materias"
+                    }
+                        </strong>
+                        de tu horario.
+                    </p>
+
+                    <h3 class="swal-offer-update__subtitle">
+                        Cambios realizados
+                    </h3>
+
+                    <div class="swal-offer-update__changes">
+                        ${changeDetailsHtml}
+                    </div>
+
+                    ${importResult.unchangedSubjects >
+                        0
+                        ? `
+                                <p class="swal-offer-update__unchanged">
+                                    ${importResult.unchangedSubjects}
+                                    ${importResult.unchangedSubjects ===
+                            1
+                            ? "materia no sufrió cambios."
+                            : "materias no sufrieron cambios."
+                        }
+                                </p>
+                            `
+                        : ""
+                    }
+
+                    ${unmatchedSubjectsHtml}
+                    ${conflictsHtml}
+                </div>
+            `,
 
                 confirmButtonText:
-                    "Continuar",
+                    "Revisar horario",
 
                 confirmButtonColor:
-                    hasWarnings
+                    hasUnmatchedSubjects ||
+                        hasConflicts
                         ? "#f59e0b"
                         : "#16a34a",
+
+                width:
+                    720,
             });
         };
 
@@ -414,7 +614,7 @@ function AcademicOfferImportCard({
             await Swal.fire({
                 icon: "error",
                 title: "No se pudo importar el archivo",
-                html: formatImportErrorMessage( errorMessage,),
+                html: formatImportErrorMessage(errorMessage,),
                 confirmButtonText: "Entendido",
             });
         };

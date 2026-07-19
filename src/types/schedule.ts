@@ -51,30 +51,61 @@ export interface ImportedAcademicOffer {
     groups: AcademicOfferGroup[];
 }
 
+export interface AcademicOfferFieldChange {
+    /*
+     * Campo del horario que fue modificado.
+     */
+    label:
+    | "Horario"
+    | "Docente"
+    | "Salón";
+
+    /*
+     * Información antes y después de reemplazar
+     * la oferta académica.
+     */
+    before: string;
+    after: string;
+}
+
+export interface AcademicOfferSubjectChange {
+    subjectName: string;
+    group: string;
+
+    changes:
+    AcademicOfferFieldChange[];
+}
+
 export interface AcademicOfferImportResult {
     /*
-     * Materias cuyo horario, docente, salón
-     * o información de grupo cambió.
+     * Materias seleccionadas por el estudiante que
+     * sí cambiaron dentro del nuevo documento.
      */
     updatedSubjects: number;
 
     /*
-     * Materias que se encontraron en la nueva
-     * oferta, pero mantuvieron la misma información.
+     * Materias seleccionadas que continuaron con
+     * exactamente la misma información.
      */
     unchangedSubjects: number;
 
     /*
-     * Materias o grupos del horario actual que
-     * no aparecieron en la nueva oferta.
+     * Materias o grupos del horario actual que no
+     * aparecieron en la nueva oferta.
      */
     unmatchedSubjects: string[];
 
     /*
-     * Cruces encontrados después de realizar
-     * la sincronización automática.
+     * Cruces encontrados después de aplicar los
+     * cambios automáticos.
      */
     conflictCount: number;
+
+    /*
+     * Detalle materia por materia de cada cambio.
+     */
+    subjectChanges:
+    AcademicOfferSubjectChange[];
 }
 
 export interface ScheduleClass {

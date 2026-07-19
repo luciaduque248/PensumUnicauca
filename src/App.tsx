@@ -49,8 +49,10 @@ import type { StudentProfile } from "./types/studentProfile";
 import type {
   AcademicOfferGroup,
   AcademicOfferImportResult,
+  AcademicOfferSubjectChange,
   ImportedAcademicOffer,
   ScheduleClass,
+  ScheduleDay,
   StudentSchedule,
 } from "./types/schedule";
 
@@ -333,83 +335,403 @@ const findEquivalentOfferGroup = (
  * Crea una firma comparable para saber si la
  * información oficial realmente cambió.
  */
-const getCurrentScheduleGroupSignature = (
+const SCHEDULE_DAY_LABELS:
+  Record<
+    ScheduleDay,
+    string
+  > = {
+  monday: "Lunes",
+  tuesday: "Martes",
+  wednesday: "Miércoles",
+  thursday: "Jueves",
+  friday: "Viernes",
+};
+
+const SCHEDULE_DAY_ORDER:
+  Record<
+    ScheduleDay,
+    number
+  > = {
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+};
+
+const formatScheduleClock = (
+  value: string,
+) => {
+  const [
+    hourText,
+    minuteText = "00",
+  ] = value.split(":");
+
+  const hour =
+    Number(hourText);
+
+  const period =
+    hour < 12
+      ? "a. m."
+      : "p. m.";
+
+  const displayedHour =
+    hour % 12 || 12;
+
+  return `${displayedHour}:${minuteText} ${period}`;
+};
+
+const sortScheduleClasses = (
   scheduleClasses:
     ScheduleClass[],
 ) => {
-  const representativeClass =
-    scheduleClasses[0];
-
-  const meetings =
-    scheduleClasses
-      .map((scheduleClass) =>
-        [
-          scheduleClass.day,
-          scheduleClass.startTime,
-          scheduleClass.endTime,
-          normalizeScheduleComparisonValue(
-            scheduleClass.classroom,
-          ),
-        ].join("|"),
-      )
-      .sort()
-      .join("::");
-
   return [
-    normalizeScheduleComparisonValue(
-      representativeClass
-        ?.subjectCode,
-    ),
-    normalizeScheduleComparisonValue(
-      representativeClass
-        ?.subjectName,
-    ),
-    normalizeScheduleComparisonValue(
-      representativeClass
-        ?.group,
-    ),
-    normalizeScheduleComparisonValue(
-      representativeClass
-        ?.teacher,
-    ),
-    meetings,
-  ].join("###");
+    ...scheduleClasses,
+  ].sort(
+    (
+      firstClass,
+      secondClass,
+    ) => {
+      const dayDifference =
+        SCHEDULE_DAY_ORDER[
+        firstClass.day
+        ] -
+        SCHEDULE_DAY_ORDER[
+        secondClass.day
+        ];
+
+      if (
+        dayDifference !==
+        0
+      ) {
+        return dayDifference;
+      }
+
+      return (
+        scheduleTimeToMinutes(
+          firstClass.startTime,
+        ) -
+        scheduleTimeToMinutes(
+          secondClass.startTime,
+        )
+      );
+    },
+  );
 };
 
-const getOfferGroupSignature = (
+const sortOfferMeetings = (
   offerGroup:
     AcademicOfferGroup,
 ) => {
-  const meetings =
-    offerGroup.meetings
-      .map((meeting) =>
-        [
-          meeting.day,
-          meeting.startTime,
-          meeting.endTime,
-          normalizeScheduleComparisonValue(
-            meeting.classroom,
-          ),
-        ].join("|"),
-      )
-      .sort()
-      .join("::");
-
   return [
-    normalizeScheduleComparisonValue(
-      offerGroup.subjectCode,
+    ...offerGroup.meetings,
+  ].sort(
+    (
+      firstMeeting,
+      secondMeeting,
+    ) => {
+      const dayDifference =
+        SCHEDULE_DAY_ORDER[
+        firstMeeting.day
+        ] -
+        SCHEDULE_DAY_ORDER[
+        secondMeeting.day
+        ];
+
+      if (
+        dayDifference !==
+        0
+      ) {
+        return dayDifference;
+      }
+
+      return (
+        scheduleTimeToMinutes(
+          firstMeeting.startTime,
+        ) -
+        scheduleTimeToMinutes(
+          secondMeeting.startTime,
+        )
+      );
+    },
+  );
+};
+
+const getCurrentScheduleDescription = (
+  scheduleClasses:
+    ScheduleClass[],
+) => {
+  return sortScheduleClasses(
+    scheduleClasses,
+  )
+    .map(
+      (scheduleClass) =>
+        `${SCHEDULE_DAY_LABELS[
+        scheduleClass.day
+        ]} ${formatScheduleClock(
+          scheduleClass.startTime,
+        )}–${formatScheduleClock(
+          scheduleClass.endTime,
+        )}`,
+    )
+    .join(" · ");
+};
+
+const getOfferScheduleDescription = (
+  offerGroup:
+    AcademicOfferGroup,
+) => {
+  return sortOfferMeetings(
+    offerGroup,
+  )
+    .map(
+      (meeting) =>
+        `${SCHEDULE_DAY_LABELS[
+        meeting.day
+        ]} ${formatScheduleClock(
+          meeting.startTime,
+        )}–${formatScheduleClock(
+          meeting.endTime,
+        )}`,
+    )
+    .join(" · ");
+};
+
+/*
+ * Evita repetir un mismo docente cuando una materia
+ * tiene dos franjas semanales.
+ */
+const getUniqueDisplayValues = (
+  values:
+    Array<
+      string | undefined
+    >,
+  fallback: string,
+) => {
+  const uniqueValues =
+    new Map<
+      string,
+      string
+    >();
+
+  values.forEach(
+    (value) => {
+      const cleanValue =
+        value?.trim() ?? "";
+
+      if (
+        cleanValue ===
+        ""
+      ) {
+        return;
+      }
+
+      const normalizedValue =
+        normalizeScheduleComparisonValue(
+          cleanValue,
+        );
+
+      if (
+        !uniqueValues.has(
+          normalizedValue,
+        )
+      ) {
+        uniqueValues.set(
+          normalizedValue,
+          cleanValue,
+        );
+      }
+    },
+  );
+
+  const result =
+    Array.from(
+      uniqueValues.values(),
+    );
+
+  return result.length >
+    0
+    ? result.join(" · ")
+    : fallback;
+};
+
+const getCurrentTeacherDescription = (
+  scheduleClasses:
+    ScheduleClass[],
+) => {
+  return getUniqueDisplayValues(
+    scheduleClasses.map(
+      (scheduleClass) =>
+        scheduleClass.teacher,
     ),
+    "Docente por confirmar",
+  );
+};
+
+const getCurrentClassroomDescription = (
+  scheduleClasses:
+    ScheduleClass[],
+) => {
+  return sortScheduleClasses(
+    scheduleClasses,
+  )
+    .map(
+      (scheduleClass) =>
+        `${SCHEDULE_DAY_LABELS[
+        scheduleClass.day
+        ]}: ${scheduleClass.classroom
+          ?.trim() ||
+        "Salón por confirmar"
+        }`,
+    )
+    .join(" · ");
+};
+
+const getOfferClassroomDescription = (
+  offerGroup:
+    AcademicOfferGroup,
+) => {
+  return sortOfferMeetings(
+    offerGroup,
+  )
+    .map(
+      (meeting) =>
+        `${SCHEDULE_DAY_LABELS[
+        meeting.day
+        ]}: ${meeting.classroom
+          .trim() ||
+        "Salón por confirmar"
+        }`,
+    )
+    .join(" · ");
+};
+
+/*
+ * Compara una materia del horario actual con su
+ * grupo equivalente dentro de la nueva oferta.
+ */
+const buildAcademicOfferSubjectChange = (
+  currentGroupClasses:
+    ScheduleClass[],
+  newOfferGroup:
+    AcademicOfferGroup,
+):
+  | AcademicOfferSubjectChange
+  | null => {
+  const changes:
+    AcademicOfferSubjectChange["changes"] =
+    [];
+
+  const currentSchedule =
+    getCurrentScheduleDescription(
+      currentGroupClasses,
+    );
+
+  const newSchedule =
+    getOfferScheduleDescription(
+      newOfferGroup,
+    );
+
+  if (
     normalizeScheduleComparisonValue(
-      offerGroup.subjectName,
-    ),
+      currentSchedule,
+    ) !==
     normalizeScheduleComparisonValue(
-      offerGroup.group,
-    ),
+      newSchedule,
+    )
+  ) {
+    changes.push({
+      label:
+        "Horario",
+
+      before:
+        currentSchedule ||
+        "Sin horario",
+
+      after:
+        newSchedule ||
+        "Sin horario",
+    });
+  }
+
+  const currentTeacher =
+    getCurrentTeacherDescription(
+      currentGroupClasses,
+    );
+
+  const newTeacher =
+    newOfferGroup.teacher
+      .trim() ||
+    "Docente por confirmar";
+
+  if (
     normalizeScheduleComparisonValue(
-      offerGroup.teacher,
-    ),
-    meetings,
-  ].join("###");
+      currentTeacher,
+    ) !==
+    normalizeScheduleComparisonValue(
+      newTeacher,
+    )
+  ) {
+    changes.push({
+      label:
+        "Docente",
+
+      before:
+        currentTeacher,
+
+      after:
+        newTeacher,
+    });
+  }
+
+  const currentClassrooms =
+    getCurrentClassroomDescription(
+      currentGroupClasses,
+    );
+
+  const newClassrooms =
+    getOfferClassroomDescription(
+      newOfferGroup,
+    );
+
+  if (
+    normalizeScheduleComparisonValue(
+      currentClassrooms,
+    ) !==
+    normalizeScheduleComparisonValue(
+      newClassrooms,
+    )
+  ) {
+    changes.push({
+      label:
+        "Salón",
+
+      before:
+        currentClassrooms ||
+        "Salón por confirmar",
+
+      after:
+        newClassrooms ||
+        "Salón por confirmar",
+    });
+  }
+
+  if (
+    changes.length ===
+    0
+  ) {
+    return null;
+  }
+
+  return {
+    subjectName:
+      newOfferGroup.subjectName,
+
+    group:
+      newOfferGroup.group,
+
+    changes,
+  };
 };
 
 const scheduleTimeToMinutes = (
@@ -562,6 +884,10 @@ const synchronizeScheduleWithOffer = (
   const unmatchedSubjects =
     new Set<string>();
 
+  const subjectChanges:
+    AcademicOfferSubjectChange[] =
+    [];
+
   let updatedSubjects = 0;
   let unchangedSubjects = 0;
 
@@ -638,23 +964,22 @@ const synchronizeScheduleWithOffer = (
         return;
       }
 
-      const currentSignature =
-        getCurrentScheduleGroupSignature(
+      const subjectChange =
+        buildAcademicOfferSubjectChange(
           currentGroupClasses,
-        );
-
-      const newSignature =
-        getOfferGroupSignature(
           equivalentOfferGroup,
         );
 
       if (
-        currentSignature ===
-        newSignature
+        subjectChange
       ) {
-        unchangedSubjects += 1;
-      } else {
         updatedSubjects += 1;
+
+        subjectChanges.push(
+          subjectChange,
+        );
+      } else {
+        unchangedSubjects += 1;
       }
 
       const replacementClasses:
@@ -732,6 +1057,8 @@ const synchronizeScheduleWithOffer = (
       countScheduleConflicts(
         synchronizedClasses,
       ),
+
+    subjectChanges,
   };
 };
 
@@ -2307,6 +2634,7 @@ function App() {
         unchangedSubjects: 0,
         unmatchedSubjects: [],
         conflictCount: 0,
+        subjectChanges: [],
       };
     }
 
@@ -2347,6 +2675,10 @@ function App() {
       conflictCount:
         synchronizationResult
           .conflictCount,
+
+      subjectChanges:
+        synchronizationResult
+          .subjectChanges,
     };
   };
 
