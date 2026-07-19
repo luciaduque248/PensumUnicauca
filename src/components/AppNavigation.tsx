@@ -1,5 +1,6 @@
 import {
     LuBookOpen,
+    LuCalculator,
     LuCalendarDays,
     LuGraduationCap,
     LuHouse,
@@ -9,7 +10,8 @@ export type AppView =
     | "home"
     | "academic-life"
     | "student-record"
-    | "schedule";
+    | "schedule"
+    | "grades";
 
 interface AppNavigationProps {
     currentView: AppView;
@@ -39,6 +41,11 @@ const navigationItems: Array<{
             view: "schedule",
             label: "Horario",
             icon: LuCalendarDays,
+        },
+        {
+            view: "grades",
+            label: "Notas",
+            icon: LuCalculator,
         },
     ];
 
@@ -107,8 +114,8 @@ function AppNavigation({
                             return (
                                 <button
                                     className={`app-navigation__link ${isActive
-                                            ? "app-navigation__link--active"
-                                            : ""
+                                        ? "app-navigation__link--active"
+                                        : ""
                                         }`}
                                     type="button"
                                     key={item.view}

@@ -10,6 +10,7 @@ import "./styles/home.css";
 import "./styles/academic-life.css";
 import "./styles/student-record.css";
 import "./styles/schedule.css";
+import "./styles/grades.css";
 import "./styles/sweetalert.css";
 import "./styles/regulatory.css";
 
@@ -27,6 +28,7 @@ import {
 import AcademicStatistics from "./components/AcademicStatistics";
 import AppNavigation, { type AppView, } from "./components/AppNavigation";
 import DegreeRequirementsCard from "./components/DegreeRequirementsCard";
+import GradesPage from "./components/GradesPage";
 import HomePage from "./components/HomePage";
 import RegulatoryAlerts from "./components/RegulatoryAlerts";
 import SchedulePage from "./components/SchedulePage";
@@ -39,8 +41,16 @@ import { externalPrerequisiteNames } from "./data/prerequisites";
 import { DEFAULT_STUDENT_PROFILE } from "./data/defaultStudentProfile";
 
 import { DEFAULT_STUDENT_SCHEDULE, STUDENT_SCHEDULE_STORAGE_KEY, } from "./data/defaultSchedule";
+import {
+  DEFAULT_STUDENT_GRADE_RECORDS,
+  SUBJECT_GRADE_RECORDS_STORAGE_KEY,
+} from "./data/defaultGrades";
 
 import { useLocalStorage } from "./hooks/useLocalStorage";
+
+import {
+  hasRegisteredGrades,
+} from "./utils/gradeCalculations";
 
 import type {
   CurriculumSection,
@@ -55,6 +65,11 @@ import type {
   SubjectStatus,
 } from "./types/curriculum";
 import type { StudentProfile } from "./types/studentProfile";
+
+import type {
+  StudentGradeRecords,
+  SubjectGradeRecord,
+} from "./types/grades";
 
 import type {
   AcademicOfferGroup,
@@ -1081,7 +1096,8 @@ function App() {
   const currentView: AppView =
     requestedView === "academic-life" ||
       requestedView === "student-record" ||
-      requestedView === "schedule"
+      requestedView === "schedule" ||
+      requestedView === "grades"
       ? requestedView
       : "home";
 
@@ -1093,6 +1109,9 @@ function App() {
 
   const isScheduleView =
     currentView === "schedule";
+
+  const isGradesView =
+    currentView === "grades";
 
   /*
    * =====================================================
@@ -1305,6 +1324,32 @@ function App() {
     normalizeStudentSchedule(
       savedStudentSchedule,
     );
+
+  /*
+   * =====================================================
+   * NOTAS DEL SEMESTRE
+   * =====================================================
+   */
+
+  const [
+    savedSubjectGradeRecords,
+    setSavedSubjectGradeRecords,
+  ] = useLocalStorage<StudentGradeRecords>(
+    SUBJECT_GRADE_RECORDS_STORAGE_KEY,
+    DEFAULT_STUDENT_GRADE_RECORDS,
+  );
+
+  const handleSubjectGradeRecordChange = (
+    subjectCode: string,
+    record: SubjectGradeRecord,
+  ) => {
+    setSavedSubjectGradeRecords(
+      (currentRecords) => ({
+        ...currentRecords,
+        [subjectCode]: record,
+      }),
+    );
+  };
 
   /*
    * =====================================================
@@ -3301,6 +3346,13 @@ function App() {
       },
     ).length;
 
+    const changedGradeRecords =
+      Object.values(
+        savedSubjectGradeRecords,
+      ).filter(
+        hasRegisteredGrades,
+      ).length;
+
     const hasRegulatoryChanges =
       studentRegulatoryRecord
         .hasLowPerformanceHistory ||
@@ -3317,6 +3369,7 @@ function App() {
       changedSubjects === 0 &&
       changedDegreeRequirements === 0 &&
       changedAcademicRecords === 0 &&
+      changedGradeRecords === 0 &&
       !hasRegulatoryChanges
     ) {
       await Swal.fire({
@@ -3357,8 +3410,8 @@ function App() {
 
           <p>
             También se eliminarán los registros de
-            repitencia, intentos y situación
-            reglamentaria.
+            repitencia, intentos, situación
+            reglamentaria y notas del semestre.
           </p>
 
           <p>
@@ -3401,6 +3454,10 @@ function App() {
       DEFAULT_STUDENT_REGULATORY_RECORD,
     );
 
+    setSavedSubjectGradeRecords(
+      DEFAULT_STUDENT_GRADE_RECORDS,
+    );
+
     setSelectedSectionId("all");
     setSelectedStatusFilter("all");
     setSearchTerm("");
@@ -3409,7 +3466,7 @@ function App() {
     await Swal.fire({
       icon: "success",
       title: "Progreso reiniciado",
-      text: "Las materias, requisitos, repitencias y alertas reglamentarias fueron reiniciados.",
+      text: "Las materias, requisitos, repitencias, notas y alertas reglamentarias fueron reiniciados.",
       confirmButtonText: "Entendido",
       confirmButtonColor: "#4f46e5",
     });
@@ -3499,6 +3556,37 @@ function App() {
 
           onDeleteSubject={
             handleDeleteScheduleSubject
+          }
+        />
+      </div>
+    );
+  }
+
+  if (isGradesView) {
+    return (
+      <div className="app">
+        <AppNavigation
+          currentView={currentView}
+        />
+
+        <GradesPage
+          themeMode={themeMode}
+          curriculum={curriculum}
+          subjectStatuses={subjectStatuses}
+          scheduleClasses={
+            studentSchedule.classes
+          }
+          isScheduleConfirmed={
+            studentSchedule.isConfirmed
+          }
+          gradeRecords={
+            savedSubjectGradeRecords
+          }
+          onToggleTheme={
+            handleToggleTheme
+          }
+          onSubjectGradeRecordChange={
+            handleSubjectGradeRecordChange
           }
         />
       </div>
