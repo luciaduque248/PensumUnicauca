@@ -14,6 +14,7 @@ import {
     LuLink,
     LuLoaderCircle,
     LuRefreshCw,
+    LuTrash2,
     LuUpload,
 } from "react-icons/lu";
 
@@ -35,6 +36,9 @@ interface AcademicOfferImportCardProps {
         offer:
             ImportedAcademicOffer,
     ) => void | Promise<void>;
+
+    onRemoveOffer:
+    () => void | Promise<void>;
 }
 
 type ImportMethod =
@@ -44,6 +48,7 @@ type ImportMethod =
 function AcademicOfferImportCard({
     importedOffer,
     onImportOffer,
+    onRemoveOffer,
 }: AcademicOfferImportCardProps) {
     const fileInputRef =
         useRef<HTMLInputElement>(
@@ -120,6 +125,122 @@ function AcademicOfferImportCard({
                 });
 
             return result.isConfirmed;
+        };
+
+    const handleRemoveImportedOffer =
+        async () => {
+            if (
+                !importedOffer ||
+                isImporting
+            ) {
+                return;
+            }
+
+            const result =
+                await Swal.fire({
+                    icon: "warning",
+
+                    title:
+                        "¿Eliminar la oferta importada?",
+
+                    html: `
+                    <div class="swal-confirmation-content">
+                        <p>
+                            Se eliminará el archivo o enlace
+                            utilizado para importar la oferta
+                            académica.
+                        </p>
+
+                        <p>
+                            <strong>
+                                También se borrarán todas las
+                                materias y franjas registradas
+                                actualmente en el horario.
+                            </strong>
+                        </p>
+
+                        <p>
+                            Después tendrás que construir el
+                            horario manualmente o realizar una
+                            nueva importación.
+                        </p>
+                    </div>
+                `,
+
+                    showCancelButton:
+                        true,
+
+                    confirmButtonText:
+                        "Sí, borrar todo",
+
+                    cancelButtonText:
+                        "Conservar horario",
+
+                    confirmButtonColor:
+                        "#dc2626",
+
+                    cancelButtonColor:
+                        "#64748b",
+
+                    reverseButtons:
+                        true,
+
+                    focusCancel:
+                        true,
+
+                    allowOutsideClick:
+                        false,
+                });
+
+            if (
+                !result.isConfirmed
+            ) {
+                return;
+            }
+
+            await onRemoveOffer();
+
+            /*
+             * También se limpia cualquier enlace que
+             * permanezca escrito en el formulario.
+             */
+            setDriveUrl("");
+
+            /*
+             * Se limpia la selección interna del input,
+             * aunque normalmente ya se reinicia después
+             * de cada importación.
+             */
+            if (
+                fileInputRef.current
+            ) {
+                fileInputRef.current.value =
+                    "";
+            }
+
+            setImportMethod(
+                "device",
+            );
+
+            await Swal.fire({
+                toast: true,
+                position: "top-end",
+                icon: "success",
+
+                title:
+                    "Oferta y horario eliminados",
+
+                text:
+                    "Ahora puedes construir el horario manualmente o importar otra oferta.",
+
+                showConfirmButton:
+                    false,
+
+                timer: 2600,
+
+                timerProgressBar:
+                    true,
+            });
         };
 
     const completeImport =
@@ -488,6 +609,25 @@ function AcademicOfferImportCard({
                     </p>
                 )}
             </div>
+
+            {importedOffer && (
+                <button
+                    className="academic-offer-import__delete-button"
+                    type="button"
+                    disabled={
+                        isImporting
+                    }
+                    onClick={() =>
+                        void handleRemoveImportedOffer()
+                    }
+                    aria-label="Eliminar archivo o enlace importado"
+                    title="Eliminar oferta importada y vaciar el horario"
+                >
+                    <LuTrash2
+                        aria-hidden="true"
+                    />
+                </button>
+            )}
 
             <div className="academic-offer-import__controls">
                 <div className="academic-offer-import__methods">

@@ -6926,6 +6926,52 @@ html[data-theme="dark"] .schedule-saved__meeting p {
   color: #334155;
 }
 
+.academic-offer-import__delete-button {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  color: #dc2626;
+  background-color: #fff1f2;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.academic-offer-import__delete-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.academic-offer-import__delete-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  color: #ffffff;
+  border-color: #dc2626;
+  background-color: #dc2626;
+  box-shadow:
+    0 8px 18px rgba(220, 38, 38, 0.2);
+}
+
+.academic-offer-import__delete-button:focus-visible {
+  outline: 3px solid rgba(220, 38, 38, 0.22);
+  outline-offset: 3px;
+}
+
+.academic-offer-import__delete-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .academic-offer-import__input {
   display: none;
 }
@@ -7651,6 +7697,18 @@ html[data-theme="dark"] .academic-offer-import__method-button--active {
 html[data-theme="dark"] .academic-offer-import__method-panel {
   border-color: #334155;
   background-color: #0f172a;
+}
+
+html[data-theme="dark"] .academic-offer-import__delete-button {
+  color: #fca5a5;
+  border-color: #7f1d1d;
+  background-color: rgba(127, 29, 29, 0.28);
+}
+
+html[data-theme="dark"] .academic-offer-import__delete-button:hover:not(:disabled) {
+  color: #ffffff;
+  border-color: #ef4444;
+  background-color: #b91c1c;
 }
 
 html[data-theme="dark"] .academic-offer-import__device strong,

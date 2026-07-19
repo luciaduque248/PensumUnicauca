@@ -1760,6 +1760,55 @@ function App() {
   };
 
   /*
+ * =====================================================
+ * ELIMINAR OFERTA ACADÉMICA IMPORTADA
+ * =====================================================
+ */
+
+  const handleRemoveAcademicOffer = () => {
+    /*
+     * El importador se encuentra oculto después de
+     * confirmar el horario. Esta validación adicional
+     * evita eliminar la oferta mediante una llamada
+     * accidental cuando el horario ya está confirmado.
+     */
+    if (
+      studentSchedule.isConfirmed
+    ) {
+      return;
+    }
+
+    setSavedStudentSchedule(
+      (currentSchedule) => {
+        const normalizedSchedule =
+          normalizeStudentSchedule(
+            currentSchedule,
+          );
+
+        return {
+          ...normalizedSchedule,
+
+          /*
+           * Se elimina el catálogo importado,
+           * independientemente de si provino de
+           * un archivo local o de Google Drive.
+           */
+          importedOffer: null,
+
+          /*
+           * La usuaria solicitó que esta acción
+           * borre completamente el horario.
+           */
+          classes: [],
+
+          isConfirmed: false,
+          confirmedAt: null,
+        };
+      },
+    );
+  };
+
+  /*
    * =====================================================
    * CONFIRMAR HORARIO
    * =====================================================
@@ -2497,6 +2546,10 @@ function App() {
 
           onImportOffer={
             handleImportAcademicOffer
+          }
+
+          onRemoveOffer={
+            handleRemoveAcademicOffer
           }
 
           onConfirmSchedule={

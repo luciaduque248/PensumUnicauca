@@ -50,6 +50,9 @@ interface SchedulePageProps {
             ImportedAcademicOffer,
     ) => void | Promise<void>;
 
+    onRemoveOffer:
+    () => void | Promise<void>;
+
     onConfirmSchedule:
     () => void | Promise<void>;
 
@@ -307,6 +310,7 @@ function SchedulePage({
 
     onToggleTheme,
     onImportOffer,
+    onRemoveOffer,
     onConfirmSchedule,
     onAddClasses,
     onUpdateSubject,
@@ -1249,8 +1253,13 @@ function SchedulePage({
                         importedOffer={
                             importedOffer
                         }
+
                         onImportOffer={
                             onImportOffer
+                        }
+
+                        onRemoveOffer={
+                            onRemoveOffer
                         }
                     />
                 )}
