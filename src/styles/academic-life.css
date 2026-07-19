@@ -1,0 +1,2898 @@
+/*
+ * =========================================================
+ * VIDA ACADÉMICA
+ * =========================================================
+ *
+ * Encabezado, resumen, filtros, semestres, materias,
+ * prerrequisitos, requisitos de grado, estadísticas,
+ * modo oscuro y diseño responsive de esta vista.
+ */
+
+/*
+ * =========================================================
+ * 1. ESTRUCTURA GENERAL
+ * =========================================================
+ */
+
+.header__actions {
+    order: 1;
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.header__theme-button,
+.header__reset-button {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    border: 1px solid rgba(224, 231, 255, 0.35);
+    border-radius: 13px;
+    color: #e0e7ff;
+    background-color: rgba(255, 255, 255, 0.08);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition:
+        transform 160ms ease,
+        color 160ms ease,
+        border-color 160ms ease,
+        background-color 160ms ease;
+}
+
+.header__theme-button:hover,
+.header__reset-button:hover {
+    transform: translateY(-1px);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+.header__theme-button:focus-visible,
+.header__reset-button:focus-visible {
+    outline: 3px solid rgba(199, 210, 254, 0.45);
+    outline-offset: 3px;
+}
+
+
+/*
+ * =========================================================
+ * MODO OSCURO
+ * =========================================================
+ */
+
+html[data-theme="dark"] .main-content {
+    color: #e2e8f0;
+}
+
+/*
+ * Títulos y textos generales
+ */
+
+html[data-theme="dark"] .section-heading h2,
+html[data-theme="dark"] .section-heading__information h2,
+html[data-theme="dark"] .program-requirements__summary-copy h2,
+html[data-theme="dark"] .academic-statistics-panel__copy h2,
+html[data-theme="dark"] .degree-requirements__header h2 {
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .section-heading__description,
+html[data-theme="dark"] .program-requirements__summary-copy>p:last-child,
+html[data-theme="dark"] .academic-statistics-panel__copy>p:last-child,
+html[data-theme="dark"] .degree-requirements__description {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .section-heading__eyebrow {
+    color: #a5b4fc;
+}
+
+html[data-theme="dark"] .summary-card {
+    border-color: #334155;
+    background-color: #0f172a;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+}
+
+html[data-theme="dark"] .summary-card__label,
+html[data-theme="dark"] .summary-card__detail {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .summary-card__value {
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .progress-bar {
+    background-color: #334155;
+}
+
+html[data-theme="dark"] .progress-bar__value {
+    background:
+        linear-gradient(90deg,
+            #818cf8,
+            #a78bfa);
+}
+
+html[data-theme="dark"] .program-requirements,
+html[data-theme="dark"] .academic-statistics-panel {
+    border-color: #334155;
+    background:
+        linear-gradient(145deg,
+            rgba(15, 23, 42, 0.98),
+            rgba(2, 6, 23, 0.98));
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+}
+
+html[data-theme="dark"] .program-requirements__summary:hover,
+html[data-theme="dark"] .academic-statistics-panel__summary:hover {
+    background-color:
+        rgba(51, 65, 85, 0.32);
+}
+
+html[data-theme="dark"] .program-requirements[open] .program-requirements__summary,
+html[data-theme="dark"] .academic-statistics-panel[open] .academic-statistics-panel__summary {
+    border-color: #334155;
+    background-color:
+        rgba(30, 41, 59, 0.5);
+}
+
+html[data-theme="dark"] .program-requirements__summary-action,
+html[data-theme="dark"] .academic-statistics-panel__action {
+    color: #c7d2fe;
+    border-color: #475569;
+    background-color: #1e293b;
+}
+
+html[data-theme="dark"] .academic-statistics {
+    border-color: transparent;
+    background: transparent;
+}
+
+html[data-theme="dark"] .academic-statistic {
+    border-color: #334155;
+    background-color: #111827;
+}
+
+html[data-theme="dark"] .academic-statistic__label {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .academic-statistic__value {
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .academic-statistic__detail {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .curriculum-filter__label {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .curriculum-filter__input,
+html[data-theme="dark"] .curriculum-filter__select {
+    color: #f8fafc;
+    border-color: #334155;
+    background-color: #0f172a;
+}
+
+html[data-theme="dark"] .curriculum-filter__input::placeholder {
+    color: #64748b;
+}
+
+html[data-theme="dark"] .curriculum-filter__input:hover,
+html[data-theme="dark"] .curriculum-filter__select:hover {
+    border-color: #6366f1;
+}
+
+html[data-theme="dark"] .curriculum-filter__input:focus,
+html[data-theme="dark"] .curriculum-filter__select:focus {
+    border-color: #818cf8;
+    box-shadow:
+        0 0 0 4px rgba(129, 140, 248, 0.16);
+}
+
+html[data-theme="dark"] .curriculum-filter__select option {
+    color: #f8fafc;
+    background-color: #0f172a;
+}
+
+html[data-theme="dark"] .curriculum-filter__control-icon {
+    color: #64748b;
+}
+
+html[data-theme="dark"] .status-legend__item,
+html[data-theme="dark"] .filter-results {
+    color: #cbd5e1;
+    border-color: #334155;
+    background-color:
+        rgba(15, 23, 42, 0.92);
+}
+
+html[data-theme="dark"] .filter-results__text {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .filter-results__text strong {
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .filter-results__clear {
+    color: #c7d2fe;
+    border-color: #475569;
+    background-color: #1e293b;
+}
+
+html[data-theme="dark"] .filter-results__clear:hover {
+    border-color: #6366f1;
+    background-color: #312e81;
+}
+
+html[data-theme="dark"] .completed-semesters-toggle {
+    border-color: #334155;
+    background-color:
+        rgba(15, 23, 42, 0.92);
+}
+
+html[data-theme="dark"] .completed-semesters-toggle:hover {
+    border-color: #475569;
+    background-color: #1e293b;
+}
+
+html[data-theme="dark"] .completed-semesters-toggle__copy strong {
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .completed-semesters-toggle__copy small {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .completed-semesters-toggle__box {
+    border-color: #64748b;
+    background-color: #0f172a;
+}
+
+html[data-theme="dark"] .semester-card {
+    color: #e2e8f0;
+    border-color: #334155;
+    background-color: #0f172a;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="dark"] .semester-card--additional {
+    border-color: #6d5cae;
+    background:
+        linear-gradient(145deg,
+            rgba(46, 16, 101, 0.28),
+            rgba(15, 23, 42, 1));
+}
+
+html[data-theme="dark"] .semester-card__header {
+    border-color: #334155;
+}
+
+html[data-theme="dark"] .semester-card__header h3 {
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .semester-card__label {
+    color: #a5b4fc;
+}
+
+html[data-theme="dark"] .semester-card__credits {
+    color: #c7d2fe;
+    background-color: #312e81;
+}
+
+html[data-theme="dark"] .semester-progress {
+    border-color: #334155;
+    background:
+        linear-gradient(135deg,
+            rgba(15, 23, 42, 0.98),
+            rgba(17, 24, 39, 0.98));
+}
+
+html[data-theme="dark"] .semester-card--completed .semester-progress {
+    border-color: #166534;
+    background:
+        linear-gradient(135deg,
+            rgba(20, 83, 45, 0.2),
+            rgba(15, 23, 42, 0.98));
+}
+
+html[data-theme="dark"] .semester-progress__label,
+html[data-theme="dark"] .semester-progress__statistic span {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .semester-progress__percentage,
+html[data-theme="dark"] .semester-progress__statistic strong {
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .semester-progress__bar {
+    background-color: #334155;
+}
+
+html[data-theme="dark"] .semester-progress__divider {
+    background-color: #334155;
+}
+
+html[data-theme="dark"] .subject-card--pending {
+    border-color: #334155;
+    background-color: #111827;
+}
+
+html[data-theme="dark"] .subject-card--in-progress {
+    border-color: #b45309;
+    background-color:
+        rgba(120, 53, 15, 0.22);
+}
+
+html[data-theme="dark"] .subject-card--approved {
+    border-color: #15803d;
+    background-color:
+        rgba(20, 83, 45, 0.25);
+}
+
+html[data-theme="dark"] .subject-card--blocked {
+    border-color: #475569;
+    background:
+        repeating-linear-gradient(-45deg,
+            rgba(30, 41, 59, 0.95),
+            rgba(30, 41, 59, 0.95) 10px,
+            rgba(15, 23, 42, 0.95) 10px,
+            rgba(15, 23, 42, 0.95) 20px);
+}
+
+html[data-theme="dark"] .subject-card h4,
+html[data-theme="dark"] .subject-card--blocked h4 {
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .subject-card__code {
+    color: #a5b4fc;
+}
+
+html[data-theme="dark"] .subject-card__credits {
+    color: #cbd5e1;
+    background-color: #0f172a;
+}
+
+html[data-theme="dark"] .subject-card__no-prerequisites {
+    color: #64748b;
+}
+
+html[data-theme="dark"] .status-selector {
+    background-color:
+        rgba(51, 65, 85, 0.65);
+}
+
+html[data-theme="dark"] .status-selector__button {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .status-selector__button:hover {
+    color: #f8fafc;
+    background-color:
+        rgba(15, 23, 42, 0.72);
+}
+
+html[data-theme="dark"] .status-selector__button--active-pending {
+    color: #f8fafc;
+    background-color: #1e293b;
+}
+
+html[data-theme="dark"] .status-selector__button--active-progress {
+    color: #fde68a;
+    background-color: #78350f;
+}
+
+html[data-theme="dark"] .status-selector__button--active-approved {
+    color: #bbf7d0;
+    background-color: #14532d;
+}
+
+html[data-theme="dark"] .subject-card__lock-message {
+    border-color: #475569;
+    background-color:
+        rgba(15, 23, 42, 0.78);
+}
+
+html[data-theme="dark"] .subject-card__lock-icon {
+    color: #cbd5e1;
+    background-color: #334155;
+}
+
+html[data-theme="dark"] .subject-card__lock-message strong {
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .subject-card__lock-message span:last-child {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .prerequisites,
+html[data-theme="dark"] .unlocks {
+    border-color: #334155;
+}
+
+html[data-theme="dark"] .prerequisites__item,
+html[data-theme="dark"] .unlocks__item {
+    border-color: #334155;
+    background-color:
+        rgba(15, 23, 42, 0.86);
+}
+
+html[data-theme="dark"] .prerequisites__name,
+html[data-theme="dark"] .unlocks__name {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .prerequisites__code {
+    color: #c7d2fe;
+    background-color: #312e81;
+}
+
+html[data-theme="dark"] .unlocks__code {
+    color: #bae6fd;
+    background-color: #0c4a6e;
+}
+
+html[data-theme="dark"] .degree-requirements {
+    border-color: #475569;
+    background:
+        linear-gradient(135deg,
+            rgba(30, 27, 75, 0.42),
+            rgba(15, 23, 42, 0.98));
+    box-shadow: none;
+}
+
+html[data-theme="dark"] .degree-requirement {
+    border-color: #334155;
+    background-color: #111827;
+}
+
+html[data-theme="dark"] .degree-requirement--completed {
+    border-color: #15803d;
+    background-color:
+        rgba(20, 83, 45, 0.24);
+}
+
+html[data-theme="dark"] .degree-requirement h3 {
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .degree-requirement>p {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .degree-requirement__actions {
+    background-color:
+        rgba(51, 65, 85, 0.72);
+}
+
+html[data-theme="dark"] .degree-requirement__button {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .degree-requirement__button--active-pending {
+    color: #f8fafc;
+    background-color: #1e293b;
+}
+
+html[data-theme="dark"] .degree-requirement__button--active-completed {
+    color: #bbf7d0;
+    background-color: #14532d;
+}
+
+html[data-theme="dark"] .curriculum-empty {
+    border-color: #475569;
+    background-color:
+        rgba(15, 23, 42, 0.86);
+}
+
+html[data-theme="dark"] .curriculum-empty h3 {
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .curriculum-empty p {
+    color: #94a3b8;
+}
+
+
+
+
+
+/*
+ * =========================================================
+ * 1-1. ESTRUCTURA GENERAL
+ * =========================================================
+ */
+
+
+.main-content {
+    width: min(1200px, calc(100% - 32px));
+    margin: -58px auto 0;
+    padding-bottom: 72px;
+}
+
+.curriculum {
+    margin-top: 64px;
+}
+
+/*
+ * =========================================================
+ * 2. ENCABEZADO
+ * =========================================================
+ */
+
+.header {
+    padding: 64px 24px 110px;
+    color: #ffffff;
+    background:
+        radial-gradient(circle at top right,
+            rgba(99, 102, 241, 0.55),
+            transparent 35%),
+        linear-gradient(135deg, #0f172a, #172554 55%, #312e81);
+}
+
+.header__content {
+    width: min(1200px, 100%);
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 32px;
+}
+
+.header__intro {
+    padding-top: 50px;
+    order: 2;
+    max-width: 800px;
+    margin-left: auto;
+    text-align: right;
+}
+
+.header__career {
+    margin: 0 0 12px;
+    color: #c7d2fe;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.header h1 {
+    max-width: none;
+    margin: 0;
+    font-size: clamp(2.8rem, 5vw, 4.2rem);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+}
+
+.header__description {
+    max-width: 680px;
+    margin: 24px 0 0 auto;
+    color: #e0e7ff;
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+.header__reset-button {
+    display: inline-flex;
+    min-height: 44px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    border: 1px solid rgba(224, 231, 255, 0.35);
+    border-radius: 13px;
+    color: #e0e7ff;
+    background-color: rgba(255, 255, 255, 0.08);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition:
+        transform 160ms ease,
+        color 160ms ease,
+        border-color 160ms ease,
+        background-color 160ms ease;
+}
+
+
+.curriculum-filter__control {
+    position: relative;
+    width: 100%;
+}
+
+.curriculum-filter__control-icon {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    width: 17px;
+    height: 17px;
+    color: #94a3b8;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.curriculum-filter__control .curriculum-filter__input {
+    padding-right: 14px;
+    padding-left: 42px;
+}
+
+.header__reset-button:hover {
+    transform: translateY(-1px);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+.header__reset-button:focus-visible {
+    outline: 3px solid rgba(199, 210, 254, 0.45);
+    outline-offset: 3px;
+}
+
+/*
+ * =========================================================
+ * 3. RESUMEN ACADÉMICO
+ * =========================================================
+ */
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.summary--four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.summary-card {
+    display: flex;
+    min-height: 170px;
+    flex-direction: column;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 22px;
+    background-color: #ffffff;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
+}
+
+.summary-card__label {
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.summary-card__value {
+    margin-top: 18px;
+    color: #0f172a;
+    font-size: 2.4rem;
+    line-height: 1;
+}
+
+.summary-card__detail {
+    margin-top: auto;
+    color: #64748b;
+    font-size: 0.88rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    margin: 18px 0 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: #e2e8f0;
+}
+
+.progress-bar__value {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #4f46e5, #7c3aed);
+    transition: width 250ms ease;
+}
+
+/*
+ * =========================================================
+ * 4. TÍTULOS, FILTRO Y LEYENDA
+ * =========================================================
+ */
+
+.section-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 32px;
+    margin-bottom: 24px;
+}
+
+.section-heading__eyebrow {
+    margin: 0 0 8px;
+    color: #4f46e5;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.section-heading h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    letter-spacing: -0.03em;
+}
+
+.section-heading__description {
+    max-width: 390px;
+    margin: 0;
+    color: #64748b;
+    line-height: 1.6;
+}
+
+.semester-filter {
+    display: flex;
+    min-width: 230px;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.semester-filter__label {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.semester-filter__select {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 38px 0 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 13px;
+    color: #1e293b;
+    background-color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition:
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.semester-filter__select:hover {
+    border-color: #a5b4fc;
+}
+
+.semester-filter__select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+.status-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.status-legend__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    color: #475569;
+    background-color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.status-legend__dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+}
+
+.status-legend__dot--pending {
+    background-color: #94a3b8;
+}
+
+.status-legend__dot--progress {
+    background-color: #f59e0b;
+}
+
+.status-legend__dot--approved {
+    background-color: #22c55e;
+}
+
+/*
+ * =========================================================
+ * 5. ESTADO VACÍO
+ * =========================================================
+ */
+
+.empty-state {
+    display: flex;
+    min-height: 330px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 24px;
+    background-color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+}
+
+.empty-state__icon {
+    display: grid;
+    width: 72px;
+    height: 72px;
+    place-items: center;
+    border-radius: 20px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    font-size: 1.4rem;
+    font-weight: 800;
+    box-shadow: 0 14px 28px rgba(79, 70, 229, 0.25);
+}
+
+.empty-state h3 {
+    margin: 24px 0 8px;
+    color: #0f172a;
+    font-size: 1.35rem;
+}
+
+.empty-state p {
+    max-width: 460px;
+    margin: 0;
+    color: #64748b;
+    line-height: 1.6;
+}
+
+/*
+ * =========================================================
+ * 6. CUADRÍCULA Y TARJETAS DE SEMESTRE
+ * =========================================================
+ */
+
+.curriculum-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: auto;
+    gap: 24px;
+    align-items: stretch;
+}
+
+.curriculum-grid>.semester-card {
+    height: 100%;
+}
+
+.semester-card {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    align-self: stretch;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    background-color: #ffffff;
+    box-shadow: 0 14px 35px rgba(15, 23, 42, 0.07);
+}
+
+.semester-card--additional {
+    border-color: #c4b5fd;
+    background: linear-gradient(145deg,
+            rgba(245, 243, 255, 0.9),
+            rgba(255, 255, 255, 1));
+}
+
+.semester-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 22px 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.semester-card__label {
+    display: block;
+    margin-bottom: 5px;
+    color: #6366f1;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.semester-card__header h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+}
+
+.semester-card__actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.semester-card__approve-button {
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    color: #166534;
+    background-color: #f0fdf4;
+    font-size: 0.72rem;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.semester-card__approve-button svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.semester-card__approve-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: #86efac;
+    background-color: #dcfce7;
+    box-shadow: 0 7px 16px rgba(22, 101, 52, 0.12);
+}
+
+.semester-card__approve-button:disabled {
+    color: #64748b;
+    border-color: #e2e8f0;
+    background-color: #f1f5f9;
+    cursor: default;
+}
+
+.semester-card__credits {
+    display: flex;
+    min-width: 70px;
+    flex-direction: column;
+    align-items: center;
+    padding: 9px 12px;
+    border-radius: 14px;
+    color: #3730a3;
+    background-color: #eef2ff;
+}
+
+.semester-card__credits strong {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.semester-card__credits span {
+    margin-top: 3px;
+    font-size: 0.68rem;
+}
+
+.subject-list {
+    display: flex;
+    flex: 0 0 auto;
+    flex-grow: 0;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 16px;
+}
+
+/*
+ * =========================================================
+ * 7. TARJETAS DE MATERIA
+ * =========================================================
+ */
+
+.subject-card {
+    display: block;
+    min-height: 78px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background-color: #f8fafc;
+    transition:
+        transform 180ms ease,
+        border-color 180ms ease,
+        background-color 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.subject-card:hover {
+    transform: translateY(-2px);
+    border-color: #a5b4fc;
+    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.09);
+}
+
+.subject-card--pending {
+    border-color: #e2e8f0;
+    background-color: #f8fafc;
+}
+
+.subject-card--in-progress {
+    border-color: #fbbf24;
+    background-color: #fffbeb;
+}
+
+.subject-card--approved {
+    border-color: #86efac;
+    background-color: #f0fdf4;
+}
+
+.subject-card--blocked {
+    border-color: #cbd5e1;
+    background: repeating-linear-gradient(-45deg,
+            rgba(241, 245, 249, 0.95),
+            rgba(241, 245, 249, 0.95) 10px,
+            rgba(248, 250, 252, 0.95) 10px,
+            rgba(248, 250, 252, 0.95) 20px);
+    box-shadow: none;
+}
+
+.subject-card--blocked:hover {
+    transform: none;
+    border-color: #94a3b8;
+    box-shadow: none;
+}
+
+.subject-card--blocked h4 {
+    color: #475569;
+}
+
+.subject-card__information {
+    min-width: 0;
+}
+
+.subject-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.subject-card__code-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.subject-card__code-row .subject-card__code {
+    margin-bottom: 0;
+}
+
+.subject-card__code {
+    display: block;
+    margin-bottom: 5px;
+    color: #6366f1;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+.subject-card h4 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.subject-card__credits {
+    flex-shrink: 0;
+    padding: 6px 9px;
+    border-radius: 10px;
+    color: #475569;
+    background-color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.subject-card__status {
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 0.63rem;
+    font-weight: 800;
+}
+
+.subject-card__status--pending {
+    color: #475569;
+    background-color: #e2e8f0;
+}
+
+.subject-card__status--in-progress {
+    color: #92400e;
+    background-color: #fde68a;
+}
+
+.subject-card__status--approved {
+    color: #166534;
+    background-color: #bbf7d0;
+}
+
+.subject-card__status--blocked {
+    color: #475569;
+    background-color: #cbd5e1;
+}
+
+.subject-card__no-prerequisites {
+    margin: 12px 0 0;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.subject-card__lock-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 11px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.75);
+}
+
+.subject-card__lock-icon {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 8px;
+    background-color: #e2e8f0;
+    font-size: 0.8rem;
+}
+
+.subject-card__lock-message div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.subject-card__lock-message strong {
+    color: #334155;
+    font-size: 0.75rem;
+}
+
+.subject-card__lock-message span:last-child {
+    color: #64748b;
+    font-size: 0.7rem;
+    line-height: 1.45;
+}
+
+/*
+ * =========================================================
+ * 8. PRERREQUISITOS
+ * =========================================================
+ */
+
+.prerequisites {
+    margin-top: 13px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 11px;
+}
+
+.prerequisites__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: #4f46e5;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.prerequisites__summary::-webkit-details-marker {
+    display: none;
+}
+
+.prerequisites__toggle-icon {
+    display: grid;
+    width: 21px;
+    height: 21px;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 7px;
+    color: #4f46e5;
+    background-color: #eef2ff;
+}
+
+.prerequisites__toggle-icon svg {
+    width: 13px;
+    height: 13px;
+}
+
+.prerequisites__icon--open {
+    display: none;
+}
+
+.prerequisites[open] .prerequisites__icon--closed {
+    display: none;
+}
+
+.prerequisites[open] .prerequisites__icon--open {
+    display: block;
+}
+
+.prerequisites__summary>span:first-of-type {
+    margin-right: auto;
+}
+
+.prerequisites__count {
+    display: grid;
+    min-width: 23px;
+    height: 23px;
+    place-items: center;
+    padding: 0 7px;
+    border-radius: 999px;
+    color: #4338ca;
+    background-color: #e0e7ff;
+    font-size: 0.68rem;
+}
+
+.prerequisites__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.prerequisites__item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px;
+    border-radius: 11px;
+    background-color: #ffffff;
+}
+
+.prerequisites__code {
+    flex-shrink: 0;
+    padding: 4px 7px;
+    border-radius: 7px;
+    color: #3730a3;
+    background-color: #eef2ff;
+    font-size: 0.65rem;
+    font-weight: 800;
+}
+
+.prerequisites__name {
+    color: #475569;
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.4;
+    flex: 1;
+    min-width: 0;
+}
+
+.prerequisites__status {
+    flex-shrink: 0;
+    padding: 4px 7px;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.prerequisites__status--pending {
+    color: #475569;
+    background-color: #e2e8f0;
+}
+
+.prerequisites__status--in-progress {
+    color: #92400e;
+    background-color: #fef3c7;
+}
+
+.prerequisites__status--approved {
+    color: #166534;
+    background-color: #dcfce7;
+}
+
+.prerequisites__status--external {
+    color: #5b21b6;
+    background-color: #ede9fe;
+}
+
+/*
+ * =========================================================
+ * 9. SELECTOR DE ESTADO
+ * =========================================================
+ */
+
+.status-selector {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 14px;
+    padding: 5px;
+    border-radius: 13px;
+    background-color: rgba(226, 232, 240, 0.65);
+}
+
+.status-selector__button {
+    min-height: 34px;
+    padding: 7px 6px;
+    border: 0;
+    border-radius: 9px;
+    color: #64748b;
+    background-color: transparent;
+    font-size: 0.68rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        color 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.status-selector__button:hover {
+    color: #0f172a;
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+.status-selector__button:disabled {
+    color: #94a3b8;
+    background-color: transparent;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.status-selector__button:disabled:hover {
+    color: #94a3b8;
+    background-color: transparent;
+}
+
+.status-selector__button--active-pending {
+    color: #334155;
+    background-color: #ffffff;
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.1);
+}
+
+.status-selector__button--active-progress {
+    color: #92400e;
+    background-color: #fef3c7;
+    box-shadow: 0 3px 8px rgba(146, 64, 14, 0.12);
+}
+
+.status-selector__button--active-approved {
+    color: #166534;
+    background-color: #dcfce7;
+    box-shadow: 0 3px 8px rgba(22, 101, 52, 0.12);
+}
+
+/*
+ * =========================================================
+ * 10. REQUISITOS DE GRADO
+ * =========================================================
+ */
+
+.degree-requirements {
+    display: flex;
+    width: 100%;
+    height: auto;
+    min-width: 0;
+    flex-direction: column;
+    margin-top: 0;
+    padding: 28px;
+    border: 1px solid #ddd6fe;
+    border-radius: 24px;
+    background: linear-gradient(135deg,
+            rgba(245, 243, 255, 0.96),
+            rgba(250, 250, 255, 0.98));
+    box-shadow: 0 18px 45px rgba(76, 29, 149, 0.08);
+}
+
+.degree-requirements__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.degree-requirements__header h2 {
+    margin: 5px 0 0;
+    color: #1e1b4b;
+}
+
+.degree-requirements__description {
+    max-width: 630px;
+    margin: 9px 0 0;
+    color: #64748b;
+    font-size: 0.88rem;
+    line-height: 1.6;
+}
+
+.degree-requirements__summary {
+    display: flex;
+    min-width: 118px;
+    flex-shrink: 0;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.degree-requirements__summary strong {
+    color: #5b21b6;
+    font-size: 1.5rem;
+}
+
+.degree-requirements__summary span {
+    color: #7c3aed;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.degree-requirements__progress {
+    width: 100%;
+    height: 8px;
+    margin: 22px 0;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: #e9d5ff;
+}
+
+.degree-requirements__progress-value {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+    transition: width 250ms ease;
+}
+
+.degree-requirements__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    gap: 16px;
+}
+
+.degree-requirement {
+    display: flex;
+    height: auto;
+    min-width: 0;
+    flex-direction: column;
+    padding: 18px;
+    border: 1px solid #e2e8f0;
+    border-radius: 17px;
+    background-color: #ffffff;
+    transition:
+        transform 180ms ease,
+        border-color 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.degree-requirement:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(76, 29, 149, 0.09);
+}
+
+.degree-requirement--completed {
+    border-color: #86efac;
+    background-color: #f0fdf4;
+}
+
+.degree-requirement__heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.degree-requirement__code {
+    padding: 5px 8px;
+    border-radius: 8px;
+    color: #5b21b6;
+    background-color: #ede9fe;
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+.degree-requirement__status {
+    padding: 5px 8px;
+    border-radius: 999px;
+    font-size: 0.63rem;
+    font-weight: 800;
+}
+
+.degree-requirement__status--pending {
+    color: #475569;
+    background-color: #e2e8f0;
+}
+
+.degree-requirement__status--completed {
+    color: #166534;
+    background-color: #bbf7d0;
+}
+
+.degree-requirement h3 {
+    margin: 15px 0 8px;
+    color: #1e293b;
+    font-size: 0.98rem;
+    line-height: 1.4;
+}
+
+.degree-requirement>p {
+    flex: 1;
+    margin: 0;
+    color: #64748b;
+    font-size: 0.76rem;
+    line-height: 1.55;
+}
+
+.degree-requirement__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 16px;
+    padding: 5px;
+    border-radius: 13px;
+    background-color: rgba(226, 232, 240, 0.7);
+}
+
+.degree-requirement__button {
+    min-height: 36px;
+    padding: 7px 8px;
+    border: 0;
+    border-radius: 9px;
+    color: #64748b;
+    background-color: transparent;
+    font-size: 0.68rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.degree-requirement__button:disabled {
+    cursor: default;
+    opacity: 1;
+}
+
+.degree-requirement__button--active-pending {
+    color: #334155;
+    background-color: #ffffff;
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.1);
+}
+
+.degree-requirement__button--active-completed {
+    color: #166534;
+    background-color: #dcfce7;
+    box-shadow: 0 3px 8px rgba(22, 101, 52, 0.12);
+}
+
+/*
+ * =========================================================
+ * 11. BLOQUE DESPLEGABLE DE REQUISITOS DEL PROGRAMA
+ * =========================================================
+ */
+
+.program-requirements {
+    margin-top: 42px;
+    overflow: hidden;
+    border: 1px solid #ddd6fe;
+    border-radius: 26px;
+    background: linear-gradient(145deg,
+            rgba(245, 243, 255, 0.78),
+            rgba(248, 250, 252, 0.96));
+    box-shadow: 0 18px 45px rgba(76, 29, 149, 0.08);
+}
+
+.program-requirements__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    min-height: 126px;
+    padding: 24px 26px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    transition:
+        background-color 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.program-requirements__summary::-webkit-details-marker {
+    display: none;
+}
+
+.program-requirements__summary::marker {
+    content: "";
+}
+
+.program-requirements__summary:hover {
+    background-color: rgba(255, 255, 255, 0.45);
+}
+
+.program-requirements__summary:focus-visible {
+    outline: 3px solid rgba(99, 102, 241, 0.25);
+    outline-offset: -3px;
+}
+
+.program-requirements[open] .program-requirements__summary {
+    border-bottom: 1px solid #ddd6fe;
+    background-color: rgba(255, 255, 255, 0.38);
+}
+
+.program-requirements__summary-copy {
+    min-width: 0;
+}
+
+.program-requirements__summary-copy h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: clamp(1.35rem, 3vw, 2.05rem);
+    letter-spacing: -0.03em;
+}
+
+.program-requirements__summary-copy>p:last-child {
+    max-width: 720px;
+    margin: 9px 0 0;
+    color: #64748b;
+    font-size: 0.84rem;
+    line-height: 1.6;
+}
+
+.program-requirements__summary-action {
+    display: inline-flex;
+    min-width: 112px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 10px 13px;
+    border: 1px solid #c7d2fe;
+    border-radius: 13px;
+    color: #4338ca;
+    background-color: #eef2ff;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.program-requirements__state--open {
+    display: none;
+}
+
+.program-requirements[open] .program-requirements__state--closed {
+    display: none;
+}
+
+.program-requirements[open] .program-requirements__state--open {
+    display: inline;
+}
+
+.program-requirements__chevron {
+    display: block;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    transition: transform 200ms ease;
+}
+
+.curriculum-empty__icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.program-requirements[open] .program-requirements__chevron {
+    transform: rotate(180deg);
+}
+
+.program-requirements__content {
+    padding: 24px 26px 26px;
+}
+
+.program-requirements__column {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 24px;
+}
+
+.program-requirements__column>* {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+}
+
+.program-requirements__column .semester-card,
+.program-requirements__column .degree-requirements {
+    height: auto;
+    min-height: 0;
+    align-self: start;
+}
+
+.program-requirements__column .subject-list {
+    flex: 0 0 auto;
+}
+
+
+
+/*
+ * =========================================================
+ * ESTADÍSTICAS ACADÉMICAS
+ * =========================================================
+ */
+
+.academic-statistics {
+    margin-top: 42px;
+    padding: 26px;
+    border: 1px solid #e2e8f0;
+    border-radius: 26px;
+    background:
+        linear-gradient(145deg,
+            rgba(255, 255, 255, 0.98),
+            rgba(248, 250, 252, 0.96));
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+}
+
+.academic-statistics__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 22px;
+}
+
+.academic-statistics__header h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    letter-spacing: -0.03em;
+}
+
+.academic-statistics__header>div>p:last-child {
+    max-width: 650px;
+    margin: 9px 0 0;
+    color: #64748b;
+    font-size: 0.84rem;
+    line-height: 1.6;
+}
+
+.academic-statistics__grid {
+    display: grid;
+    grid-template-columns: repeat(3,
+            minmax(0, 1fr));
+    gap: 14px;
+}
+
+.academic-statistic {
+    --stat-color: #4338ca;
+    --stat-background: #eef2ff;
+    --stat-border: #c7d2fe;
+
+    display: flex;
+    min-width: 0;
+    min-height: 140px;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid var(--stat-border);
+    border-radius: 18px;
+    background-color: #ffffff;
+    transition:
+        transform 180ms ease,
+        border-color 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.academic-statistic:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+}
+
+.academic-statistic--approved {
+    --stat-color: #15803d;
+    --stat-background: #dcfce7;
+    --stat-border: #bbf7d0;
+}
+
+.academic-statistic--progress {
+    --stat-color: #b45309;
+    --stat-background: #fef3c7;
+    --stat-border: #fde68a;
+}
+
+.academic-statistic--blocked {
+    --stat-color: #be123c;
+    --stat-background: #ffe4e6;
+    --stat-border: #fecdd3;
+}
+
+.academic-statistic--credits {
+    --stat-color: #4338ca;
+    --stat-background: #e0e7ff;
+    --stat-border: #c7d2fe;
+}
+
+.academic-statistic--semesters {
+    --stat-color: #7e22ce;
+    --stat-background: #f3e8ff;
+    --stat-border: #e9d5ff;
+}
+
+.academic-statistic--strongest {
+    --stat-color: #0369a1;
+    --stat-background: #e0f2fe;
+    --stat-border: #bae6fd;
+}
+
+.academic-statistic__icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 13px;
+    color: var(--stat-color);
+    background-color: var(--stat-background);
+}
+
+.academic-statistic__icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.academic-statistic__information {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+}
+
+.academic-statistic__label {
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.academic-statistic__value {
+    margin-top: 9px;
+    color: #0f172a;
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+.academic-statistic__value--text {
+    overflow-wrap: anywhere;
+    font-size: 1.15rem;
+    line-height: 1.25;
+}
+
+.academic-statistic__detail {
+    margin-top: auto;
+    padding-top: 12px;
+    color: #94a3b8;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+@media (max-width: 950px) {
+    .academic-statistics__grid {
+        grid-template-columns: repeat(2,
+                minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 580px) {
+    .academic-statistics {
+        padding: 20px;
+        border-radius: 22px;
+    }
+
+    .academic-statistics__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .academic-statistic {
+        min-height: 125px;
+    }
+}
+
+/*
+ * =========================================================
+ * MOSTRAR SEMESTRES COMPLETADOS
+ * =========================================================
+ */
+
+.completed-semesters-toggle {
+    display: flex;
+    grid-column: 1 / -1;
+    min-width: 0;
+    align-items: center;
+    gap: 11px;
+    padding: 12px 14px;
+    border: 1px solid #dbeafe;
+    border-radius: 14px;
+    background-color: rgba(239, 246, 255, 0.72);
+    cursor: pointer;
+    user-select: none;
+    transition:
+        border-color 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.completed-semesters-toggle:hover {
+    border-color: #93c5fd;
+    background-color: #eff6ff;
+}
+
+.completed-semesters-toggle__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.completed-semesters-toggle__box {
+    display: grid;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    place-items: center;
+    border: 2px solid #94a3b8;
+    border-radius: 7px;
+    color: #ffffff;
+    background-color: #ffffff;
+    transition:
+        border-color 160ms ease,
+        background-color 160ms ease,
+        transform 160ms ease;
+}
+
+.completed-semesters-toggle__box svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0;
+    transform: scale(0.7);
+    transition:
+        opacity 160ms ease,
+        transform 160ms ease;
+}
+
+.completed-semesters-toggle__input:checked+.completed-semesters-toggle__box {
+    border-color: #16a34a;
+    background-color: #16a34a;
+}
+
+.completed-semesters-toggle__input:checked+.completed-semesters-toggle__box svg {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.completed-semesters-toggle__input:focus-visible+.completed-semesters-toggle__box {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: 3px;
+}
+
+.completed-semesters-toggle__copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.completed-semesters-toggle__copy strong {
+    color: #334155;
+    font-size: 0.75rem;
+}
+
+.completed-semesters-toggle__copy small {
+    color: #64748b;
+    font-size: 0.67rem;
+    line-height: 1.4;
+}
+
+/*
+ * =========================================================
+ * PANEL DESPLEGABLE DE ESTADÍSTICAS
+ * =========================================================
+ */
+
+.academic-statistics-panel {
+    margin-top: 42px;
+    overflow: hidden;
+    border: 1px solid #dbeafe;
+    border-radius: 26px;
+    background:
+        linear-gradient(145deg,
+            rgba(239, 246, 255, 0.72),
+            rgba(248, 250, 252, 0.96));
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+}
+
+.academic-statistics-panel__summary {
+    display: flex;
+    min-height: 126px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 24px 26px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    transition:
+        background-color 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.academic-statistics-panel__summary::-webkit-details-marker {
+    display: none;
+}
+
+.academic-statistics-panel__summary::marker {
+    content: "";
+}
+
+.academic-statistics-panel__summary:hover {
+    background-color: rgba(255, 255, 255, 0.48);
+}
+
+.academic-statistics-panel__summary:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: -3px;
+}
+
+.academic-statistics-panel[open] .academic-statistics-panel__summary {
+    border-bottom: 1px solid #dbeafe;
+    background-color: rgba(255, 255, 255, 0.38);
+}
+
+.academic-statistics-panel__copy {
+    min-width: 0;
+}
+
+.academic-statistics-panel__copy h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: clamp(1.35rem, 3vw, 2.05rem);
+    letter-spacing: -0.03em;
+}
+
+.academic-statistics-panel__copy>p:last-child {
+    max-width: 720px;
+    margin: 9px 0 0;
+    color: #64748b;
+    font-size: 0.84rem;
+    line-height: 1.6;
+}
+
+.academic-statistics-panel__action {
+    display: inline-flex;
+    min-width: 112px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 10px 13px;
+    border: 1px solid #bfdbfe;
+    border-radius: 13px;
+    color: #1d4ed8;
+    background-color: #eff6ff;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.academic-statistics-panel__state--open {
+    display: none;
+}
+
+.academic-statistics-panel[open] .academic-statistics-panel__state--closed {
+    display: none;
+}
+
+.academic-statistics-panel[open] .academic-statistics-panel__state--open {
+    display: inline;
+}
+
+.academic-statistics-panel__chevron {
+    display: block;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    transition: transform 200ms ease;
+}
+
+.academic-statistics-panel[open] .academic-statistics-panel__chevron {
+    transform: rotate(180deg);
+}
+
+.academic-statistics-panel__content {
+    padding: 24px 26px 26px;
+}
+
+/*
+ * El componente interno conserva solamente
+ * las tarjetas, sin crear otro recuadro exterior.
+ */
+.academic-statistics-panel__content .academic-statistics {
+    margin-top: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+/*
+ * =========================================================
+ * 12. DISEÑO RESPONSIVO
+ * =========================================================
+ */
+
+@media (max-width: 620px) {
+    .academic-statistics-panel {
+        border-radius: 22px;
+    }
+
+    .academic-statistics-panel__summary {
+        min-height: 0;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+    }
+
+    .academic-statistics-panel__action {
+        min-width: 0;
+        align-self: flex-start;
+    }
+
+    .academic-statistics-panel__content {
+        padding: 20px;
+    }
+
+    .completed-semesters-toggle {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 1050px) {
+    .summary--four {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .degree-requirements__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+    .curriculum-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 800px) {
+    .header {
+        padding-top: 48px;
+    }
+
+    .summary {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-card {
+        min-height: 145px;
+    }
+
+    .section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 760px) {
+    .header__intro {
+        order: 1;
+        max-width: none;
+        margin-left: 0;
+        text-align: left;
+    }
+
+    .header__description {
+        margin: 24px 0 0;
+    }
+
+    .header__actions {
+        order: 2;
+        width: 100%;
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .header__theme-button,
+    .header__reset-button {
+        width: 100%;
+    }
+
+    .header__content {
+        flex-direction: column;
+    }
+
+    .header__reset-button {
+        align-self: flex-start;
+    }
+
+    .curriculum-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .curriculum-filter--search {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 620px) {
+    .header h1 {
+        white-space: normal;
+    }
+
+
+    .summary--four {
+        grid-template-columns: 1fr;
+    }
+
+    .degree-requirements {
+        padding: 20px;
+    }
+
+    .degree-requirements__header {
+        flex-direction: column;
+    }
+
+    .degree-requirements__summary {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 520px) {
+    .semester-progress {
+        margin: 14px 14px 18px;
+        padding: 13px;
+    }
+
+    .semester-card__header {
+        padding: 18px;
+    }
+
+    .subject-list {
+        padding: 12px;
+    }
+
+    .subject-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .subject-card__credits {
+        align-self: flex-start;
+    }
+
+    .subject-card__top {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .prerequisites__item {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .prerequisites__name {
+        flex-basis: calc(100% - 80px);
+    }
+
+    .prerequisites__status {
+        margin-left: auto;
+    }
+
+
+
+    .curriculum-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .curriculum-filter--search {
+        grid-column: auto;
+    }
+
+    .filter-results {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .filter-results__clear {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .header__reset-button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 420px) {
+    .status-selector {
+        grid-template-columns: 1fr;
+    }
+
+    .semester-progress__heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .semester-progress__statistics {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .semester-progress__divider {
+        width: 100%;
+        height: 1px;
+    }
+}
+
+.semester-card--completed {
+    border-color: #86efac;
+    box-shadow: 0 18px 42px rgba(22, 101, 52, 0.1);
+}
+
+.semester-progress {
+    margin: 18px 18px 20px;
+    padding: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: linear-gradient(135deg,
+            rgba(248, 250, 252, 0.98),
+            rgba(255, 255, 255, 0.98));
+}
+
+.semester-card--completed .semester-progress {
+    border-color: #bbf7d0;
+    background: linear-gradient(135deg,
+            rgba(240, 253, 244, 0.98),
+            rgba(255, 255, 255, 0.98));
+}
+
+.semester-progress__heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.semester-progress__heading>div {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.semester-progress__label {
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.semester-progress__percentage {
+    color: #3730a3;
+    font-size: 1rem;
+}
+
+.semester-card--completed .semester-progress__percentage {
+    color: #15803d;
+}
+
+.semester-progress__completed {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    color: #166534;
+    background-color: #dcfce7;
+    font-size: 0.64rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.semester-progress__bar {
+    width: 100%;
+    height: 8px;
+    margin: 13px 0;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: #e2e8f0;
+}
+
+.semester-progress__bar-value {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #4f46e5, #8b5cf6);
+    transition: width 280ms ease;
+}
+
+.semester-card--completed .semester-progress__bar-value {
+    background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+
+.semester-progress__statistics {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+    align-items: center;
+    gap: 13px;
+}
+
+.semester-progress__statistic {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.semester-progress__statistic strong {
+    color: #1e293b;
+    font-size: 0.84rem;
+}
+
+.semester-progress__statistic span {
+    color: #94a3b8;
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+.semester-progress__divider {
+    width: 1px;
+    height: 31px;
+    background-color: #e2e8f0;
+}
+
+.section-heading--filters {
+    align-items: flex-end;
+    gap: 32px;
+}
+
+.section-heading__information {
+    min-width: 250px;
+}
+
+.section-heading__information .section-heading__description {
+    max-width: 480px;
+    margin: 9px 0 0;
+}
+
+.curriculum-filters {
+    display: grid;
+    width: min(100%, 760px);
+    grid-template-columns: minmax(220px, 1.4fr) minmax(170px, 1fr) minmax(170px,
+            1fr);
+    gap: 12px;
+}
+
+.curriculum-filter {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.curriculum-filter__label {
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.curriculum-filter__input,
+.curriculum-filter__select {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #cbd5e1;
+    border-radius: 13px;
+    color: #1e293b;
+    background-color: #ffffff;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    outline: none;
+    transition:
+        border-color 160ms ease,
+        box-shadow 160ms ease,
+        background-color 160ms ease;
+}
+
+.curriculum-filter__select {
+    padding: 0 38px 0 14px;
+    cursor: pointer;
+}
+
+.curriculum-filter__input::placeholder {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.curriculum-filter__input:hover,
+.curriculum-filter__select:hover {
+    border-color: #a5b4fc;
+}
+
+.curriculum-filter__input:focus,
+.curriculum-filter__select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+.filter-results {
+    display: flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin: -6px 0 20px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background-color: rgba(255, 255, 255, 0.72);
+}
+
+.filter-results__text {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.76rem;
+}
+
+.filter-results__text strong {
+    color: #334155;
+}
+
+.filter-results__clear {
+    flex-shrink: 0;
+    padding: 7px 11px;
+    border: 1px solid #c7d2fe;
+    border-radius: 9px;
+    color: #4338ca;
+    background-color: #eef2ff;
+    font-size: 0.7rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition:
+        border-color 160ms ease,
+        background-color 160ms ease,
+        transform 160ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.filter-results__clear svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.curriculum-empty button {
+    margin-top: 18px;
+    padding: 10px 15px;
+    border: 0;
+    border-radius: 11px;
+    color: #ffffff;
+    background-color: #4f46e5;
+    font-size: 0.75rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.curriculum-empty button svg {
+    width: 15px;
+    height: 15px;
+}
+
+.filter-results__clear:hover {
+    transform: translateY(-1px);
+    border-color: #a5b4fc;
+    background-color: #e0e7ff;
+}
+
+.curriculum-empty {
+    display: flex;
+    min-height: 300px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 34px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 22px;
+    background-color: rgba(248, 250, 252, 0.85);
+    text-align: center;
+}
+
+.curriculum-empty__icon {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    place-items: center;
+    border-radius: 18px;
+    color: #6366f1;
+    background-color: #eef2ff;
+    font-size: 1.8rem;
+    font-weight: 800;
+}
+
+.curriculum-empty h3 {
+    margin: 17px 0 7px;
+    color: #1e293b;
+    font-size: 1.05rem;
+}
+
+.curriculum-empty p {
+    max-width: 420px;
+    margin: 0;
+    color: #64748b;
+    font-size: 0.8rem;
+    line-height: 1.6;
+}
+
+.curriculum-empty button:hover {
+    background-color: #4338ca;
+}
+
+@media (max-width: 1100px) {
+    .section-heading--filters {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .curriculum-filters {
+        width: 100%;
+    }
+}
+
+.unlocks {
+    margin-top: 11px;
+    border-top: 1px solid #dbeafe;
+    padding-top: 11px;
+}
+
+.unlocks__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: #0369a1;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.unlocks__summary::-webkit-details-marker {
+    display: none;
+}
+
+.unlocks__toggle-icon {
+    display: grid;
+    width: 21px;
+    height: 21px;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 7px;
+    color: #0369a1;
+    background-color: #e0f2fe;
+    transition: transform 180ms ease;
+}
+
+.unlocks__toggle-icon svg {
+    width: 13px;
+    height: 13px;
+}
+
+.unlocks[open] .unlocks__toggle-icon {
+    transform: rotate(180deg);
+}
+
+.unlocks__summary>span:first-of-type {
+    margin-right: auto;
+}
+
+.unlocks__count {
+    display: grid;
+    min-width: 23px;
+    height: 23px;
+    place-items: center;
+    padding: 0 7px;
+    border-radius: 999px;
+    color: #075985;
+    background-color: #bae6fd;
+    font-size: 0.68rem;
+}
+
+.unlocks__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.unlocks__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 11px;
+    padding: 10px;
+    border: 1px solid #e0f2fe;
+    border-radius: 11px;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.unlocks__information {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 9px;
+}
+
+.unlocks__code {
+    flex-shrink: 0;
+    padding: 4px 7px;
+    border-radius: 7px;
+    color: #075985;
+    background-color: #e0f2fe;
+    font-size: 0.65rem;
+    font-weight: 800;
+}
+
+.unlocks__name {
+    min-width: 0;
+    color: #475569;
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.unlocks__status {
+    flex-shrink: 0;
+    padding: 5px 8px;
+    border-radius: 999px;
+    font-size: 0.61rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.unlocks__status--blocked {
+    color: #475569;
+    background-color: #e2e8f0;
+}
+
+.unlocks__status--available {
+    color: #075985;
+    background-color: #bae6fd;
+}
+
+.unlocks__status--in-progress {
+    color: #92400e;
+    background-color: #fef3c7;
+}
+
+.unlocks__status--approved {
+    color: #166534;
+    background-color: #dcfce7;
+}
+
+@media (max-width: 520px) {
+    .unlocks__item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .unlocks__information {
+        width: 100%;
+    }
+
+    .unlocks__status {
+        align-self: flex-end;
+    }
+}
+
+/*
+ * Ajustes finales para evitar estiramientos verticales.
+ */
+
+@media (max-width: 620px) {
+    .program-requirements {
+        border-radius: 22px;
+    }
+
+    .program-requirements__summary {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 16px;
+        min-height: 0;
+        padding: 20px;
+    }
+
+    .program-requirements__summary-action {
+        width: 100%;
+    }
+
+    .program-requirements__content {
+        padding: 18px;
+    }
+
+    .program-requirements__column {
+        gap: 18px;
+    }
+}
+
+@media (max-width: 520px) {
+    .semester-progress {
+        margin: 14px 14px 18px;
+        padding: 13px;
+    }
+}
+
+.semester-progress__completed {
+    gap: 5px;
+}
+
+.semester-progress__completed svg {
+    width: 13px;
+    height: 13px;
+}

@@ -1,0 +1,684 @@
+/*
+ * =========================================================
+ * ETAPA 8 — HISTORIAL PERSISTENTE Y HOJA DE VIDA
+ * =========================================================
+ */
+
+.summary--five {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.summary-card--student-record {
+    position: relative;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    appearance: none;
+    transition:
+        transform 180ms ease,
+        border-color 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.summary-card--student-record:hover {
+    transform: translateY(-3px);
+    border-color: #a5b4fc;
+    box-shadow: 0 22px 48px rgba(79, 70, 229, 0.16);
+}
+
+.summary-card--student-record:focus-visible {
+    outline: 3px solid rgba(99, 102, 241, 0.3);
+    outline-offset: 4px;
+}
+
+.summary-card__record-icon {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    margin-top: 17px;
+    place-items: center;
+    border-radius: 15px;
+    color: #4338ca;
+    background-color: #eef2ff;
+}
+
+.summary-card__record-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.summary-card__record-action {
+    margin-top: 12px;
+    color: #312e81;
+    font-size: 1rem;
+}
+
+
+
+.student-record-page {
+    min-height: 100vh;
+    color: #0f172a;
+    background-color: #f8fafc;
+}
+
+.student-record-header {
+
+    padding: 52px 24px 98px;
+    color: #ffffff;
+    background:
+        radial-gradient(circle at top right,
+            rgba(99, 102, 241, 0.58),
+            transparent 38%),
+        linear-gradient(135deg, #0f172a, #172554 55%, #312e81);
+}
+
+.student-record-header__content {
+    display: flex;
+    width: min(1280px, 100%);
+    margin: 0 auto;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.student-record-header__intro {
+    padding-top: 70px;
+    max-width: none;
+}
+
+.student-record-header__eyebrow {
+    margin: 0 0 12px;
+    color: #c7d2fe;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.student-record-header__title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.student-record-header__title-row>svg {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    color: #c7d2fe;
+}
+
+.student-record-header h1 {
+    margin: 0;
+    font-size: clamp(2.25rem, 6vw, 4.5rem);
+    line-height: 1;
+    letter-spacing: -0.045em;
+}
+
+.student-record-header__intro>p:last-child {
+    max-width: 720px;
+    margin: 20px 0 0;
+    color: #e0e7ff;
+    line-height: 1.7;
+}
+
+.student-record-header__actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 10px;
+}
+
+.student-record-header__actions button {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 15px;
+    border: 1px solid rgba(224, 231, 255, 0.36);
+    border-radius: 13px;
+    color: #e0e7ff;
+    background-color: rgba(255, 255, 255, 0.08);
+    font-family: inherit;
+    font-size: 0.76rem;
+    font-weight: 800;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+}
+
+.student-record-header__actions button:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.62);
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.student-record-header__actions button:focus-visible {
+    outline: 3px solid rgba(199, 210, 254, 0.44);
+    outline-offset: 3px;
+}
+
+.student-record-header__actions svg {
+    width: 17px;
+    height: 17px;
+}
+
+.student-record-main {
+    width: min(1280px, calc(100% - 32px));
+    margin: -58px auto 0;
+    padding-bottom: 72px;
+}
+
+.student-record-overview {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.student-record-panel,
+.student-record-table-panel {
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    background-color: #ffffff;
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.09);
+}
+
+.student-record-panel {
+    padding: 24px;
+}
+
+.student-record-panel--low-performance {
+    border-color: #fde68a;
+}
+
+.student-record-panel--conditional-enrollment {
+    border-color: #fed7aa;
+}
+
+.student-record-panel--lost-right {
+    border-color: #fecaca;
+}
+
+.student-record-panel__heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+}
+
+.student-record-panel__heading>span {
+    display: grid;
+    width: 43px;
+    height: 43px;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 14px;
+    color: #4338ca;
+    background-color: #eef2ff;
+}
+
+.student-record-panel--low-performance .student-record-panel__heading>span {
+    color: #b45309;
+    background-color: #fef3c7;
+}
+
+.student-record-panel--conditional-enrollment .student-record-panel__heading>span {
+    color: #c2410c;
+    background-color: #ffedd5;
+}
+
+.student-record-panel--lost-right .student-record-panel__heading>span {
+    color: #b91c1c;
+    background-color: #fee2e2;
+}
+
+.student-record-panel__heading svg {
+    width: 21px;
+    height: 21px;
+}
+
+.student-record-panel__heading p {
+    margin: 0 0 4px;
+    color: #6366f1;
+    font-size: 0.69rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.student-record-panel__heading h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.28rem;
+    letter-spacing: -0.025em;
+}
+
+.student-record-panel__description {
+    margin: 17px 0 0;
+    color: #64748b;
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+.student-record-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 20px 0 0;
+}
+
+.student-record-facts>div {
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background-color: #f8fafc;
+}
+
+.student-record-facts dt {
+    color: #64748b;
+    font-size: 0.66rem;
+    font-weight: 700;
+}
+
+.student-record-facts dd {
+    margin: 6px 0 0;
+    color: #0f172a;
+    font-size: 0.83rem;
+    font-weight: 850;
+}
+
+.student-record-restrictions {
+    display: grid;
+    gap: 9px;
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.student-record-restrictions li {
+    position: relative;
+    padding: 11px 12px 11px 31px;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    color: #475569;
+    background-color: #f8fafc;
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.student-record-restrictions li::before {
+    content: "";
+    position: absolute;
+    top: 17px;
+    left: 14px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #6366f1;
+}
+
+.student-record-repeat-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 17px;
+}
+
+.student-record-repeat-summary>div {
+    display: grid;
+    min-height: 78px;
+    place-items: center;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background-color: #ffffff;
+    text-align: center;
+}
+
+.student-record-repeat-summary span {
+    color: #6366f1;
+    font-size: 0.66rem;
+    font-weight: 900;
+}
+
+.student-record-repeat-summary strong {
+    color: #0f172a;
+    font-size: 1.3rem;
+}
+
+.student-record-repeat-summary small {
+    color: #64748b;
+    font-size: 0.62rem;
+}
+
+.student-record-table-panel {
+    margin-top: 22px;
+    overflow: hidden;
+}
+
+.student-record-table-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 22px 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.student-record-table-panel__header p {
+    margin: 0 0 4px;
+    color: #6366f1;
+    font-size: 0.7rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.student-record-table-panel__header h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.45rem;
+    letter-spacing: -0.025em;
+}
+
+.student-record-table-panel__header>span {
+    padding: 8px 11px;
+    border-radius: 999px;
+    color: #4338ca;
+    background-color: #eef2ff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.student-record-table-wrapper {
+    max-height: 670px;
+    overflow: auto;
+}
+
+.student-record-table {
+    width: 100%;
+    min-width: 1040px;
+    border-collapse: collapse;
+}
+
+.student-record-table th,
+.student-record-table td {
+    padding: 14px 15px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: top;
+}
+
+.student-record-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    color: #475569;
+    background-color: #f8fafc;
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.student-record-table td {
+    color: #475569;
+    font-size: 0.75rem;
+}
+
+.student-record-table td:nth-child(2) strong {
+    display: block;
+    color: #0f172a;
+    font-size: 0.78rem;
+}
+
+.student-record-table td:nth-child(2) small {
+    display: block;
+    margin-top: 4px;
+    color: #6366f1;
+    font-size: 0.64rem;
+    font-weight: 800;
+}
+
+.student-record-pill,
+.student-record-repeat {
+    display: inline-flex;
+    min-height: 25px;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 900;
+}
+
+.student-record-pill--yes {
+    color: #166534;
+    background-color: #dcfce7;
+}
+
+.student-record-pill--no {
+    color: #475569;
+    background-color: #e2e8f0;
+}
+
+.student-record-repeat--regular {
+    color: #64748b;
+    background-color: #f1f5f9;
+}
+
+.student-record-repeat--r1 {
+    color: #92400e;
+    background-color: #fef3c7;
+}
+
+.student-record-repeat--r2 {
+    color: #c2410c;
+    background-color: #ffedd5;
+}
+
+.student-record-repeat--r3 {
+    color: #b91c1c;
+    background-color: #fee2e2;
+}
+
+.student-record-current-status {
+    display: block;
+    color: #0f172a;
+    font-size: 0.75rem;
+}
+
+.student-record-restriction-text {
+    display: block;
+    max-width: 220px;
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 0.64rem;
+    line-height: 1.45;
+}
+
+.student-record-attempts summary {
+    color: #4338ca;
+    font-size: 0.68rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.student-record-attempts ol {
+    display: grid;
+    gap: 5px;
+    margin: 9px 0 0;
+    padding-left: 19px;
+}
+
+.student-record-attempts li {
+    color: #64748b;
+    font-size: 0.64rem;
+}
+
+.student-record-attempts li strong {
+    color: #334155;
+}
+
+.student-record-attempts li span::before {
+    content: " · ";
+}
+
+.student-record-no-history {
+    color: #94a3b8;
+    font-size: 0.65rem;
+}
+
+.student-record-disclaimer {
+    margin: 18px 0 0;
+    color: #64748b;
+    font-size: 0.68rem;
+    line-height: 1.55;
+    text-align: center;
+}
+
+html[data-theme="dark"] .summary-card--student-record {
+    border-color: #334155;
+    background-color: #0f172a;
+}
+
+html[data-theme="dark"] .summary-card__record-icon {
+    color: #c7d2fe;
+    background-color: #312e81;
+}
+
+html[data-theme="dark"] .summary-card__record-action {
+    color: #e0e7ff;
+}
+
+html[data-theme="dark"] .student-record-page {
+    color: #e2e8f0;
+    background-color: #020617;
+}
+
+html[data-theme="dark"] .student-record-panel,
+html[data-theme="dark"] .student-record-table-panel {
+    border-color: #334155;
+    background-color: #0f172a;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .student-record-panel__heading h2,
+html[data-theme="dark"] .student-record-facts dd,
+html[data-theme="dark"] .student-record-repeat-summary strong,
+html[data-theme="dark"] .student-record-table-panel__header h2,
+html[data-theme="dark"] .student-record-table td:nth-child(2) strong,
+html[data-theme="dark"] .student-record-current-status {
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .student-record-panel__description,
+html[data-theme="dark"] .student-record-facts dt,
+html[data-theme="dark"] .student-record-repeat-summary small,
+html[data-theme="dark"] .student-record-restriction-text,
+html[data-theme="dark"] .student-record-attempts li,
+html[data-theme="dark"] .student-record-disclaimer {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .student-record-facts>div,
+html[data-theme="dark"] .student-record-restrictions li,
+html[data-theme="dark"] .student-record-repeat-summary>div {
+    border-color: #334155;
+    background-color: #111827;
+}
+
+html[data-theme="dark"] .student-record-table-panel__header,
+html[data-theme="dark"] .student-record-table th,
+html[data-theme="dark"] .student-record-table td {
+    border-color: #334155;
+}
+
+html[data-theme="dark"] .student-record-table th {
+    color: #cbd5e1;
+    background-color: #111827;
+}
+
+html[data-theme="dark"] .student-record-table td {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .student-record-attempts summary,
+html[data-theme="dark"] .student-record-table td:nth-child(2) small {
+    color: #a5b4fc;
+}
+
+html[data-theme="dark"] .student-record-attempts li strong {
+    color: #e2e8f0;
+}
+
+@media (max-width: 1180px) {
+    .summary--five {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+
+    .student-record-header__content,
+    .student-record-header__actions {
+        flex-direction: column;
+    }
+
+    .student-record-header__actions {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .student-record-header__actions button {
+        width: 100%;
+    }
+
+    .student-record-overview {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 800px) {
+    .summary--five {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 620px) {
+    .student-record-header {
+        padding: 42px 18px 90px;
+    }
+
+    .student-record-header__title-row {
+        align-items: flex-start;
+    }
+
+    .student-record-header__title-row>svg {
+        width: 31px;
+        height: 31px;
+    }
+
+    .student-record-main {
+        width: min(100% - 22px, 1280px);
+    }
+
+    .student-record-panel {
+        padding: 19px;
+        border-radius: 20px;
+    }
+
+    .student-record-facts {
+        grid-template-columns: 1fr;
+    }
+
+    .student-record-repeat-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .student-record-table-panel__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

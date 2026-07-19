@@ -1,7 +1,17 @@
 import { useEffect } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
-import "./App.css";
+
+import "sweetalert2/dist/sweetalert2.min.css";
+
+import "./styles/base.css";
+import "./styles/navigation.css";
+import "./styles/home.css";
+import "./styles/academic-life.css";
+import "./styles/student-record.css";
+import "./styles/schedule.css";
+import "./styles/sweetalert.css";
+import "./styles/regulatory.css";
 
 import {
   LuCheck,
