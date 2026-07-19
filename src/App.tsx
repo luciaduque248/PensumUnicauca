@@ -11,10 +11,13 @@ import {
   LuX,
   LuMoon,
   LuSun,
+  LuGraduationCap,
 } from "react-icons/lu";
 
 import AcademicStatistics from "./components/AcademicStatistics";
 import DegreeRequirementsCard from "./components/DegreeRequirementsCard";
+import RegulatoryAlerts from "./components/RegulatoryAlerts";
+import StudentAcademicRecordPage from "./components/StudentAcademicRecordPage";
 import SemesterCard from "./components/SemesterCard";
 
 import { curriculum } from "./data/curriculum";
@@ -27,12 +30,70 @@ import type {
   CurriculumSection,
   DegreeRequirement,
   DegreeRequirementStatus,
+  RepeatLevel,
+  StudentAcademicSituation,
+  StudentRegulatoryRecord,
   Subject,
+  SubjectAcademicRecord,
+  SubjectAttempt,
   SubjectStatus,
 } from "./types/curriculum";
 
 type SubjectFilter = "all" | "pending" | "in-progress" | "approved" | "blocked";
 type ThemeMode = "light" | "dark";
+
+const DEFAULT_STUDENT_REGULATORY_RECORD: StudentRegulatoryRecord = {
+  hasLowPerformanceHistory: false,
+  hasDisciplinarySanction: false,
+  conditionalEnrollmentActive: false,
+  conditionalEnrollmentsUsed: 0,
+  lostRightToContinue: false,
+};
+
+const createAttemptId = () => {
+  if (
+    typeof crypto !== "undefined" &&
+    "randomUUID" in crypto
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const createSubjectAttempt = (
+  repeatLevel: RepeatLevel,
+  result: SubjectAttempt["result"],
+): SubjectAttempt => ({
+  id: createAttemptId(),
+  attemptNumber: repeatLevel + 1,
+  repeatLevel,
+  result,
+  recordedAt: new Date().toISOString(),
+});
+
+const getApprovedRepeatLevelFromRecord = (
+  record: SubjectAcademicRecord | undefined,
+): RepeatLevel | null => {
+  if (!record) {
+    return null;
+  }
+
+  if (record.approvedRepeatLevel !== null &&
+      record.approvedRepeatLevel !== undefined) {
+    return record.approvedRepeatLevel;
+  }
+
+  for (let index = record.attempts.length - 1; index >= 0; index -= 1) {
+    const attempt = record.attempts[index];
+
+    if (attempt.result === "approved") {
+      return attempt.repeatLevel;
+    }
+  }
+
+  return null;
+};
 
 const escapeHtml = (value: string) => {
   return value
@@ -44,6 +105,13 @@ const escapeHtml = (value: string) => {
 };
 
 function App() {
+  const currentView = new URLSearchParams(
+    window.location.search,
+  ).get("view");
+
+  const isStudentRecordView =
+    currentView === "student-record";
+
   /*
    * =====================================================
    * INFORMACIÓN GENERAL DEL PENSUM
@@ -95,6 +163,79 @@ function App() {
   const subjectStatuses: Record<string, SubjectStatus> = {
     ...initialStatuses,
     ...savedSubjectStatuses,
+  };
+
+  /*
+   * =====================================================
+   * HISTORIAL ACADÉMICO Y REPITENCIAS
+   * =====================================================
+   */
+
+  const initialSubjectAcademicRecords: Record<
+    string,
+    SubjectAcademicRecord
+  > = Object.fromEntries(
+    allSubjects.map((subject) => [
+      subject.code,
+      {
+        repeatLevel: 0 as RepeatLevel,
+        approvedRepeatLevel: null,
+        failedAttempts: 0,
+        attempts: [],
+      },
+    ]),
+  );
+
+  const [
+    savedSubjectAcademicRecords,
+    setSavedSubjectAcademicRecords,
+  ] = useLocalStorage<Record<string, SubjectAcademicRecord>>(
+    "pensum-subject-academic-records",
+    initialSubjectAcademicRecords,
+  );
+
+  const subjectAcademicRecords: Record<
+    string,
+    SubjectAcademicRecord
+  > = Object.fromEntries(
+    allSubjects.map((subject) => {
+      const savedRecord =
+        savedSubjectAcademicRecords[subject.code];
+
+      return [
+        subject.code,
+        {
+          repeatLevel: savedRecord?.repeatLevel ?? 0,
+          approvedRepeatLevel:
+            getApprovedRepeatLevelFromRecord(savedRecord),
+          failedAttempts: savedRecord?.failedAttempts ?? 0,
+          attempts: Array.isArray(savedRecord?.attempts)
+            ? savedRecord.attempts
+            : [],
+        },
+      ];
+    }),
+  );
+
+  const [
+    savedStudentRegulatoryRecord,
+    setSavedStudentRegulatoryRecord,
+  ] = useLocalStorage<StudentRegulatoryRecord>(
+    "pensum-student-regulatory-record",
+    DEFAULT_STUDENT_REGULATORY_RECORD,
+  );
+
+  const studentRegulatoryRecord: StudentRegulatoryRecord = {
+    ...DEFAULT_STUDENT_REGULATORY_RECORD,
+    ...savedStudentRegulatoryRecord,
+    conditionalEnrollmentsUsed: Math.min(
+      2,
+      Math.max(
+        0,
+        savedStudentRegulatoryRecord
+          .conditionalEnrollmentsUsed ?? 0,
+      ),
+    ),
   };
 
   /*
@@ -285,6 +426,75 @@ function App() {
     (subject) => isSubjectLocked(subject),
   ).length;
 
+  const activeRepeatCounts = allSubjects.reduce(
+    (counts, subject) => {
+      const status =
+        subjectStatuses[subject.code] ?? "pending";
+      const repeatLevel =
+        subjectAcademicRecords[subject.code]
+          ?.repeatLevel ?? 0;
+
+      if (status === "approved") {
+        return counts;
+      }
+
+      if (repeatLevel === 1) {
+        counts.r1 += 1;
+      } else if (repeatLevel === 2) {
+        counts.r2 += 1;
+      } else if (repeatLevel === 3) {
+        counts.r3 += 1;
+      }
+
+      return counts;
+    },
+    { r1: 0, r2: 0, r3: 0 },
+  );
+
+  const historicalRepeatCounts = allSubjects.reduce(
+    (counts, subject) => {
+      const record = subjectAcademicRecords[subject.code];
+      const approvedRepeatLevel =
+        getApprovedRepeatLevelFromRecord(record);
+      const historicalLevel =
+        subjectStatuses[subject.code] === "approved"
+          ? approvedRepeatLevel ?? record?.repeatLevel ?? 0
+          : record?.repeatLevel ?? approvedRepeatLevel ?? 0;
+
+      if (historicalLevel === 1) {
+        counts.r1 += 1;
+      } else if (historicalLevel === 2) {
+        counts.r2 += 1;
+      } else if (historicalLevel === 3) {
+        counts.r3 += 1;
+      }
+
+      return counts;
+    },
+    { r1: 0, r2: 0, r3: 0 },
+  );
+
+  const hasRepeatHistory = allSubjects.some((subject) => {
+    const record = subjectAcademicRecords[subject.code];
+
+    return (
+      record.repeatLevel > 0 ||
+      record.failedAttempts > 0 ||
+      (record.approvedRepeatLevel ?? 0) > 0
+    );
+  });
+
+  const studentAcademicSituation: StudentAcademicSituation =
+    studentRegulatoryRecord.lostRightToContinue
+      ? "lost-right"
+      : studentRegulatoryRecord
+        .conditionalEnrollmentActive
+        ? "conditional-enrollment"
+        : studentRegulatoryRecord
+          .hasLowPerformanceHistory
+          ? "low-performance"
+          : "normal";
+
   const completedDegreeRequirements = degreeRequirements.filter(
     (requirement) =>
       degreeRequirementStatuses[requirement.code] === "completed",
@@ -356,6 +566,15 @@ function App() {
   const completedSemesters = semesterStatistics.filter(
     (semester) => semester.isCompleted,
   ).length;
+
+  const shouldShowRegulatoryTracking =
+    completedSemesters > 0 ||
+    hasRepeatHistory ||
+    studentRegulatoryRecord.hasLowPerformanceHistory ||
+    studentRegulatoryRecord.hasDisciplinarySanction ||
+    studentRegulatoryRecord.conditionalEnrollmentActive ||
+    studentRegulatoryRecord.conditionalEnrollmentsUsed > 0 ||
+    studentRegulatoryRecord.lostRightToContinue;
 
   const completedSemesterIds = new Set(
     semesterStatistics
@@ -562,6 +781,68 @@ function App() {
     }
   };
 
+  const getSubjectAcademicRecord = (
+    subjectCode: string,
+  ): SubjectAcademicRecord => {
+    return (
+      subjectAcademicRecords[subjectCode] ?? {
+        repeatLevel: 0,
+        approvedRepeatLevel: null,
+        failedAttempts: 0,
+        attempts: [],
+      }
+    );
+  };
+
+  const handleDisciplinarySanctionChange = async (
+    hasSanction: boolean,
+  ) => {
+    const result = await Swal.fire({
+      icon: hasSanction ? "warning" : "question",
+      title: hasSanction
+        ? "¿Registrar sanción disciplinaria?"
+        : "¿Retirar la sanción registrada?",
+      html: `
+        <div class="swal-confirmation-content">
+          <p>
+            ${hasSanction
+          ? "Este dato se tendrá en cuenta al evaluar futuras pérdidas de materias cursadas en R2."
+          : "Las futuras evaluaciones reglamentarias se realizarán sin una sanción disciplinaria registrada."
+        }
+          </p>
+
+          <p>
+            Esta modificación no cambia retroactivamente las
+            pérdidas que ya fueron registradas.
+          </p>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: hasSanction
+        ? "Sí, registrar"
+        : "Sí, retirar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: hasSanction
+        ? "#dc2626"
+        : "#4f46e5",
+      cancelButtonColor: "#64748b",
+      reverseButtons: true,
+      focusCancel: true,
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    setSavedStudentRegulatoryRecord(
+      (currentRecord) => ({
+        ...DEFAULT_STUDENT_REGULATORY_RECORD,
+        ...currentRecord,
+        hasDisciplinarySanction: hasSanction,
+      }),
+    );
+  };
+
   const handleStatusChange = async (
     subjectCode: string,
     newStatus: SubjectStatus,
@@ -570,6 +851,55 @@ function App() {
       subjectStatuses[subjectCode] ?? "pending";
 
     if (currentStatus === newStatus) {
+      return;
+    }
+
+    if (
+      studentRegulatoryRecord.lostRightToContinue &&
+      newStatus !== "pending"
+    ) {
+      await Swal.fire({
+        icon: "error",
+        title: "Cambio bloqueado",
+        text: "El historial registra pérdida del derecho a continuar. Verifica la situación con la Universidad antes de registrar nuevos avances.",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#dc2626",
+      });
+
+      return;
+    }
+
+    const academicRecord =
+      getSubjectAcademicRecord(subjectCode);
+
+    const restrictedByConditionalEnrollment =
+      studentRegulatoryRecord
+        .conditionalEnrollmentActive &&
+      academicRecord.repeatLevel === 0 &&
+      (newStatus === "in-progress" ||
+        newStatus === "approved");
+
+    if (restrictedByConditionalEnrollment) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Restricción de matrícula condicional",
+        html: `
+          <div class="swal-confirmation-content">
+            <p>
+              Durante la matrícula condicional solo se pueden
+              registrar materias que deban repetirse.
+            </p>
+
+            <p>
+              Esta materia todavía se encuentra en intento
+              regular.
+            </p>
+          </div>
+        `,
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#f59e0b",
+      });
+
       return;
     }
 
@@ -596,6 +926,78 @@ function App() {
       ...currentStatuses,
       [subjectCode]: newStatus,
     }));
+
+    if (newStatus === "approved") {
+      setSavedSubjectAcademicRecords(
+        (currentRecords) => {
+          const mergedRecords = {
+            ...initialSubjectAcademicRecords,
+            ...currentRecords,
+          };
+
+          const currentRecord =
+            mergedRecords[subjectCode];
+          const lastAttempt =
+            currentRecord.attempts.at(-1);
+
+          const approvalAlreadyRegistered =
+            lastAttempt?.result === "approved" &&
+            lastAttempt.repeatLevel ===
+            currentRecord.repeatLevel;
+
+          if (approvalAlreadyRegistered) {
+            return mergedRecords;
+          }
+
+          return {
+            ...mergedRecords,
+            [subjectCode]: {
+              ...currentRecord,
+              approvedRepeatLevel:
+                currentRecord.repeatLevel,
+              attempts: [
+                ...currentRecord.attempts,
+                createSubjectAttempt(
+                  currentRecord.repeatLevel,
+                  "approved",
+                ),
+              ],
+            },
+          };
+        },
+      );
+
+      if (
+        academicRecord.repeatLevel > 0 &&
+        studentRegulatoryRecord
+          .conditionalEnrollmentActive
+      ) {
+        const hasAnotherUnresolvedRepeat =
+          allSubjects.some((subject) => {
+            if (subject.code === subjectCode) {
+              return false;
+            }
+
+            return (
+              getSubjectAcademicRecord(
+                subject.code,
+              ).repeatLevel > 0 &&
+              subjectStatuses[subject.code] !==
+              "approved"
+            );
+          });
+
+        if (!hasAnotherUnresolvedRepeat) {
+          setSavedStudentRegulatoryRecord(
+            (currentRecord) => ({
+              ...DEFAULT_STUDENT_REGULATORY_RECORD,
+              ...currentRecord,
+              conditionalEnrollmentActive: false,
+            }),
+          );
+        }
+      }
+    }
 
     if (!completesSemester || !subjectSemester) {
       return;
@@ -633,6 +1035,303 @@ function App() {
     });
 
     showNextPendingSemesters();
+  };
+
+  const handleRegisterFailure = async (
+    subject: Subject,
+  ) => {
+    const currentStatus =
+      subjectStatuses[subject.code] ?? "pending";
+
+    if (
+      studentRegulatoryRecord.lostRightToContinue
+    ) {
+      await Swal.fire({
+        icon: "error",
+        title: "Registro bloqueado",
+        text: "El historial ya registra pérdida del derecho a continuar estudios.",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#dc2626",
+      });
+
+      return;
+    }
+
+    if (currentStatus !== "in-progress") {
+      await Swal.fire({
+        icon: "info",
+        title: "La materia no está en curso",
+        text: "Para registrar una pérdida, primero debes marcar la materia como En curso.",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#4f46e5",
+      });
+
+      return;
+    }
+
+    const academicRecord =
+      getSubjectAcademicRecord(subject.code);
+    const repeatLevel = academicRecord.repeatLevel;
+
+    const repeatDescription =
+      repeatLevel === 0
+        ? "intento regular"
+        : `R${repeatLevel}`;
+
+    const reachesConditionalEnrollment =
+      repeatLevel === 2 &&
+      !studentRegulatoryRecord
+        .hasDisciplinarySanction &&
+      (studentRegulatoryRecord
+        .conditionalEnrollmentActive ||
+        studentRegulatoryRecord
+          .conditionalEnrollmentsUsed < 2);
+
+    const losesRightInR2 =
+      repeatLevel === 2 &&
+      (studentRegulatoryRecord
+        .hasDisciplinarySanction ||
+        studentRegulatoryRecord
+          .conditionalEnrollmentsUsed >= 2);
+
+    let confirmationResult;
+
+    if (repeatLevel === 3) {
+      confirmationResult = await Swal.fire({
+        icon: "error",
+        title: "Advertencia académica crítica",
+        html: `
+          <div class="swal-confirmation-content">
+            <p>
+              <strong>${escapeHtml(subject.name)}</strong>
+              está siendo cursada como repitente por
+              tercera vez, R3.
+            </p>
+
+            <p>
+              Registrar su pérdida implica la pérdida
+              del derecho a continuar estudios en el
+              programa.
+            </p>
+
+            <p>
+              Escribe <strong>CONFIRMAR</strong> para
+              continuar.
+            </p>
+          </div>
+        `,
+        input: "text",
+        inputPlaceholder: "CONFIRMAR",
+        showCancelButton: true,
+        confirmButtonText: "Registrar pérdida",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#64748b",
+        reverseButtons: true,
+        focusCancel: true,
+        allowOutsideClick: false,
+        preConfirm: (value: string) => {
+          if (value !== "CONFIRMAR") {
+            Swal.showValidationMessage(
+              "Debes escribir CONFIRMAR exactamente.",
+            );
+          }
+
+          return value;
+        },
+      });
+    } else {
+      const consequenceHtml =
+        repeatLevel === 0
+          ? `La próxima vez deberá cursarse como <strong>R1</strong>.`
+          : repeatLevel === 1
+            ? `Se registrará un antecedente de <strong>bajo rendimiento</strong> y la próxima vez deberá cursarse como <strong>R2</strong>.`
+            : reachesConditionalEnrollment
+              ? `Se activará la <strong>matrícula condicional</strong> y la materia deberá cursarse como <strong>R3</strong>.`
+              : `Esta pérdida produce una consecuencia académica definitiva y se registrará la <strong>pérdida del derecho a continuar</strong>.`;
+
+      confirmationResult = await Swal.fire({
+        icon: losesRightInR2
+          ? "error"
+          : repeatLevel >= 1
+            ? "warning"
+            : "question",
+        title: "¿Registrar pérdida de la materia?",
+        html: `
+          <div class="swal-confirmation-content">
+            <p>
+              Se registrará la pérdida de
+              <strong>${escapeHtml(subject.name)}</strong>
+              durante ${repeatDescription}.
+            </p>
+
+            <p>${consequenceHtml}</p>
+
+            <p>
+              La materia volverá al estado
+              <strong>Pendiente</strong>.
+            </p>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "Sí, registrar pérdida",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: losesRightInR2
+          ? "#dc2626"
+          : "#f59e0b",
+        cancelButtonColor: "#64748b",
+        reverseButtons: true,
+        focusCancel: true,
+      });
+    }
+
+    if (!confirmationResult.isConfirmed) {
+      return;
+    }
+
+    const nextRepeatLevel: RepeatLevel =
+      repeatLevel < 3
+        ? ((repeatLevel + 1) as RepeatLevel)
+        : 3;
+
+    const canEnterConditionalEnrollment =
+      repeatLevel === 2 &&
+      !studentRegulatoryRecord
+        .hasDisciplinarySanction &&
+      (studentRegulatoryRecord
+        .conditionalEnrollmentActive ||
+        studentRegulatoryRecord
+          .conditionalEnrollmentsUsed < 2);
+
+    const losesRightToContinue =
+      repeatLevel === 3 ||
+      (repeatLevel === 2 &&
+        !canEnterConditionalEnrollment);
+
+    const storedRepeatLevel: RepeatLevel =
+      losesRightToContinue && repeatLevel === 2
+        ? 2
+        : nextRepeatLevel;
+
+    setSavedSubjectStatuses((currentStatuses) => ({
+      ...initialStatuses,
+      ...currentStatuses,
+      [subject.code]: "pending",
+    }));
+
+    setSavedSubjectAcademicRecords(
+      (currentRecords) => {
+        const mergedRecords = {
+          ...initialSubjectAcademicRecords,
+          ...currentRecords,
+        };
+        const currentRecord =
+          mergedRecords[subject.code];
+
+        return {
+          ...mergedRecords,
+          [subject.code]: {
+            repeatLevel: storedRepeatLevel,
+            approvedRepeatLevel:
+              currentRecord.approvedRepeatLevel,
+            failedAttempts:
+              currentRecord.failedAttempts + 1,
+            attempts: [
+              ...currentRecord.attempts,
+              createSubjectAttempt(
+                repeatLevel,
+                "failed",
+              ),
+            ],
+          },
+        };
+      },
+    );
+
+    setSavedStudentRegulatoryRecord(
+      (currentRecord) => {
+        const mergedRecord = {
+          ...DEFAULT_STUDENT_REGULATORY_RECORD,
+          ...currentRecord,
+        };
+
+        if (repeatLevel === 1) {
+          return {
+            ...mergedRecord,
+            hasLowPerformanceHistory: true,
+          };
+        }
+
+        if (repeatLevel === 2) {
+          if (!canEnterConditionalEnrollment) {
+            return {
+              ...mergedRecord,
+              hasLowPerformanceHistory: true,
+              conditionalEnrollmentActive: false,
+              lostRightToContinue: true,
+            };
+          }
+
+          return {
+            ...mergedRecord,
+            hasLowPerformanceHistory: true,
+            conditionalEnrollmentActive: true,
+            conditionalEnrollmentsUsed:
+              mergedRecord
+                .conditionalEnrollmentActive
+                ? mergedRecord
+                  .conditionalEnrollmentsUsed
+                : Math.min(
+                  2,
+                  mergedRecord
+                    .conditionalEnrollmentsUsed + 1,
+                ),
+          };
+        }
+
+        if (repeatLevel === 3) {
+          return {
+            ...mergedRecord,
+            conditionalEnrollmentActive: false,
+            lostRightToContinue: true,
+          };
+        }
+
+        return mergedRecord;
+      },
+    );
+
+    const resultTitle =
+      repeatLevel === 0
+        ? "Materia registrada en R1"
+        : repeatLevel === 1
+          ? "Bajo rendimiento registrado"
+          : canEnterConditionalEnrollment
+            ? "Matrícula condicional activada"
+            : "Pérdida del derecho registrada";
+
+    const resultText =
+      repeatLevel === 0
+        ? "La próxima vez la materia se cursará como repitente por primera vez."
+        : repeatLevel === 1
+          ? "La próxima vez la materia se cursará como repitente por segunda vez, R2."
+          : canEnterConditionalEnrollment
+            ? "La materia deberá cursarse en R3 y se aplicarán las restricciones de matrícula condicional."
+            : "Verifica esta situación directamente con la Universidad del Cauca.";
+
+    await Swal.fire({
+      icon: losesRightToContinue
+        ? "error"
+        : repeatLevel >= 1
+          ? "warning"
+          : "success",
+      title: resultTitle,
+      text: resultText,
+      confirmButtonText: "Entendido",
+      confirmButtonColor: losesRightToContinue
+        ? "#dc2626"
+        : "#4f46e5",
+    });
   };
 
   /*
@@ -713,6 +1412,61 @@ function App() {
    */
 
   const handleApproveSection = async (section: CurriculumSection) => {
+    if (studentRegulatoryRecord.lostRightToContinue) {
+      await Swal.fire({
+        icon: "error",
+        title: "Acción bloqueada",
+        text: "El historial registra pérdida del derecho a continuar estudios.",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#dc2626",
+      });
+
+      return;
+    }
+
+    const restrictedRegularSubjects =
+      studentRegulatoryRecord
+        .conditionalEnrollmentActive
+        ? section.subjects.filter((subject) => {
+          const status =
+            subjectStatuses[subject.code] ??
+            "pending";
+
+          return (
+            status !== "approved" &&
+            getSubjectAcademicRecord(
+              subject.code,
+            ).repeatLevel === 0
+          );
+        })
+        : [];
+
+    if (restrictedRegularSubjects.length > 0) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Restricción de matrícula condicional",
+        html: `
+          <div class="swal-confirmation-content">
+            <p>
+              No se puede usar “Aprobar todo” porque el
+              semestre contiene materias regulares que no
+              están autorizadas durante la matrícula
+              condicional.
+            </p>
+
+            <p>
+              Modifica individualmente únicamente las
+              materias que debas repetir.
+            </p>
+          </div>
+        `,
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#f59e0b",
+      });
+
+      return;
+    }
+
     const blockedSubjects: Array<{
       subject: (typeof section.subjects)[number];
       missingPrerequisites: string[];
@@ -934,6 +1688,82 @@ function App() {
       return updatedStatuses;
     });
 
+    setSavedSubjectAcademicRecords(
+      (currentRecords) => {
+        const updatedRecords = {
+          ...initialSubjectAcademicRecords,
+          ...currentRecords,
+        };
+
+        section.subjects.forEach((subject) => {
+          const academicRecord =
+            updatedRecords[subject.code];
+          const lastAttempt =
+            academicRecord.attempts.at(-1);
+
+          if (
+            lastAttempt?.result === "approved" &&
+            lastAttempt.repeatLevel ===
+            academicRecord.repeatLevel
+          ) {
+            return;
+          }
+
+          updatedRecords[subject.code] = {
+            ...academicRecord,
+            approvedRepeatLevel:
+              academicRecord.repeatLevel,
+            attempts: [
+              ...academicRecord.attempts,
+              createSubjectAttempt(
+                academicRecord.repeatLevel,
+                "approved",
+              ),
+            ],
+          };
+        });
+
+        return updatedRecords;
+      },
+    );
+
+    if (
+      studentRegulatoryRecord
+        .conditionalEnrollmentActive
+    ) {
+      const approvedCodes = new Set(
+        section.subjects.map(
+          (subject) => subject.code,
+        ),
+      );
+
+      const hasUnresolvedRepeat = allSubjects.some(
+        (subject) => {
+          const willBeApproved =
+            approvedCodes.has(subject.code);
+
+          return (
+            getSubjectAcademicRecord(
+              subject.code,
+            ).repeatLevel > 0 &&
+            !willBeApproved &&
+            subjectStatuses[subject.code] !==
+            "approved"
+          );
+        },
+      );
+
+      if (!hasUnresolvedRepeat) {
+        setSavedStudentRegulatoryRecord(
+          (currentRecord) => ({
+            ...DEFAULT_STUDENT_REGULATORY_RECORD,
+            ...currentRecord,
+            conditionalEnrollmentActive: false,
+          }),
+        );
+      }
+    }
+
     const isAcademicSemester =
       section.semester !== undefined;
 
@@ -990,6 +1820,22 @@ function App() {
     });
   };
 
+  const handleOpenStudentRecord = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", "student-record");
+    window.location.href = url.toString();
+  };
+
+  const handleReturnToDashboard = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("view");
+
+    const remainingQuery = url.searchParams.toString();
+    window.location.href = `${url.pathname}${
+      remainingQuery ? `?${remainingQuery}` : ""
+    }${url.hash}`;
+  };
+
   /*
    * =====================================================
    * REINICIAR TODO EL PROGRESO
@@ -1006,7 +1852,38 @@ function App() {
         degreeRequirementStatuses[requirement.code] !== "pending",
     ).length;
 
-    if (changedSubjects === 0 && changedDegreeRequirements === 0) {
+    const changedAcademicRecords = allSubjects.filter(
+      (subject) => {
+        const record =
+          getSubjectAcademicRecord(subject.code);
+
+        return (
+          record.repeatLevel > 0 ||
+          (record.approvedRepeatLevel ?? 0) > 0 ||
+          record.failedAttempts > 0 ||
+          record.attempts.length > 0
+        );
+      },
+    ).length;
+
+    const hasRegulatoryChanges =
+      studentRegulatoryRecord
+        .hasLowPerformanceHistory ||
+      studentRegulatoryRecord
+        .hasDisciplinarySanction ||
+      studentRegulatoryRecord
+        .conditionalEnrollmentActive ||
+      studentRegulatoryRecord
+        .conditionalEnrollmentsUsed > 0 ||
+      studentRegulatoryRecord
+        .lostRightToContinue;
+
+    if (
+      changedSubjects === 0 &&
+      changedDegreeRequirements === 0 &&
+      changedAcademicRecords === 0 &&
+      !hasRegulatoryChanges
+    ) {
       await Swal.fire({
         icon: "info",
         title: "No hay progreso para reiniciar",
@@ -1044,6 +1921,12 @@ function App() {
           </p>
 
           <p>
+            También se eliminarán los registros de
+            repitencia, intentos y situación
+            reglamentaria.
+          </p>
+
+          <p>
             Todos volverán al estado pendiente.
           </p>
 
@@ -1075,6 +1958,14 @@ function App() {
 
     setSavedDegreeRequirementStatuses(initialDegreeRequirementStatuses);
 
+    setSavedSubjectAcademicRecords(
+      initialSubjectAcademicRecords,
+    );
+
+    setSavedStudentRegulatoryRecord(
+      DEFAULT_STUDENT_REGULATORY_RECORD,
+    );
+
     setSelectedSectionId("all");
     setSelectedStatusFilter("all");
     setSearchTerm("");
@@ -1083,7 +1974,7 @@ function App() {
     await Swal.fire({
       icon: "success",
       title: "Progreso reiniciado",
-      text: "Todas las materias y requisitos de grado volvieron al estado pendiente.",
+      text: "Las materias, requisitos, repitencias y alertas reglamentarias fueron reiniciados.",
       confirmButtonText: "Entendido",
       confirmButtonColor: "#4f46e5",
     });
@@ -1094,6 +1985,24 @@ function App() {
    * INTERFAZ
    * =====================================================
    */
+
+  if (isStudentRecordView) {
+    return (
+      <StudentAcademicRecordPage
+        curriculum={curriculum}
+        subjectStatuses={subjectStatuses}
+        subjectAcademicRecords={subjectAcademicRecords}
+        regulatoryRecord={studentRegulatoryRecord}
+        situation={studentAcademicSituation}
+        historicalRepeatCounts={historicalRepeatCounts}
+        activeRepeatCounts={activeRepeatCounts}
+        completedSemesters={completedSemesters}
+        themeMode={themeMode}
+        onToggleTheme={handleToggleTheme}
+        onBack={handleReturnToDashboard}
+      />
+    );
+  }
 
   return (
     <div className="app">
@@ -1170,7 +2079,7 @@ function App() {
          * =================================================
          */}
 
-        <section className="summary summary--four" aria-label="Resumen académico">
+        <section className="summary summary--five" aria-label="Resumen académico">
           <article className="summary-card">
             <span className="summary-card__label">Progreso</span>
 
@@ -1229,7 +2138,44 @@ function App() {
 
             <span className="summary-card__detail">No suman créditos</span>
           </article>
+
+          <button
+            className="summary-card summary-card--student-record"
+            type="button"
+            onClick={handleOpenStudentRecord}
+          >
+            <span className="summary-card__label">
+              Hoja de vida académica
+            </span>
+
+            <span
+              className="summary-card__record-icon"
+              aria-hidden="true"
+            >
+              <LuGraduationCap />
+            </span>
+
+            <strong className="summary-card__record-action">
+              Ver historial
+            </strong>
+
+            <span className="summary-card__detail">
+              Repitencias, situación y restricciones
+            </span>
+          </button>
         </section>
+
+        {shouldShowRegulatoryTracking && (
+          <RegulatoryAlerts
+          situation={studentAcademicSituation}
+          regulatoryRecord={studentRegulatoryRecord}
+          historicalRepeatCounts={historicalRepeatCounts}
+          activeRepeatCounts={activeRepeatCounts}
+          onDisciplinarySanctionChange={
+            handleDisciplinarySanctionChange
+          }
+          />
+        )}
 
         <details className="academic-statistics-panel">
           <summary className="academic-statistics-panel__summary">
@@ -1345,7 +2291,17 @@ function App() {
                       prerequisiteNamesByCode={prerequisiteNamesByCode}
                       unlockedSubjectsByCode={unlockedSubjectsByCode}
                       subjectStatuses={subjectStatuses}
+                      subjectAcademicRecords={subjectAcademicRecords}
+                      conditionalEnrollmentActive={
+                        studentRegulatoryRecord
+                          .conditionalEnrollmentActive
+                      }
+                      lostRightToContinue={
+                        studentRegulatoryRecord
+                          .lostRightToContinue
+                      }
                       onStatusChange={handleStatusChange}
+                      onRegisterFailure={handleRegisterFailure}
                       onApproveAll={() =>
                         handleApproveSection(additionalRequirementsSection)
                       }
@@ -1540,7 +2496,17 @@ function App() {
                   prerequisiteNamesByCode={prerequisiteNamesByCode}
                   unlockedSubjectsByCode={unlockedSubjectsByCode}
                   subjectStatuses={subjectStatuses}
+                  subjectAcademicRecords={subjectAcademicRecords}
+                  conditionalEnrollmentActive={
+                    studentRegulatoryRecord
+                      .conditionalEnrollmentActive
+                  }
+                  lostRightToContinue={
+                    studentRegulatoryRecord
+                      .lostRightToContinue
+                  }
                   onStatusChange={handleStatusChange}
+                  onRegisterFailure={handleRegisterFailure}
                   onApproveAll={() => handleApproveSection(section)}
                 />
               ))}

@@ -1,6 +1,7 @@
 import type {
   CurriculumSection,
   Subject,
+  SubjectAcademicRecord,
   SubjectStatus,
 } from '../types/curriculum'
 
@@ -9,6 +10,7 @@ import {
   LuCheckCheck,
   LuCircleAlert,
   LuCircleCheck,
+  LuLockKeyhole,
   LuMinus,
   LuPlus,
 } from "react-icons/lu";
@@ -19,11 +21,20 @@ interface SemesterCardProps {
   prerequisiteNamesByCode: Record<string, string>
   unlockedSubjectsByCode: Record<string, Subject[]>
   subjectStatuses: Record<string, SubjectStatus>
+  subjectAcademicRecords: Record<
+    string,
+    SubjectAcademicRecord
+  >
+  conditionalEnrollmentActive: boolean
+  lostRightToContinue: boolean
   onStatusChange: (
     subjectCode: string,
     newStatus: SubjectStatus,
-  ) => void
-  onApproveAll: () => void
+  ) => void | Promise<void>
+  onRegisterFailure: (
+    subject: Subject,
+  ) => void | Promise<void>
+  onApproveAll: () => void | Promise<void>
 }
 
 function SemesterCard({
@@ -32,7 +43,11 @@ function SemesterCard({
   prerequisiteNamesByCode,
   unlockedSubjectsByCode,
   subjectStatuses,
+  subjectAcademicRecords,
+  conditionalEnrollmentActive,
+  lostRightToContinue,
   onStatusChange,
+  onRegisterFailure,
   onApproveAll,
 }: SemesterCardProps) {
   const semesterCredits = section.subjects.reduce(
@@ -117,9 +132,46 @@ function SemesterCard({
     )
   }
 
-  const getStatusLabel = (status: SubjectStatus) => {
+  const getApprovedRepeatLevel = (
+    record: SubjectAcademicRecord,
+  ) => {
+    if (record.approvedRepeatLevel !== null) {
+      return record.approvedRepeatLevel
+    }
+
+    for (
+      let index = record.attempts.length - 1;
+      index >= 0;
+      index -= 1
+    ) {
+      const attempt = record.attempts[index]
+
+      if (attempt.result === 'approved') {
+        return attempt.repeatLevel
+      }
+    }
+
+    return null
+  }
+
+  const getRepeatLabel = (
+    repeatLevel: SubjectAcademicRecord["repeatLevel"] | null,
+  ) => {
+    if (repeatLevel === null || repeatLevel === 0) {
+      return null
+    }
+
+    return `R${repeatLevel}`
+  }
+
+  const getStatusLabel = (
+    status: SubjectStatus,
+    approvedRepeatLevel: SubjectAcademicRecord["repeatLevel"] | null = null,
+  ) => {
     if (status === 'approved') {
-      return 'Aprobada'
+      return approvedRepeatLevel && approvedRepeatLevel > 0
+        ? `Aprobada R${approvedRepeatLevel}`
+        : 'Aprobada'
     }
 
     if (status === 'in-progress') {
@@ -321,8 +373,6 @@ function SemesterCard({
         </div>
       </section>
 
-      <div className="subject-list"></div>
-
       <div className="subject-list">
         {visibleSubjects.map((subject: Subject) => {
           const hasPrerequisites =
@@ -330,6 +380,42 @@ function SemesterCard({
 
           const currentStatus =
             subjectStatuses[subject.code] ?? 'pending'
+
+          const academicRecord =
+            subjectAcademicRecords[subject.code] ?? {
+              repeatLevel: 0 as const,
+              approvedRepeatLevel: null,
+              failedAttempts: 0,
+              attempts: [],
+            }
+
+          const approvedRepeatLevel =
+            getApprovedRepeatLevel(academicRecord)
+
+          const displayedRepeatLevel =
+            currentStatus === 'approved'
+              ? approvedRepeatLevel
+              : academicRecord.repeatLevel
+
+          const repeatLabel = getRepeatLabel(
+            displayedRepeatLevel,
+          )
+
+          const approvedButtonLabel = getStatusLabel(
+            'approved',
+            currentStatus === 'approved'
+              ? approvedRepeatLevel
+              : academicRecord.repeatLevel,
+          )
+
+          const restrictedByConditionalEnrollment =
+            conditionalEnrollmentActive &&
+            academicRecord.repeatLevel === 0 &&
+            currentStatus !== 'approved'
+
+          const statusChangesBlocked =
+            lostRightToContinue ||
+            restrictedByConditionalEnrollment
 
           const unlockedSubjects =
             unlockedSubjectsByCode[subject.code] ?? []
@@ -393,8 +479,18 @@ function SemesterCard({
                         ? 'Bloqueada'
                         : getStatusLabel(
                           currentStatus,
+                          approvedRepeatLevel,
                         )}
                     </span>
+
+                    {repeatLabel && (
+                      <span
+                        className={`subject-card__repeat subject-card__repeat--${repeatLabel.toLowerCase()}`}
+                        title={`Nivel de repetición: ${repeatLabel}`}
+                      >
+                        {repeatLabel}
+                      </span>
+                    )}
                   </div>
 
                   <h4>{subject.name}</h4>
@@ -414,7 +510,7 @@ function SemesterCard({
                     className="subject-card__lock-icon"
                     aria-hidden="true"
                   >
-                    🔒
+                    <LuLockKeyhole />
                   </span>
 
                   <div>
@@ -427,6 +523,36 @@ function SemesterCard({
                       {missingPrerequisiteNames.join(
                         ', ',
                       )}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {restrictedByConditionalEnrollment &&
+                !isLocked && (
+                  <div className="subject-card__regulatory-message">
+                    <LuLockKeyhole aria-hidden="true" />
+
+                    <div>
+                      <strong>Restricción reglamentaria</strong>
+                      <span>
+                        Esta materia está en intento regular y
+                        no puede cursarse durante una matrícula
+                        condicional.
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+              {lostRightToContinue && !isLocked && (
+                <div className="subject-card__regulatory-message subject-card__regulatory-message--critical">
+                  <LuCircleAlert aria-hidden="true" />
+
+                  <div>
+                    <strong>Cambios académicos bloqueados</strong>
+                    <span>
+                      El historial registra pérdida del derecho
+                      a continuar estudios.
                     </span>
                   </div>
                 </div>
@@ -459,11 +585,15 @@ function SemesterCard({
                     : ''
                     }`}
                   type="button"
-                  disabled={isLocked}
+                  disabled={isLocked || statusChangesBlocked}
                   title={
                     isLocked
                       ? 'Aprueba primero los prerrequisitos.'
-                      : undefined
+                      : lostRightToContinue
+                        ? 'El historial registra pérdida del derecho a continuar.'
+                        : restrictedByConditionalEnrollment
+                          ? 'La matrícula condicional solo permite materias en repetición.'
+                          : undefined
                   }
                   onClick={() =>
                     onStatusChange(
@@ -481,11 +611,15 @@ function SemesterCard({
                     : ''
                     }`}
                   type="button"
-                  disabled={isLocked}
+                  disabled={isLocked || statusChangesBlocked}
                   title={
                     isLocked
                       ? 'Aprueba primero los prerrequisitos.'
-                      : undefined
+                      : lostRightToContinue
+                        ? 'El historial registra pérdida del derecho a continuar.'
+                        : restrictedByConditionalEnrollment
+                          ? 'La matrícula condicional solo permite materias en repetición.'
+                          : undefined
                   }
                   onClick={() =>
                     onStatusChange(
@@ -494,9 +628,32 @@ function SemesterCard({
                     )
                   }
                 >
-                  Aprobada
+                  {approvedButtonLabel}
                 </button>
               </div>
+
+              <button
+                className="subject-card__failure-button"
+                type="button"
+                disabled={
+                  currentStatus !== 'in-progress' ||
+                  isLocked ||
+                  lostRightToContinue
+                }
+                title={
+                  currentStatus !== 'in-progress'
+                    ? 'Primero marca la materia como En curso.'
+                    : lostRightToContinue
+                      ? 'El historial registra pérdida del derecho a continuar.'
+                      : 'Registrar la pérdida definitiva de esta materia.'
+                }
+                onClick={() =>
+                  onRegisterFailure(subject)
+                }
+              >
+                <LuCircleAlert aria-hidden="true" />
+                Registrar pérdida
+              </button>
 
               {hasPrerequisites ? (
                 <details className="prerequisites">
@@ -567,7 +724,7 @@ function SemesterCard({
                     >
                       <LuArrowDown />
                     </span>
-                    
+
                     <span>Materias que desbloquea</span>
 
                     <span className="unlocks__count">
