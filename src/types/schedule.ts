@@ -35,6 +35,16 @@ export interface ImportedAcademicOffer {
     version: 1;
 
     fileName: string;
+
+    /*
+     * Nombre de la hoja donde el sistema detectó
+     * automáticamente la tabla estructurada.
+     *
+     * Es opcional para conservar compatibilidad con
+     * ofertas que ya estén guardadas en localStorage.
+     */
+    sourceSheetName?: string;
+
     importedAt: string;
 
     period: string;

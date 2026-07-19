@@ -139,6 +139,11 @@ function AcademicOfferImportCard({
                     ),
                 ).size;
 
+            const detectedSheetMessage =
+                parsedOffer.sourceSheetName
+                    ? ` La tabla se detectó automáticamente en la hoja “${parsedOffer.sourceSheetName}”.`
+                    : "";
+
             await Swal.fire({
                 icon: "success",
 
@@ -146,7 +151,7 @@ function AcademicOfferImportCard({
                     "Oferta académica importada",
 
                 text:
-                    `Se encontraron ${importedSubjectCount} materias y ${parsedOffer.groups.length} grupos para el periodo ${parsedOffer.period}.`,
+                    `Se encontraron ${importedSubjectCount} materias y ${parsedOffer.groups.length} grupos para el periodo ${parsedOffer.period}.${detectedSheetMessage}`,
 
                 confirmButtonText:
                     "Continuar",
@@ -435,6 +440,17 @@ function AcademicOfferImportCard({
                             }
                         </span>
 
+                        {importedOffer.sourceSheetName && (
+                            <span>
+                                <strong>
+                                    Hoja detectada:
+                                </strong>{" "}
+                                {
+                                    importedOffer.sourceSheetName
+                                }
+                            </span>
+                        )}
+                        
                         <span>
                             <strong>
                                 Materias:
@@ -536,7 +552,7 @@ function AcademicOfferImportCard({
                                     </strong>
 
                                     <span>
-                                        La OfertaFIET 
+                                        La OfertaFIET
                                         solo se permite en formato:
                                         .xlsx.
                                     </span>

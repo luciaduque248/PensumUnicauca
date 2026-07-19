@@ -14,21 +14,18 @@ export const ACADEMIC_OFFER_PROGRAM =
 type RawAcademicOfferRow =
     Record<string, unknown>;
 
-const REQUIRED_HEADERS = [
-    "PERIODO",
-    "PROGRAMA",
-    "SEMESTRE",
-    "CODIGO_MATERIA",
-    "MATERIA",
-    "GRUPO",
-    "LUNES",
-    "MARTES",
-    "MIERCOLES",
-    "JUEVES",
-    "VIERNES",
-    "DOCENTES",
-    "OIDGRUPO",
-];
+interface DetectedOfferTable {
+    sheetName: string;
+    rows: RawAcademicOfferRow[];
+    headers: Set<string>;
+    score: number;
+}
+
+interface HeaderCandidate {
+    rowIndex: number;
+    headerIndexes: Map<string, number>;
+    score: number;
+}
 
 const DAY_COLUMNS: Array<{
     column: string;
@@ -56,6 +53,118 @@ const DAY_COLUMNS: Array<{
         },
     ];
 
+/*
+ * Estos encabezados identifican una tabla de oferta
+ * académica y permiten diferenciarla de una cuadrícula
+ * visual de salones o de horarios.
+ */
+const REQUIRED_TABLE_HEADERS = [
+    "MATERIA",
+    "GRUPO",
+    "DOCENTES",
+    "LUNES",
+    "MARTES",
+    "MIERCOLES",
+    "JUEVES",
+    "VIERNES",
+];
+
+/*
+ * Estos encabezados aumentan la confianza de la
+ * detección, pero no todos son obligatorios.
+ */
+const OPTIONAL_TABLE_HEADERS = [
+    "PERIODO",
+    "PROGRAMA",
+    "SEMESTRE",
+    "CODIGO_MATERIA",
+    "OIDGRUPO",
+];
+
+/*
+ * Permite reconocer pequeñas variaciones en los
+ * encabezados de diferentes archivos.
+ *
+ * Antes de consultar este objeto:
+ *
+ * - Se eliminan las tildes.
+ * - Se convierten los textos a mayúsculas.
+ * - Los espacios y símbolos se cambian por "_".
+ */
+const HEADER_ALIASES: Record<
+    string,
+    string
+> = {
+    PERIODO_ACADEMICO:
+        "PERIODO",
+
+    PROGRAMA_ACADEMICO:
+        "PROGRAMA",
+
+    NIVEL:
+        "SEMESTRE",
+
+    NIVEL_ACADEMICO:
+        "SEMESTRE",
+
+    CODIGO:
+        "CODIGO_MATERIA",
+
+    COD_MATERIA:
+        "CODIGO_MATERIA",
+
+    CODIGO_DE_MATERIA:
+        "CODIGO_MATERIA",
+
+    CODIGO_ASIGNATURA:
+        "CODIGO_MATERIA",
+
+    CODIGO_DE_ASIGNATURA:
+        "CODIGO_MATERIA",
+
+    ASIGNATURA:
+        "MATERIA",
+
+    NOMBRE_MATERIA:
+        "MATERIA",
+
+    NOMBRE_DE_MATERIA:
+        "MATERIA",
+
+    NOMBRE_ASIGNATURA:
+        "MATERIA",
+
+    NOMBRE_DE_ASIGNATURA:
+        "MATERIA",
+
+    GRUPO_MATERIA:
+        "GRUPO",
+
+    GRUPO_ASIGNATURA:
+        "GRUPO",
+
+    DOCENTE:
+        "DOCENTES",
+
+    NOMBRE_DOCENTE:
+        "DOCENTES",
+
+    NOMBRE_DEL_DOCENTE:
+        "DOCENTES",
+
+    PROFESOR:
+        "DOCENTES",
+
+    PROFESORES:
+        "DOCENTES",
+
+    ID_GRUPO:
+        "OIDGRUPO",
+
+    OID_GRUPO:
+        "OIDGRUPO",
+};
+
 const cleanText = (
     value: unknown,
 ) => {
@@ -76,8 +185,17 @@ const normalizeText = (
         .toLowerCase();
 };
 
+/*
+ * Convierte un encabezado a una forma comparable.
+ *
+ * Ejemplos:
+ *
+ * "Código materia" -> "CODIGO_MATERIA"
+ * "MIÉRCOLES"      -> "MIERCOLES"
+ * "Nombre docente" -> "NOMBRE_DOCENTE"
+ */
 const normalizeHeader = (
-    value: string,
+    value: unknown,
 ) => {
     return cleanText(value)
         .normalize("NFD")
@@ -85,19 +203,35 @@ const normalizeHeader = (
             /[\u0300-\u036f]/g,
             "",
         )
-        .toUpperCase();
+        .toUpperCase()
+        .replace(
+            /[^A-Z0-9]+/g,
+            "_",
+        )
+        .replace(
+            /^_+|_+$/g,
+            "",
+        );
 };
 
-const normalizeRow = (
-    row: RawAcademicOfferRow,
-): RawAcademicOfferRow => {
-    return Object.fromEntries(
-        Object.entries(row).map(
-            ([key, value]) => [
-                normalizeHeader(key),
-                value,
-            ],
-        ),
+const getCanonicalHeader = (
+    value: unknown,
+) => {
+    const normalizedHeader =
+        normalizeHeader(value);
+
+    if (
+        normalizedHeader ===
+        ""
+    ) {
+        return "";
+    }
+
+    return (
+        HEADER_ALIASES[
+        normalizedHeader
+        ] ??
+        normalizedHeader
     );
 };
 
@@ -122,6 +256,15 @@ const normalizeHour = (
         return "";
     }
 
+    if (
+        hour < 0 ||
+        hour > 23 ||
+        minutes < 0 ||
+        minutes > 59
+    ) {
+        return "";
+    }
+
     return `${String(hour).padStart(
         2,
         "0",
@@ -134,10 +277,22 @@ const normalizeHour = (
 const parseSemester = (
     value: unknown,
 ): number | null => {
-    const parsedValue =
-        Number(value);
+    const cleanValue =
+        cleanText(value);
 
-    return Number.isFinite(parsedValue)
+    if (
+        cleanValue ===
+        ""
+    ) {
+        return null;
+    }
+
+    const parsedValue =
+        Number(cleanValue);
+
+    return Number.isFinite(
+        parsedValue,
+    )
         ? parsedValue
         : null;
 };
@@ -146,7 +301,10 @@ const cleanTeachers = (
     value: unknown,
 ) => {
     return cleanText(value)
-        .replace(/\s*,\s*/g, ", ");
+        .replace(
+            /\s*,\s*/g,
+            ", ",
+        );
 };
 
 const parseMeetingCell = (
@@ -157,8 +315,8 @@ const parseMeetingCell = (
         cleanText(value);
 
     /*
-     * En la oferta FIET el valor 27 representa
-     * una celda sin horario.
+     * En algunos archivos de la oferta FIET,
+     * el valor 27 representa una celda sin horario.
      */
     if (
         cellText === "" ||
@@ -167,6 +325,12 @@ const parseMeetingCell = (
         return null;
     }
 
+    /*
+     * Formatos aceptados:
+     *
+     * 07:00-09:00 Salón 221-FIET
+     * 07:00 - 09:00 Sala 334
+     */
     const match =
         cellText.match(
             /(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})\s*(.*)/,
@@ -177,10 +341,14 @@ const parseMeetingCell = (
     }
 
     const startTime =
-        normalizeHour(match[1]);
+        normalizeHour(
+            match[1],
+        );
 
     const endTime =
-        normalizeHour(match[2]);
+        normalizeHour(
+            match[2],
+        );
 
     if (
         startTime === "" ||
@@ -190,7 +358,9 @@ const parseMeetingCell = (
     }
 
     const classroom =
-        cleanText(match[3]);
+        cleanText(
+            match[3],
+        );
 
     return {
         day,
@@ -203,57 +373,318 @@ const parseMeetingCell = (
     };
 };
 
-const findOfferRows = (
-    workbook: XLSX.WorkBook,
+/*
+ * Construye la relación:
+ *
+ * encabezado canónico -> posición de la columna.
+ */
+const createHeaderIndexes = (
+    row: unknown[],
 ) => {
+    const headerIndexes =
+        new Map<
+            string,
+            number
+        >();
+
+    row.forEach(
+        (
+            cellValue,
+            columnIndex,
+        ) => {
+            const canonicalHeader =
+                getCanonicalHeader(
+                    cellValue,
+                );
+
+            if (
+                canonicalHeader ===
+                "" ||
+                headerIndexes.has(
+                    canonicalHeader,
+                )
+            ) {
+                return;
+            }
+
+            headerIndexes.set(
+                canonicalHeader,
+                columnIndex,
+            );
+        },
+    );
+
+    return headerIndexes;
+};
+
+/*
+ * Busca la fila que contiene los encabezados reales.
+ *
+ * No se limita a la primera fila porque algunos libros
+ * tienen títulos, logos, filtros o espacios antes de la
+ * tabla estructurada.
+ */
+const findHeaderCandidate = (
+    matrix: unknown[][],
+): HeaderCandidate | null => {
+    let bestCandidate:
+        HeaderCandidate | null =
+        null;
+
+    const rowsToInspect =
+        Math.min(
+            matrix.length,
+            100,
+        );
+
+    for (
+        let rowIndex = 0;
+        rowIndex <
+        rowsToInspect;
+        rowIndex += 1
+    ) {
+        const headerIndexes =
+            createHeaderIndexes(
+                matrix[rowIndex] ?? [],
+            );
+
+        const hasRequiredHeaders =
+            REQUIRED_TABLE_HEADERS.every(
+                (requiredHeader) =>
+                    headerIndexes.has(
+                        requiredHeader,
+                    ),
+            );
+
+        if (
+            !hasRequiredHeaders
+        ) {
+            continue;
+        }
+
+        const optionalHeadersFound =
+            OPTIONAL_TABLE_HEADERS.filter(
+                (optionalHeader) =>
+                    headerIndexes.has(
+                        optionalHeader,
+                    ),
+            ).length;
+
+        /*
+         * Los encabezados obligatorios asignan la mayor
+         * parte de la puntuación.
+         *
+         * Los campos opcionales permiten preferir una
+         * tabla completa sobre otra tabla parcial.
+         *
+         * También se prefiere una fila de encabezados
+         * cercana al inicio cuando dos opciones empatan.
+         */
+        const score =
+            REQUIRED_TABLE_HEADERS.length *
+            100 +
+            optionalHeadersFound *
+            20 -
+            rowIndex;
+
+        if (
+            bestCandidate === null ||
+            score >
+            bestCandidate.score
+        ) {
+            bestCandidate = {
+                rowIndex,
+                headerIndexes,
+                score,
+            };
+        }
+    }
+
+    return bestCandidate;
+};
+
+const createRowsFromDetectedTable = (
+    matrix: unknown[][],
+    headerCandidate:
+        HeaderCandidate,
+) => {
+    const dataRows =
+        matrix.slice(
+            headerCandidate.rowIndex +
+            1,
+        );
+
+    return dataRows
+        .map(
+            (
+                row,
+            ): RawAcademicOfferRow => {
+                const normalizedRow:
+                    RawAcademicOfferRow =
+                    {};
+
+                headerCandidate
+                    .headerIndexes
+                    .forEach(
+                        (
+                            columnIndex,
+                            canonicalHeader,
+                        ) => {
+                            normalizedRow[
+                                canonicalHeader
+                            ] =
+                                row[
+                                columnIndex
+                                ] ??
+                                "";
+                        },
+                    );
+
+                return normalizedRow;
+            },
+        )
+        .filter(
+            (row) =>
+                cleanText(
+                    row.MATERIA,
+                ) !==
+                "",
+        );
+};
+
+/*
+ * Examina todas las hojas del libro y selecciona
+ * automáticamente la tabla estructurada más completa.
+ */
+const findOfferTable = (
+    workbook: XLSX.WorkBook,
+): DetectedOfferTable => {
+    const candidates:
+        DetectedOfferTable[] =
+        [];
+
     for (
         const sheetName of
         workbook.SheetNames
     ) {
         const worksheet =
-            workbook.Sheets[sheetName];
+            workbook.Sheets[
+            sheetName
+            ];
 
-        const rawRows =
-            XLSX.utils.sheet_to_json<
-                RawAcademicOfferRow
-            >(worksheet, {
-                defval: "",
-                raw: false,
-            });
-
-        if (rawRows.length === 0) {
+        if (!worksheet) {
             continue;
         }
 
-        const normalizedRows =
-            rawRows.map(normalizeRow);
+        const matrix =
+            XLSX.utils.sheet_to_json<
+                unknown[]
+            >(
+                worksheet,
+                {
+                    header: 1,
+                    defval: "",
+                    raw: false,
+                    blankrows: false,
+                },
+            ) as unknown[][];
+
+        if (
+            matrix.length ===
+            0
+        ) {
+            continue;
+        }
+
+        const headerCandidate =
+            findHeaderCandidate(
+                matrix,
+            );
+
+        if (
+            !headerCandidate
+        ) {
+            continue;
+        }
+
+        const rows =
+            createRowsFromDetectedTable(
+                matrix,
+                headerCandidate,
+            );
+
+        if (
+            rows.length ===
+            0
+        ) {
+            continue;
+        }
 
         const headers =
             new Set(
-                Object.keys(
-                    normalizedRows[0],
-                ),
+                headerCandidate
+                    .headerIndexes
+                    .keys(),
             );
 
-        const hasRequiredHeaders =
-            REQUIRED_HEADERS.every(
-                (header) =>
-                    headers.has(header),
+        /*
+         * La cantidad de filas válidas sirve como
+         * criterio secundario de selección.
+         */
+        const score =
+            headerCandidate.score +
+            Math.min(
+                rows.length,
+                200,
             );
 
-        if (hasRequiredHeaders) {
-            return normalizedRows;
-        }
+        candidates.push({
+            sheetName,
+            rows,
+            headers,
+            score,
+        });
     }
 
-    throw new Error(
-        "El archivo no contiene la tabla estructurada de la oferta académica FIET. Usa el archivo OfertaFIET en formato XLSX, no el archivo visual HORARIOS FIET2.",
-    );
+    const bestCandidate =
+        candidates.sort(
+            (
+                firstCandidate,
+                secondCandidate,
+            ) => {
+                if (
+                    secondCandidate.score !==
+                    firstCandidate.score
+                ) {
+                    return (
+                        secondCandidate.score -
+                        firstCandidate.score
+                    );
+                }
+
+                return (
+                    secondCandidate.rows.length -
+                    firstCandidate.rows.length
+                );
+            },
+        )[0];
+
+    if (
+        !bestCandidate
+    ) {
+        throw new Error(
+            "Se revisaron todas las hojas del archivo, pero no se encontró una tabla estructurada con las columnas Materia, Grupo, Docentes y los horarios de lunes a viernes.",
+        );
+    }
+
+    return bestCandidate;
 };
 
 const readAcademicOfferWorkbook = (
     fileBuffer: ArrayBuffer,
-    extension: "xls" | "xlsx",
+    extension:
+        | "xls"
+        | "xlsx",
 ): XLSX.WorkBook => {
     /*
      * Primer intento:
@@ -263,31 +694,39 @@ const readAcademicOfferWorkbook = (
         () => XLSX.WorkBook
     > = [
             () =>
-                XLSX.read(fileBuffer, {
-                    type: "array",
-                }),
+                XLSX.read(
+                    fileBuffer,
+                    {
+                        type: "array",
+                    },
+                ),
         ];
 
     /*
      * Algunos archivos XLS antiguos marcados
      * como solo lectura usan internamente esta
      * contraseña estándar.
-     *
-     * Este segundo intento no afecta los XLS
-     * normales.
      */
-    if (extension === "xls") {
+    if (
+        extension ===
+        "xls"
+    ) {
         readAttempts.push(
             () =>
-                XLSX.read(fileBuffer, {
-                    type: "array",
-                    password:
-                        "VelvetSweatshop",
-                }),
+                XLSX.read(
+                    fileBuffer,
+                    {
+                        type: "array",
+
+                        password:
+                            "VelvetSweatshop",
+                    },
+                ),
         );
     }
 
-    let lastError: unknown;
+    let lastError:
+        unknown;
 
     for (
         const readAttempt of
@@ -296,7 +735,8 @@ const readAcademicOfferWorkbook = (
         try {
             return readAttempt();
         } catch (error) {
-            lastError = error;
+            lastError =
+                error;
         }
     }
 
@@ -310,7 +750,9 @@ const readAcademicOfferWorkbook = (
             originalMessage,
         );
 
-    if (isProtectedFile) {
+    if (
+        isProtectedFile
+    ) {
         throw new Error(
             "El archivo XLS está protegido con un método que el lector web no puede descifrar. Para importarlo, ábrelo en Google Sheets, Excel o LibreOffice y guárdalo como XLSX sin contraseña. También puedes compartir la versión de Google Sheets mediante un enlace público.",
         );
@@ -328,17 +770,17 @@ const convertLegacyWorkbookToXlsx = (
 ): XLSX.WorkBook => {
     /*
      * El libro XLS ya fue leído correctamente.
-     * Ahora se genera una versión XLSX en memoria.
-     *
-     * No se descarga ningún archivo en el
-     * dispositivo del usuario.
+     * Se genera una versión XLSX en memoria.
      */
     const convertedBuffer =
-        XLSX.write(workbook, {
-            type: "array",
-            bookType: "xlsx",
-            compression: true,
-        });
+        XLSX.write(
+            workbook,
+            {
+                type: "array",
+                bookType: "xlsx",
+                compression: true,
+            },
+        );
 
     return XLSX.read(
         convertedBuffer,
@@ -348,10 +790,35 @@ const convertLegacyWorkbookToXlsx = (
     );
 };
 
+const createFallbackSubjectCode = (
+    subjectName: string,
+    rowIndex: number,
+) => {
+    const normalizedName =
+        normalizeHeader(
+            subjectName,
+        )
+            .replace(
+                /_/g,
+                "-",
+            )
+            .slice(
+                0,
+                45,
+            );
+
+    return (
+        normalizedName ||
+        `SIN-CODIGO-${rowIndex + 1}`
+    );
+};
+
 export const parseAcademicOfferBuffer =
     async (
-        fileBuffer: ArrayBuffer,
-        fileName: string,
+        fileBuffer:
+            ArrayBuffer,
+        fileName:
+            string,
     ): Promise<ImportedAcademicOffer> => {
         const extension =
             fileName
@@ -385,39 +852,71 @@ export const parseAcademicOfferBuffer =
          * antes de procesar las hojas.
          */
         const workbook =
-            supportedExtension === "xls"
+            supportedExtension ===
+                "xls"
                 ? convertLegacyWorkbookToXlsx(
                     sourceWorkbook,
                 )
                 : sourceWorkbook;
 
         const normalizedFileName =
-            supportedExtension === "xls"
+            supportedExtension ===
+                "xls"
                 ? fileName.replace(
                     /\.xls$/i,
                     ".xlsx",
                 )
                 : fileName;
 
-        const rows =
-            findOfferRows(workbook);
-
-        const programRows =
-            rows.filter(
-                (row) =>
-                    normalizeText(
-                        row.PROGRAMA,
-                    ) ===
-                    normalizeText(
-                        ACADEMIC_OFFER_PROGRAM,
-                    ),
+        const detectedTable =
+            findOfferTable(
+                workbook,
             );
 
+        const rows =
+            detectedTable.rows;
+
+        /*
+         * Si la tabla contiene la columna PROGRAMA y
+         * tiene valores, se filtra únicamente el programa
+         * de esta aplicación.
+         *
+         * Si la columna no existe o está completamente
+         * vacía, se permite continuar con las filas
+         * detectadas.
+         */
+        const rowsWithProgramValue =
+            rows.filter(
+                (row) =>
+                    cleanText(
+                        row.PROGRAMA,
+                    ) !==
+                    "",
+            );
+
+        const programRows =
+            detectedTable.headers.has(
+                "PROGRAMA",
+            ) &&
+                rowsWithProgramValue.length >
+                0
+                ? rows.filter(
+                    (row) =>
+                        normalizeText(
+                            row.PROGRAMA,
+                        ) ===
+                        normalizeText(
+                            ACADEMIC_OFFER_PROGRAM,
+                        ),
+                )
+                : rows;
+
         if (
-            programRows.length === 0
+            programRows.length ===
+            0
         ) {
             throw new Error(
-                "El archivo no contiene registros de Ingeniería Electrónica y Telecomunicaciones.",
+                "La tabla fue detectada, pero no contiene registros de Ingeniería Electrónica y Telecomunicaciones.",
             );
         }
 
@@ -426,7 +925,22 @@ export const parseAcademicOfferBuffer =
                 .map(
                     (
                         row,
-                    ): AcademicOfferGroup | null => {
+                        rowIndex,
+                    ):
+                        | AcademicOfferGroup
+                        | null => {
+                        const subjectName =
+                            cleanText(
+                                row.MATERIA,
+                            );
+
+                        if (
+                            subjectName ===
+                            ""
+                        ) {
+                            return null;
+                        }
+
                         const meetings =
                             DAY_COLUMNS
                                 .map(
@@ -435,7 +949,9 @@ export const parseAcademicOfferBuffer =
                                         day,
                                     }) =>
                                         parseMeetingCell(
-                                            row[column],
+                                            row[
+                                            column
+                                            ],
                                             day,
                                         ),
                                 )
@@ -443,7 +959,8 @@ export const parseAcademicOfferBuffer =
                                     (
                                         meeting,
                                     ): meeting is AcademicOfferMeeting =>
-                                        meeting !== null,
+                                        meeting !==
+                                        null,
                                 );
 
                         /*
@@ -451,7 +968,8 @@ export const parseAcademicOfferBuffer =
                          * no se necesitan en la cuadrícula.
                          */
                         if (
-                            meetings.length === 0
+                            meetings.length ===
+                            0
                         ) {
                             return null;
                         }
@@ -459,22 +977,23 @@ export const parseAcademicOfferBuffer =
                         const period =
                             cleanText(
                                 row.PERIODO,
-                            );
+                            ) ||
+                            "Periodo no indicado";
 
                         const subjectCode =
                             cleanText(
                                 row.CODIGO_MATERIA,
-                            );
-
-                        const subjectName =
-                            cleanText(
-                                row.MATERIA,
+                            ) ||
+                            createFallbackSubjectCode(
+                                subjectName,
+                                rowIndex,
                             );
 
                         const group =
                             cleanText(
                                 row.GRUPO,
-                            );
+                            ) ||
+                            "Sin grupo";
 
                         const rowGroupId =
                             cleanText(
@@ -487,6 +1006,8 @@ export const parseAcademicOfferBuffer =
                                 period,
                                 subjectCode,
                                 group,
+                                rowIndex +
+                                1,
                             ].join("-");
 
                         return {
@@ -501,7 +1022,6 @@ export const parseAcademicOfferBuffer =
 
                             subjectCode,
                             subjectName,
-
                             group,
 
                             teacher:
@@ -518,7 +1038,8 @@ export const parseAcademicOfferBuffer =
                     (
                         group,
                     ): group is AcademicOfferGroup =>
-                        group !== null,
+                        group !==
+                        null,
                 );
 
         const uniqueGroups =
@@ -537,42 +1058,62 @@ export const parseAcademicOfferBuffer =
                     secondGroup,
                 ) => {
                     const nameComparison =
-                        firstGroup.subjectName
+                        firstGroup
+                            .subjectName
                             .localeCompare(
-                                secondGroup.subjectName,
+                                secondGroup
+                                    .subjectName,
                                 "es",
                             );
 
                     if (
-                        nameComparison !== 0
+                        nameComparison !==
+                        0
                     ) {
                         return nameComparison;
                     }
 
-                    return firstGroup.group
+                    return firstGroup
+                        .group
                         .localeCompare(
-                            secondGroup.group,
+                            secondGroup
+                                .group,
                             "es",
                         );
                 },
             );
 
         if (
-            uniqueGroups.length === 0
+            uniqueGroups.length ===
+            0
         ) {
             throw new Error(
-                "No se encontraron grupos con horarios de lunes a viernes.",
+                `La hoja "${detectedTable.sheetName}" fue detectada como tabla de oferta académica, pero no contiene grupos con horarios válidos de lunes a viernes.`,
             );
         }
 
+        const groupWithPeriod =
+            uniqueGroups.find(
+                (group) =>
+                    group.period !==
+                    "Periodo no indicado",
+            );
+
         const period =
-            uniqueGroups[0].period;
+            groupWithPeriod
+                ?.period ??
+            uniqueGroups[0]
+                .period;
 
         return {
             version: 1,
 
             fileName:
                 normalizedFileName,
+
+            sourceSheetName:
+                detectedTable
+                    .sheetName,
 
             importedAt:
                 new Date()
