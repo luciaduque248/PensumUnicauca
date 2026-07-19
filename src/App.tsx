@@ -46,7 +46,11 @@ import type {
 } from "./types/curriculum";
 import type { StudentProfile } from "./types/studentProfile";
 
-import type { ScheduleClass, StudentSchedule, } from "./types/schedule";
+import type {
+  ImportedAcademicOffer,
+  ScheduleClass,
+  StudentSchedule,
+} from "./types/schedule";
 
 type SubjectFilter = "all" | "pending" | "in-progress" | "approved" | "blocked";
 type ThemeMode = "light" | "dark";
@@ -81,6 +85,35 @@ const createScheduleClassId = () => {
   return `schedule-${Date.now()}-${Math.random()
     .toString(16)
     .slice(2)}`;
+};
+
+const normalizeStudentSchedule = (
+  schedule:
+    | Partial<StudentSchedule>
+    | undefined,
+): StudentSchedule => {
+  return {
+    version: 2,
+
+    classes:
+      Array.isArray(
+        schedule?.classes,
+      )
+        ? schedule.classes
+        : [],
+
+    importedOffer:
+      schedule?.importedOffer ??
+      null,
+
+    isConfirmed:
+      schedule?.isConfirmed ??
+      false,
+
+    confirmedAt:
+      schedule?.confirmedAt ??
+      null,
+  };
 };
 
 const createSubjectAttempt = (
@@ -368,15 +401,10 @@ function App() {
     DEFAULT_STUDENT_SCHEDULE,
   );
 
-  const studentSchedule: StudentSchedule = {
-    version: 1,
-
-    classes: Array.isArray(
-      savedStudentSchedule.classes,
-    )
-      ? savedStudentSchedule.classes
-      : [],
-  };
+  const studentSchedule =
+    normalizeStudentSchedule(
+      savedStudentSchedule,
+    );
 
   /*
    * =====================================================
@@ -954,36 +982,25 @@ function App() {
       ScheduleClass[] =
       newScheduleClasses.map(
         (newScheduleClass) => ({
-          id: createScheduleClassId(),
+          id:
+            createScheduleClassId(),
 
-          subjectName:
-            newScheduleClass.subjectName,
-
-          day:
-            newScheduleClass.day,
-
-          startTime:
-            newScheduleClass.startTime,
-
-          endTime:
-            newScheduleClass.endTime,
+          ...newScheduleClass,
         }),
       );
 
     setSavedStudentSchedule(
       (currentSchedule) => {
-        const currentClasses =
-          Array.isArray(
-            currentSchedule.classes,
-          )
-            ? currentSchedule.classes
-            : [];
+        const normalizedSchedule =
+          normalizeStudentSchedule(
+            currentSchedule,
+          );
 
         return {
-          version: 1,
+          ...normalizedSchedule,
 
           classes: [
-            ...currentClasses,
+            ...normalizedSchedule.classes,
             ...scheduleClassesWithId,
           ],
         };
@@ -1003,34 +1020,41 @@ function App() {
       Omit<ScheduleClass, "id">
     >,
   ) => {
-    const normalizedOriginalName =
-      normalizeScheduleSubjectName(
-        originalSubjectName,
-      );
-
     setSavedStudentSchedule(
       (currentSchedule) => {
-        const currentClasses =
-          Array.isArray(
-            currentSchedule.classes,
-          )
-            ? currentSchedule.classes
-            : [];
-
-        const originalClasses =
-          currentClasses.filter(
-            (scheduleClass) =>
-              normalizeScheduleSubjectName(
-                scheduleClass.subjectName,
-              ) === normalizedOriginalName,
+        const normalizedSchedule =
+          normalizeStudentSchedule(
+            currentSchedule,
           );
 
-        const remainingClasses =
-          currentClasses.filter(
+        const normalizedOriginalName =
+          normalizeScheduleSubjectName(
+            originalSubjectName,
+          );
+
+        /*
+         * Franjas que pertenecen actualmente a la
+         * materia que se está editando.
+         */
+        const originalClasses =
+          normalizedSchedule.classes.filter(
             (scheduleClass) =>
               normalizeScheduleSubjectName(
                 scheduleClass.subjectName,
-              ) !== normalizedOriginalName,
+              ) ===
+              normalizedOriginalName,
+          );
+
+        /*
+         * Las demás materias se conservan sin cambios.
+         */
+        const remainingClasses =
+          normalizedSchedule.classes.filter(
+            (scheduleClass) =>
+              normalizeScheduleSubjectName(
+                scheduleClass.subjectName,
+              ) !==
+              normalizedOriginalName,
           );
 
         const updatedClassesWithId:
@@ -1040,26 +1064,31 @@ function App() {
               updatedScheduleClass,
               index,
             ) => ({
+              /*
+               * Conserva grupo, docente, salón,
+               * procedencia y código cuando existían.
+               */
+              ...originalClasses[index],
+
+              /*
+               * Aplica los cambios realizados desde
+               * el formulario.
+               */
+              ...updatedScheduleClass,
+
+              /*
+               * Conserva el identificador de la franja.
+               * Si se agregó una franja nueva, crea uno.
+               */
               id:
-                originalClasses[index]?.id ??
+                originalClasses[index]
+                  ?.id ??
                 createScheduleClassId(),
-
-              subjectName:
-                updatedScheduleClass.subjectName,
-
-              day:
-                updatedScheduleClass.day,
-
-              startTime:
-                updatedScheduleClass.startTime,
-
-              endTime:
-                updatedScheduleClass.endTime,
             }),
           );
 
         return {
-          version: 1,
+          ...normalizedSchedule,
 
           classes: [
             ...remainingClasses,
@@ -1086,18 +1115,16 @@ function App() {
 
     setSavedStudentSchedule(
       (currentSchedule) => {
-        const currentClasses =
-          Array.isArray(
-            currentSchedule.classes,
-          )
-            ? currentSchedule.classes
-            : [];
+        const normalizedSchedule =
+          normalizeStudentSchedule(
+            currentSchedule,
+          );
 
         return {
-          version: 1,
+          ...normalizedSchedule,
 
           classes:
-            currentClasses.filter(
+            normalizedSchedule.classes.filter(
               (scheduleClass) =>
                 normalizeScheduleSubjectName(
                   scheduleClass.subjectName,
@@ -1693,6 +1720,70 @@ function App() {
         ? "#dc2626"
         : "#4f46e5",
     });
+  };
+
+  /*
+ * =====================================================
+ * IMPORTAR OFERTA ACADÉMICA
+ * =====================================================
+ */
+
+  const handleImportAcademicOffer = (
+    importedOffer:
+      ImportedAcademicOffer,
+  ) => {
+    /*
+     * Aunque la interfaz oculta el botón, también
+     * se protege la función para impedir una
+     * importación después de confirmar.
+     */
+    if (
+      studentSchedule.isConfirmed
+    ) {
+      return;
+    }
+
+    setSavedStudentSchedule(
+      (currentSchedule) => {
+        const normalizedSchedule =
+          normalizeStudentSchedule(
+            currentSchedule,
+          );
+
+        return {
+          ...normalizedSchedule,
+
+          importedOffer,
+        };
+      },
+    );
+  };
+
+  /*
+   * =====================================================
+   * CONFIRMAR HORARIO
+   * =====================================================
+   */
+
+  const handleConfirmSchedule = () => {
+    setSavedStudentSchedule(
+      (currentSchedule) => {
+        const normalizedSchedule =
+          normalizeStudentSchedule(
+            currentSchedule,
+          );
+
+        return {
+          ...normalizedSchedule,
+
+          isConfirmed: true,
+
+          confirmedAt:
+            new Date()
+              .toISOString(),
+        };
+      },
+    );
   };
 
   /*
@@ -2379,12 +2470,50 @@ function App() {
 
         <SchedulePage
           themeMode={themeMode}
-          scheduleClasses={studentSchedule.classes}
-          availableSubjectNames={availableScheduleSubjectNames}
-          onToggleTheme={handleToggleTheme}
-          onAddClasses={handleAddScheduleClasses}
-          onUpdateSubject={handleUpdateScheduleSubject}
-          onDeleteSubject={handleDeleteScheduleSubject}
+
+          scheduleClasses={
+            studentSchedule.classes
+          }
+
+          availableSubjectNames={
+            availableScheduleSubjectNames
+          }
+
+          importedOffer={
+            studentSchedule.importedOffer
+          }
+
+          isScheduleConfirmed={
+            studentSchedule.isConfirmed
+          }
+
+          confirmedAt={
+            studentSchedule.confirmedAt
+          }
+
+          onToggleTheme={
+            handleToggleTheme
+          }
+
+          onImportOffer={
+            handleImportAcademicOffer
+          }
+
+          onConfirmSchedule={
+            handleConfirmSchedule
+          }
+
+          onAddClasses={
+            handleAddScheduleClasses
+          }
+
+          onUpdateSubject={
+            handleUpdateScheduleSubject
+          }
+
+          onDeleteSubject={
+            handleDeleteScheduleSubject
+          }
         />
       </div>
     );

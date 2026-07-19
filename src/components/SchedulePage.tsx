@@ -17,11 +17,15 @@ import {
     LuSun,
     LuTrash2,
     LuX,
+    LuBadgeCheck,
 } from "react-icons/lu";
 
 import ScheduleGrid from "./ScheduleGrid";
+import AcademicOfferClassForm from "./AcademicOfferClassForm";
+import AcademicOfferImportCard from "./AcademicOfferImportCard";
 
 import type {
+    ImportedAcademicOffer,
     ScheduleClass,
     ScheduleDay,
 } from "../types/schedule";
@@ -32,6 +36,22 @@ interface SchedulePageProps {
     scheduleClasses: ScheduleClass[];
 
     availableSubjectNames: string[];
+
+    importedOffer:
+    | ImportedAcademicOffer
+    | null;
+
+    isScheduleConfirmed: boolean;
+
+    confirmedAt: string | null;
+
+    onImportOffer: (
+        importedOffer:
+            ImportedAcademicOffer,
+    ) => void | Promise<void>;
+
+    onConfirmSchedule:
+    () => void | Promise<void>;
 
     onToggleTheme: () => void;
 
@@ -280,7 +300,14 @@ function SchedulePage({
     themeMode,
     scheduleClasses,
     availableSubjectNames,
+
+    importedOffer,
+    isScheduleConfirmed,
+    confirmedAt,
+
     onToggleTheme,
+    onImportOffer,
+    onConfirmSchedule,
     onAddClasses,
     onUpdateSubject,
     onDeleteSubject,
@@ -716,6 +743,101 @@ function SchedulePage({
             });
         };
 
+    const handleConfirmCurrentSchedule =
+        async () => {
+            if (
+                scheduleClasses.length === 0
+            ) {
+                await Swal.fire({
+                    icon: "info",
+
+                    title:
+                        "El horario está vacío",
+
+                    text:
+                        "Agrega al menos una materia antes de confirmar el horario.",
+
+                    confirmButtonText:
+                        "Entendido",
+
+                    confirmButtonColor:
+                        "#4f46e5",
+                });
+
+                return;
+            }
+
+            const result =
+                await Swal.fire({
+                    icon: "question",
+
+                    title:
+                        "¿Confirmar este horario?",
+
+                    text:
+                        "Después de confirmarlo podrás seguir agregando, editando o eliminando materias por adiciones y cancelaciones. Sin embargo, ya no podrás subir ni reemplazar el archivo Excel de la oferta académica.",
+
+                    showCancelButton:
+                        true,
+
+                    confirmButtonText:
+                        "Sí, confirmar horario",
+
+                    cancelButtonText:
+                        "Seguir revisando",
+
+                    confirmButtonColor:
+                        "#16a34a",
+
+                    cancelButtonColor:
+                        "#64748b",
+
+                    reverseButtons:
+                        true,
+
+                    focusCancel:
+                        true,
+
+                    allowOutsideClick:
+                        false,
+                });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            await onConfirmSchedule();
+
+            await Swal.fire({
+                icon: "success",
+
+                title:
+                    "Horario confirmado",
+
+                text:
+                    "El horario quedó confirmado. Todavía podrás agregar, editar o eliminar materias, pero la importación del Excel quedó cerrada.",
+
+                confirmButtonText:
+                    "Continuar",
+
+                confirmButtonColor:
+                    "#16a34a",
+            });
+        };
+
+    const formattedConfirmationDate =
+        confirmedAt
+            ? new Intl.DateTimeFormat(
+                "es-CO",
+                {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                },
+            ).format(
+                new Date(confirmedAt),
+            )
+            : "";
+
     const handleSubmit = async (
         event:
             FormEvent<HTMLFormElement>,
@@ -1069,6 +1191,88 @@ function SchedulePage({
             </header>
 
             <main className="schedule-main">
+                <section
+                    className={`schedule-confirmation ${isScheduleConfirmed
+                        ? "schedule-confirmation--confirmed"
+                        : ""
+                        }`}
+                >
+                    <div>
+                        <p>
+                            Estado del horario
+                        </p>
+
+                        <h2>
+                            {isScheduleConfirmed
+                                ? "Horario confirmado"
+                                : "Horario en construcción"}
+                        </h2>
+
+                        <span>
+                            {isScheduleConfirmed
+                                ? `Confirmado ${formattedConfirmationDate}. Puedes seguir realizando adiciones, cancelaciones o ajustes manuales.`
+                                : "Revisa las materias y confirma cuando hayas terminado de construir tu horario."}
+                        </span>
+                    </div>
+
+                    {isScheduleConfirmed ? (
+                        <span className="schedule-confirmation__badge">
+                            <LuBadgeCheck
+                                aria-hidden="true"
+                            />
+
+                            Confirmado
+                        </span>
+                    ) : (
+                        <button
+                            className="schedule-confirmation__button"
+                            type="button"
+                            onClick={
+                                handleConfirmCurrentSchedule
+                            }
+                        >
+                            <LuBadgeCheck
+                                aria-hidden="true"
+                            />
+
+                            Confirmar horario
+                        </button>
+                    )}
+                </section>
+
+                {/*
+   * El importador desaparece completamente
+   * después de confirmar el horario.
+   */}
+                {!isScheduleConfirmed && (
+                    <AcademicOfferImportCard
+                        importedOffer={
+                            importedOffer
+                        }
+                        onImportOffer={
+                            onImportOffer
+                        }
+                    />
+                )}
+
+                {/*
+   * La oferta importada se conserva después de
+   * confirmar, para permitir futuras adiciones.
+   */}
+                {importedOffer && (
+                    <AcademicOfferClassForm
+                        importedOffer={
+                            importedOffer
+                        }
+                        scheduleClasses={
+                            scheduleClasses
+                        }
+                        onAddClasses={
+                            onAddClasses
+                        }
+                    />
+                )}
+
                 <div className="schedule-builder">
                     <form
                         className="schedule-form"
@@ -1088,13 +1292,17 @@ function SchedulePage({
                                 <p>
                                     {editingSubjectName
                                         ? "Editando materia"
-                                        : "Nueva materia"}
+                                        : importedOffer
+                                            ? "Registro manual"
+                                            : "Nueva materia"}
                                 </p>
 
                                 <h2>
                                     {editingSubjectName
                                         ? "Modificar materia"
-                                        : "Agregar al horario"}
+                                        : importedOffer
+                                            ? "Agregar o ajustar manualmente"
+                                            : "Agregar al horario"}
                                 </h2>
 
                                 <span>
@@ -1537,93 +1745,133 @@ function SchedulePage({
                         ) : (
                             <div className="schedule-saved__list">
                                 {groupedScheduleSubjects.map(
-                                    (
-                                        scheduleSubject,
-                                    ) => (
-                                        <article
-                                            className="schedule-saved__item schedule-saved__item--grouped"
-                                            key={
-                                                normalizeSearchText(
-                                                    scheduleSubject.subjectName,
-                                                )
-                                            }
-                                        >
-                                            <div className="schedule-saved__item-header">
-                                                <h3>
-                                                    {
-                                                        scheduleSubject.subjectName
-                                                    }
-                                                </h3>
+                                    (scheduleSubject) => {
+                                        const referenceClass =
+                                            scheduleSubject.classes[0];
 
-                                                <div className="schedule-saved__item-actions">
-                                                    <button
-                                                        className="schedule-saved__edit-button"
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleEditSubject(
-                                                                scheduleSubject,
-                                                            )
-                                                        }
-                                                    >
-                                                        <LuPencil
-                                                            aria-hidden="true"
-                                                        />
+                                        return (
+                                            <article
+                                                className="schedule-saved__item schedule-saved__item--grouped"
+                                                key={
+                                                    normalizeSearchText(
+                                                        scheduleSubject.subjectName,
+                                                    )
+                                                }
+                                            >
+                                                <div className="schedule-saved__item-header">
+                                                    <div className="schedule-saved__item-title">
+                                                        <h3>
+                                                            {
+                                                                scheduleSubject
+                                                                    .subjectName
+                                                            }
+                                                        </h3>
 
-                                                        Editar
-                                                    </button>
+                                                        {referenceClass
+                                                            ?.group && (
+                                                                <span>
+                                                                    Grupo{" "}
+                                                                    {
+                                                                        referenceClass
+                                                                            .group
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                    </div>
 
-                                                    <button
-                                                        className="schedule-saved__delete-button"
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleDeleteSubject(
-                                                                scheduleSubject,
-                                                            )
-                                                        }
-                                                    >
-                                                        <LuTrash2
-                                                            aria-hidden="true"
-                                                        />
-
-                                                        Eliminar
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <div className="schedule-saved__meeting-list">
-                                                {scheduleSubject.classes.map(
-                                                    (
-                                                        scheduleClass,
-                                                    ) => (
-                                                        <div
-                                                            className="schedule-saved__meeting"
-                                                            key={
-                                                                scheduleClass.id
+                                                    <div className="schedule-saved__item-actions">
+                                                        <button
+                                                            className="schedule-saved__edit-button"
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleEditSubject(
+                                                                    scheduleSubject,
+                                                                )
                                                             }
                                                         >
-                                                            <span className="schedule-saved__item-day">
-                                                                {
-                                                                    dayLabels[
-                                                                    scheduleClass.day
-                                                                    ]
-                                                                }
-                                                            </span>
+                                                            <LuPencil
+                                                                aria-hidden="true"
+                                                            />
 
-                                                            <p>
-                                                                {formatScheduleTime(
-                                                                    scheduleClass.startTime,
-                                                                )}
-                                                                {" — "}
-                                                                {formatScheduleTime(
-                                                                    scheduleClass.endTime,
-                                                                )}
-                                                            </p>
-                                                        </div>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </article>
-                                    ),
+                                                            Editar
+                                                        </button>
+
+                                                        <button
+                                                            className="schedule-saved__delete-button"
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleDeleteSubject(
+                                                                    scheduleSubject,
+                                                                )
+                                                            }
+                                                        >
+                                                            <LuTrash2
+                                                                aria-hidden="true"
+                                                            />
+
+                                                            Eliminar
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {referenceClass
+                                                    ?.teacher && (
+                                                        <p className="schedule-saved__teacher">
+                                                            <strong>
+                                                                Docente:
+                                                            </strong>{" "}
+                                                            {
+                                                                referenceClass
+                                                                    .teacher
+                                                            }
+                                                        </p>
+                                                    )}
+
+                                                <div className="schedule-saved__meeting-list">
+                                                    {scheduleSubject.classes.map(
+                                                        (scheduleClass) => (
+                                                            <div
+                                                                className="schedule-saved__meeting"
+                                                                key={
+                                                                    scheduleClass.id
+                                                                }
+                                                            >
+                                                                <span className="schedule-saved__item-day">
+                                                                    {
+                                                                        dayLabels[
+                                                                        scheduleClass.day
+                                                                        ]
+                                                                    }
+                                                                </span>
+
+                                                                <div className="schedule-saved__meeting-information">
+                                                                    <p>
+                                                                        {formatScheduleTime(
+                                                                            scheduleClass.startTime,
+                                                                        )}
+                                                                        {" — "}
+                                                                        {formatScheduleTime(
+                                                                            scheduleClass.endTime,
+                                                                        )}
+                                                                    </p>
+
+                                                                    {scheduleClass
+                                                                        .classroom && (
+                                                                            <small>
+                                                                                {
+                                                                                    scheduleClass
+                                                                                        .classroom
+                                                                                }
+                                                                            </small>
+                                                                        )}
+                                                                </div>
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </article>
+                                        );
+                                    },
                                 )}
                             </div>
                         )}

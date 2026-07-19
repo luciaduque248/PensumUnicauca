@@ -6736,3 +6736,731 @@ html[data-theme="dark"] .schedule-saved__meeting p {
   border-color: #d8b4fe;
   background-color: #f3e8ff;
 }
+
+/*
+ * =========================================================
+ * CONFIRMACIÓN DEL HORARIO
+ * =========================================================
+ */
+
+.schedule-confirmation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+  padding: 20px 22px;
+  border: 1px solid #c7d2fe;
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg,
+      #eef2ff,
+      #ffffff);
+  box-shadow:
+    0 14px 34px rgba(79, 70, 229, 0.08);
+}
+
+.schedule-confirmation--confirmed {
+  border-color: #bbf7d0;
+  background:
+    linear-gradient(135deg,
+      #f0fdf4,
+      #ffffff);
+}
+
+.schedule-confirmation p {
+  margin: 0 0 4px;
+  color: #6366f1;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.schedule-confirmation--confirmed p {
+  color: #15803d;
+}
+
+.schedule-confirmation h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.25rem;
+  letter-spacing: -0.025em;
+}
+
+.schedule-confirmation div>span {
+  display: block;
+  max-width: 760px;
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.schedule-confirmation__button,
+.schedule-confirmation__badge {
+  display: inline-flex;
+  min-height: 43px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.schedule-confirmation__button {
+  color: #ffffff;
+  border: 1px solid #16a34a;
+  background-color: #16a34a;
+  cursor: pointer;
+}
+
+.schedule-confirmation__button:hover {
+  background-color: #15803d;
+}
+
+.schedule-confirmation__badge {
+  color: #166534;
+  border: 1px solid #86efac;
+  background-color: #dcfce7;
+}
+
+.schedule-confirmation__button svg,
+.schedule-confirmation__badge svg {
+  width: 16px;
+  height: 16px;
+}
+
+/*
+ * =========================================================
+ * IMPORTACIÓN DE LA OFERTA FIET
+ * =========================================================
+ */
+
+.academic-offer-import {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding: 21px;
+  border: 1px solid #bae6fd;
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg,
+      #f0f9ff,
+      #ffffff);
+  box-shadow:
+    0 14px 34px rgba(2, 132, 199, 0.08);
+}
+
+.academic-offer-import__icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 16px;
+  color: #0369a1;
+  background-color: #e0f2fe;
+}
+
+.academic-offer-import__icon svg {
+  width: 25px;
+  height: 25px;
+}
+
+.academic-offer-import__spinner {
+  animation:
+    academic-offer-spin 900ms linear infinite;
+}
+
+@keyframes academic-offer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.academic-offer-import__content {
+  min-width: 0;
+  flex: 1;
+}
+
+.academic-offer-import__content>p:first-child {
+  margin: 0 0 4px;
+  color: #0284c7;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.academic-offer-import h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.25rem;
+  letter-spacing: -0.025em;
+}
+
+.academic-offer-import__description {
+  max-width: 760px;
+  margin: 7px 0 0;
+  color: #64748b;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.academic-offer-import__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 16px;
+  margin-top: 9px;
+  color: #64748b;
+  font-size: 0.68rem;
+}
+
+.academic-offer-import__summary strong {
+  color: #334155;
+}
+
+.academic-offer-import__input {
+  display: none;
+}
+
+.academic-offer-import__button {
+  display: inline-flex;
+  min-height: 43px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid #0284c7;
+  border-radius: 12px;
+  color: #ffffff;
+  background-color: #0284c7;
+  font-family: inherit;
+  font-size: 0.71rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.academic-offer-import__button:hover:not(:disabled) {
+  background-color: #0369a1;
+}
+
+.academic-offer-import__button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.academic-offer-import__button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/*
+ * =========================================================
+ * FORMULARIO DE LA OFERTA IMPORTADA
+ * =========================================================
+ */
+
+.academic-offer-form {
+  margin-bottom: 22px;
+  padding: 23px;
+  border: 1px solid #c7d2fe;
+  border-radius: 24px;
+  background-color: #ffffff;
+  box-shadow:
+    0 18px 44px rgba(15, 23, 42, 0.09);
+}
+
+.academic-offer-form__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+
+.academic-offer-form__header>span {
+  display: grid;
+  width: 45px;
+  height: 45px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 14px;
+  color: #4338ca;
+  background-color: #eef2ff;
+}
+
+.academic-offer-form__header svg {
+  width: 21px;
+  height: 21px;
+}
+
+.academic-offer-form__header p {
+  margin: 0 0 4px;
+  color: #6366f1;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.academic-offer-form__header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.4rem;
+  letter-spacing: -0.03em;
+}
+
+.academic-offer-form__header small {
+  display: block;
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.academic-offer-form__fields {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.3fr) minmax(220px, 0.7fr);
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.academic-offer-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.academic-offer-field>span {
+  color: #334155;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.academic-offer-field>small {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 0.65rem;
+}
+
+.academic-offer-field input,
+.academic-offer-field select {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 11px;
+  padding: 0 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  color: #1e293b;
+  background-color: #ffffff;
+  font-family: inherit;
+  font-size: 0.77rem;
+  outline: none;
+}
+
+.academic-offer-field input:focus,
+.academic-offer-field select:focus {
+  border-color: #6366f1;
+  box-shadow:
+    0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+.academic-offer-field select:disabled {
+  color: #94a3b8;
+  background-color: #f8fafc;
+  cursor: not-allowed;
+}
+
+.academic-offer-autocomplete {
+  position: relative;
+}
+
+.academic-offer-autocomplete input {
+  margin-top: 11px;
+}
+
+.academic-offer-autocomplete__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 40;
+  display: grid;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 7px;
+  border: 1px solid #cbd5e1;
+  border-radius: 13px;
+  background-color: #ffffff;
+  box-shadow:
+    0 18px 38px rgba(15, 23, 42, 0.16);
+}
+
+.academic-offer-autocomplete__menu button {
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 8px;
+  color: #334155;
+  background-color: transparent;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.academic-offer-autocomplete__menu button:hover {
+  color: #3730a3;
+  background-color: #eef2ff;
+}
+
+.academic-offer-preview {
+  margin-top: 18px;
+  padding: 17px;
+  border: 1px solid #e0e7ff;
+  border-radius: 18px;
+  background-color: #f8fafc;
+}
+
+.academic-offer-preview__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.academic-offer-preview__heading p {
+  margin: 0 0 4px;
+  color: #6366f1;
+  font-size: 0.65rem;
+  font-weight: 850;
+}
+
+.academic-offer-preview__heading h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.academic-offer-preview__heading>span {
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #3730a3;
+  background-color: #e0e7ff;
+  font-size: 0.66rem;
+  font-weight: 850;
+}
+
+.academic-offer-preview__teacher {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #ffffff;
+}
+
+.academic-offer-preview__teacher>svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #4f46e5;
+}
+
+.academic-offer-preview__teacher div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.academic-offer-preview__teacher small {
+  color: #64748b;
+  font-size: 0.62rem;
+}
+
+.academic-offer-preview__teacher strong {
+  color: #1e293b;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.academic-offer-preview__meetings {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.academic-offer-preview__meetings article {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #ffffff;
+}
+
+.academic-offer-preview__day {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #075985;
+  background-color: #e0f2fe;
+  font-size: 0.62rem;
+  font-weight: 850;
+}
+
+.academic-offer-preview__meetings article div {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.academic-offer-preview__meetings p {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  color: #475569;
+  font-size: 0.67rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.academic-offer-preview__meetings svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #6366f1;
+}
+
+.academic-offer-form__submit {
+  display: inline-flex;
+  min-height: 43px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 0 15px;
+  border: 1px solid #4f46e5;
+  border-radius: 12px;
+  color: #ffffff;
+  background-color: #4f46e5;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.academic-offer-form__submit:hover {
+  background-color: #4338ca;
+}
+
+/*
+ * =========================================================
+ * DATOS IMPORTADOS EN EL RESUMEN
+ * =========================================================
+ */
+
+.schedule-saved__item-title {
+  min-width: 0;
+}
+
+.schedule-saved__item-title>span {
+  display: inline-flex;
+  margin-top: 6px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #3730a3;
+  background-color: #e0e7ff;
+  font-size: 0.6rem;
+  font-weight: 850;
+}
+
+.schedule-saved__teacher {
+  margin: 11px 0 0;
+  color: #64748b;
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+
+.schedule-saved__teacher strong {
+  color: #334155;
+}
+
+.schedule-saved__meeting-information {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.schedule-saved__meeting-information p {
+  margin: 0;
+}
+
+.schedule-saved__meeting-information small {
+  color: #64748b;
+  font-size: 0.61rem;
+  font-weight: 650;
+  text-align: right;
+}
+
+/*
+ * Datos dentro de la cuadrícula.
+ */
+
+.schedule-class-block__group,
+.schedule-class-block__classroom {
+  display: block;
+  overflow: hidden;
+  font-size: 0.57rem;
+  font-weight: 750;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-class-block__group {
+  opacity: 0.85;
+}
+
+.schedule-class-block__classroom {
+  opacity: 0.78;
+}
+
+/*
+ * =========================================================
+ * MODO OSCURO
+ * =========================================================
+ */
+
+html[data-theme="dark"] .schedule-confirmation,
+html[data-theme="dark"] .schedule-confirmation--confirmed,
+html[data-theme="dark"] .academic-offer-import,
+html[data-theme="dark"] .academic-offer-form {
+  border-color: #334155;
+  background:
+    linear-gradient(135deg,
+      #0f172a,
+      #111827);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.28);
+}
+
+html[data-theme="dark"] .schedule-confirmation h2,
+html[data-theme="dark"] .academic-offer-import h2,
+html[data-theme="dark"] .academic-offer-form__header h2,
+html[data-theme="dark"] .academic-offer-preview__heading h3,
+html[data-theme="dark"] .academic-offer-preview__teacher strong {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .schedule-confirmation div>span,
+html[data-theme="dark"] .academic-offer-import__description,
+html[data-theme="dark"] .academic-offer-import__summary,
+html[data-theme="dark"] .academic-offer-form__header small,
+html[data-theme="dark"] .academic-offer-field>small,
+html[data-theme="dark"] .schedule-saved__teacher,
+html[data-theme="dark"] .schedule-saved__meeting-information small {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .academic-offer-import__summary strong,
+html[data-theme="dark"] .academic-offer-field>span,
+html[data-theme="dark"] .schedule-saved__teacher strong {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .academic-offer-field input,
+html[data-theme="dark"] .academic-offer-field select,
+html[data-theme="dark"] .academic-offer-preview__teacher,
+html[data-theme="dark"] .academic-offer-preview__meetings article {
+  color: #f8fafc;
+  border-color: #334155;
+  background-color: #0f172a;
+}
+
+html[data-theme="dark"] .academic-offer-preview {
+  border-color: #334155;
+  background-color: #111827;
+}
+
+html[data-theme="dark"] .academic-offer-autocomplete__menu {
+  border-color: #334155;
+  background-color: #0f172a;
+}
+
+html[data-theme="dark"] .academic-offer-autocomplete__menu button {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .academic-offer-autocomplete__menu button:hover {
+  color: #e0e7ff;
+  background-color: #312e81;
+}
+
+/*
+ * =========================================================
+ * RESPONSIVE
+ * =========================================================
+ */
+
+@media (max-width: 780px) {
+
+  .schedule-confirmation,
+  .academic-offer-import {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .schedule-confirmation__button,
+  .academic-offer-import__button {
+    width: 100%;
+  }
+
+  .academic-offer-form__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .academic-offer-preview__meetings {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+
+  .schedule-confirmation,
+  .academic-offer-import,
+  .academic-offer-form {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .academic-offer-form__header {
+    flex-direction: column;
+  }
+
+  .academic-offer-preview__heading {
+    flex-direction: column;
+  }
+
+  .schedule-saved__meeting-information {
+    align-items: flex-start;
+  }
+
+  .schedule-saved__meeting-information small {
+    text-align: left;
+  }
+}

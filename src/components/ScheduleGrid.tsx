@@ -254,19 +254,39 @@ function ScheduleGrid({
                                     style={blockStyle}
                                     key={scheduleClass.id}
                                     aria-label={`${scheduleClass.subjectName}, ${scheduleDays[
-                                            dayIndex
-                                        ].label
+                                        dayIndex
+                                    ].label
                                         }, de ${formatScheduleTime(
                                             scheduleClass.startTime,
                                         )} a ${formatScheduleTime(
                                             scheduleClass.endTime,
                                         )}`}
+                                    title={
+                                        scheduleClass.teacher
+                                            ? `Docente: ${scheduleClass.teacher}`
+                                            : undefined
+                                    }
                                 >
                                     <strong>
                                         {
                                             scheduleClass.subjectName
                                         }
                                     </strong>
+
+                                    {scheduleClass.group && (
+                                        <small className="schedule-class-block__group">
+                                            Grupo{" "}
+                                            {scheduleClass.group}
+                                        </small>
+                                    )}
+
+                                    {scheduleClass.classroom && (
+                                        <small className="schedule-class-block__classroom">
+                                            {
+                                                scheduleClass.classroom
+                                            }
+                                        </small>
+                                    )}
 
                                     <span>
                                         {formatScheduleTime(

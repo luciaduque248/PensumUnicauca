@@ -6,6 +6,12 @@ export const STUDENT_SCHEDULE_STORAGE_KEY =
     "pensum-student-schedule";
 
 export const DEFAULT_STUDENT_SCHEDULE: StudentSchedule = {
-    version: 1,
+    version: 2,
+
     classes: [],
+
+    importedOffer: null,
+
+    isConfirmed: false,
+    confirmedAt: null,
 };
