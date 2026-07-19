@@ -7464,3 +7464,229 @@ html[data-theme="dark"] .academic-offer-autocomplete__menu button:hover {
     text-align: left;
   }
 }
+
+/*
+ * =========================================================
+ * MÉTODOS DE IMPORTACIÓN DE LA OFERTA FIET
+ * =========================================================
+ */
+
+.academic-offer-import {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.academic-offer-import__controls {
+  width: 100%;
+  padding-top: 4px;
+}
+
+.academic-offer-import__methods {
+  display: inline-flex;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid #dbe3ee;
+  border-radius: 14px;
+  background-color: #f8fafc;
+}
+
+.academic-offer-import__method-button {
+  display: inline-flex;
+  min-height: 39px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #64748b;
+  background-color: transparent;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.academic-offer-import__method-button:hover {
+  color: #334155;
+  background-color: #ffffff;
+}
+
+.academic-offer-import__method-button--active {
+  color: #3730a3;
+  border-color: #c7d2fe;
+  background-color: #ffffff;
+  box-shadow:
+    0 5px 14px rgba(79, 70, 229, 0.1);
+}
+
+.academic-offer-import__method-button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.academic-offer-import__method-panel {
+  margin-top: 12px;
+  padding: 15px;
+  border: 1px solid #dbe3ee;
+  border-radius: 16px;
+  background-color: #ffffff;
+}
+
+.academic-offer-import__device {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.academic-offer-import__device>div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.academic-offer-import__device strong {
+  color: #1e293b;
+  font-size: 0.74rem;
+}
+
+.academic-offer-import__device span {
+  color: #64748b;
+  font-size: 0.66rem;
+  line-height: 1.45;
+}
+
+.academic-offer-drive-form {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 14px;
+}
+
+.academic-offer-drive-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.academic-offer-drive-field>span {
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.academic-offer-drive-field input {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 11px;
+  color: #1e293b;
+  background-color: #ffffff;
+  font-family: inherit;
+  font-size: 0.72rem;
+  outline: none;
+}
+
+.academic-offer-drive-field input:focus {
+  border-color: #6366f1;
+  box-shadow:
+    0 0 0 4px rgba(99, 102, 241, 0.11);
+}
+
+.academic-offer-drive-field input::placeholder {
+  color: #94a3b8;
+}
+
+.academic-offer-drive-field small {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+/*
+ * Modo oscuro
+ */
+
+html[data-theme="dark"] .academic-offer-import__methods {
+  border-color: #334155;
+  background-color: #111827;
+}
+
+html[data-theme="dark"] .academic-offer-import__method-button {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .academic-offer-import__method-button:hover {
+  color: #e2e8f0;
+  background-color: #1e293b;
+}
+
+html[data-theme="dark"] .academic-offer-import__method-button--active {
+  color: #e0e7ff;
+  border-color: #6366f1;
+  background-color: #312e81;
+}
+
+html[data-theme="dark"] .academic-offer-import__method-panel {
+  border-color: #334155;
+  background-color: #0f172a;
+}
+
+html[data-theme="dark"] .academic-offer-import__device strong,
+html[data-theme="dark"] .academic-offer-drive-field>span {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .academic-offer-import__device span,
+html[data-theme="dark"] .academic-offer-drive-field small {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .academic-offer-drive-field input {
+  color: #f8fafc;
+  border-color: #475569;
+  background-color: #111827;
+}
+
+/*
+ * Responsive
+ */
+
+@media (max-width: 700px) {
+  .academic-offer-import__methods {
+    display: grid;
+    width: 100%;
+    box-sizing: border-box;
+    grid-template-columns: 1fr;
+  }
+
+  .academic-offer-import__method-button {
+    width: 100%;
+  }
+
+  .academic-offer-import__device,
+  .academic-offer-drive-form {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .academic-offer-import__device {
+    display: flex;
+  }
+
+  .academic-offer-import__button {
+    width: 100%;
+  }
+}

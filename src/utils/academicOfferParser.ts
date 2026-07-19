@@ -1,3 +1,4 @@
+/* eslint-disable preserve-caught-error */
 import * as XLSX from "xlsx";
 
 import type {
@@ -246,16 +247,47 @@ const findOfferRows = (
     }
 
     throw new Error(
-        "No se encontró una hoja con la estructura de la oferta académica FIET.",
+        "El archivo no contiene la tabla estructurada de la oferta académica FIET. Usa el archivo OfertaFIET en formato XLSX, no el archivo visual HORARIOS FIET2.",
     );
 };
 
-export const parseAcademicOfferFile =
+const readAcademicOfferWorkbook = (
+    fileBuffer: ArrayBuffer,
+) => {
+    try {
+        return XLSX.read(fileBuffer);
+    } catch (error) {
+        const originalMessage =
+            error instanceof Error
+                ? error.message
+                : "";
+
+        const isProtectedFile =
+            /password-protected|password protected|encrypted|password/i.test(
+                originalMessage,
+            );
+
+        if (isProtectedFile) {
+            throw new Error(
+                "Este archivo XLS utiliza una protección antigua que el lector web no puede abrir. Usa el archivo OfertaFIET en formato XLSX. También puedes abrir el archivo en Excel o LibreOffice y guardarlo como XLSX sin contraseña, siempre que conserve la tabla de la oferta académica.",
+            );
+        }
+
+        throw new Error(
+            originalMessage
+                ? `No fue posible leer el archivo: ${originalMessage}`
+                : "No fue posible leer el archivo seleccionado.",
+        );
+    }
+};
+
+export const parseAcademicOfferBuffer =
     async (
-        file: File,
+        fileBuffer: ArrayBuffer,
+        fileName: string,
     ): Promise<ImportedAcademicOffer> => {
         const extension =
-            file.name
+            fileName
                 .split(".")
                 .at(-1)
                 ?.toLowerCase();
@@ -269,15 +301,10 @@ export const parseAcademicOfferFile =
             );
         }
 
-        /*
-         * El navegador lee el archivo como ArrayBuffer
-         * y SheetJS lo convierte en un libro de trabajo.
-         */
-        const fileBuffer =
-            await file.arrayBuffer();
-
         const workbook =
-            XLSX.read(fileBuffer);
+            readAcademicOfferWorkbook(
+                fileBuffer,
+            );
 
         const rows =
             findOfferRows(workbook);
@@ -451,8 +478,7 @@ export const parseAcademicOfferFile =
         return {
             version: 1,
 
-            fileName:
-                file.name,
+            fileName,
 
             importedAt:
                 new Date()
@@ -466,4 +492,17 @@ export const parseAcademicOfferFile =
             groups:
                 uniqueGroups,
         };
+    };
+
+export const parseAcademicOfferFile =
+    async (
+        file: File,
+    ): Promise<ImportedAcademicOffer> => {
+        const fileBuffer =
+            await file.arrayBuffer();
+
+        return parseAcademicOfferBuffer(
+            fileBuffer,
+            file.name,
+        );
     };
