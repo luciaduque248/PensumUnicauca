@@ -139,9 +139,9 @@ function AcademicOfferImportCard({
                     ),
                 ).size;
 
-            const detectedSheetMessage =
+            const detectedTableMessage =
                 parsedOffer.sourceSheetName
-                    ? ` La tabla se detectó automáticamente en la hoja “${parsedOffer.sourceSheetName}”.`
+                    ? ` Se revisaron ${parsedOffer.workbookSheetCount ?? 1} hojas y se utilizó la hoja “${parsedOffer.sourceSheetName}”.`
                     : "";
 
             await Swal.fire({
@@ -151,7 +151,7 @@ function AcademicOfferImportCard({
                     "Oferta académica importada",
 
                 text:
-                    `Se encontraron ${importedSubjectCount} materias y ${parsedOffer.groups.length} grupos para el periodo ${parsedOffer.period}.${detectedSheetMessage}`,
+                    `Se encontraron ${importedSubjectCount} materias y ${parsedOffer.groups.length} grupos para el periodo ${parsedOffer.period}.${detectedTableMessage}`,
 
                 confirmButtonText:
                     "Continuar",
@@ -450,7 +450,18 @@ function AcademicOfferImportCard({
                                 }
                             </span>
                         )}
-                        
+
+                        {importedOffer.workbookSheetCount !== undefined && (
+                            <span>
+                                <strong>
+                                    Hojas revisadas:
+                                </strong>{" "}
+                                {
+                                    importedOffer.workbookSheetCount
+                                }
+                            </span>
+                        )}
+
                         <span>
                             <strong>
                                 Materias:
