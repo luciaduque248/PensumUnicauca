@@ -1,5 +1,53 @@
 /*
  * =========================================================
+ * TIPOGRAFÍA GLOBAL
+ * =========================================================
+ */
+
+:root {
+  font-family:
+    "Montserrat",
+    Arial,
+    Helvetica,
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html,
+body,
+#root,
+.app {
+  font-family:
+    "Montserrat",
+    Arial,
+    Helvetica,
+    sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+.swal2-container,
+.swal2-popup,
+.swal2-title,
+.swal2-html-container,
+.swal2-actions,
+.swal2-confirm,
+.swal2-cancel,
+.swal2-input,
+.swal2-textarea,
+.swal2-select {
+  font-family:
+    "Montserrat",
+    Arial,
+    Helvetica,
+    sans-serif;
+}
+
+/*
+ * =========================================================
  * APP.CSS
  * Pensum interactivo
  *
@@ -17,6 +65,7 @@
  */
 
 .header__actions {
+  order: 1;
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -37,7 +86,7 @@
   background-color: rgba(255, 255, 255, 0.08);
   font-family: inherit;
   font-size: 0.78rem;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
   backdrop-filter: blur(10px);
   transition:
@@ -609,7 +658,11 @@ html[data-theme="dark"] .swal-requirement__information small {
 }
 
 .header__intro {
+  padding-top: 50px;
+  order: 2;
   max-width: 800px;
+  margin-left: auto;
+  text-align: right;
 }
 
 .header__career {
@@ -622,16 +675,17 @@ html[data-theme="dark"] .swal-requirement__information small {
 }
 
 .header h1 {
-  max-width: 780px;
+  max-width: none;
   margin: 0;
-  font-size: clamp(2.4rem, 7vw, 4.8rem);
+  font-size: clamp(2.8rem, 5vw, 4.2rem);
   line-height: 1;
   letter-spacing: -0.04em;
+  white-space: nowrap;
 }
 
 .header__description {
   max-width: 680px;
-  margin: 24px 0 0;
+  margin: 24px 0 0 auto;
   color: #e0e7ff;
   font-size: 1.05rem;
   line-height: 1.7;
@@ -650,7 +704,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   color: #e0e7ff;
   background-color: rgba(255, 255, 255, 0.08);
   font-size: 0.78rem;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
   backdrop-filter: blur(10px);
   transition:
@@ -808,7 +862,7 @@ html[data-theme="dark"] .swal-requirement__information small {
 .semester-filter__label {
   color: #64748b;
   font-size: 0.75rem;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .semester-filter__select {
@@ -820,7 +874,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   color: #1e293b;
   background-color: #ffffff;
   font-size: 0.85rem;
-  font-weight: 650;
+  font-weight: 600;
   cursor: pointer;
   outline: none;
   transition:
@@ -1166,7 +1220,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   margin: 0;
   color: #1e293b;
   font-size: 0.95rem;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.35;
 }
 
@@ -1212,7 +1266,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   margin: 12px 0 0;
   color: #94a3b8;
   font-size: 0.75rem;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .subject-card__lock-message {
@@ -1274,7 +1328,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   gap: 12px;
   color: #4f46e5;
   font-size: 0.78rem;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
   list-style: none;
   user-select: none;
@@ -1359,7 +1413,7 @@ html[data-theme="dark"] .swal-requirement__information small {
 .prerequisites__name {
   color: #475569;
   font-size: 0.74rem;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.4;
   flex: 1;
   min-width: 0;
@@ -1418,7 +1472,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   color: #64748b;
   background-color: transparent;
   font-size: 0.68rem;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
   transition:
     color 160ms ease,
@@ -1520,7 +1574,7 @@ html[data-theme="dark"] .swal-requirement__information small {
 .degree-requirements__summary span {
   color: #7c3aed;
   font-size: 0.7rem;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .degree-requirements__progress {
@@ -1637,7 +1691,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   color: #64748b;
   background-color: transparent;
   font-size: 0.68rem;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -1919,7 +1973,7 @@ html[data-theme="dark"] .swal-requirement__information small {
 .swal-requirement__information small {
   color: #94a3b8;
   font-size: 0.66rem;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .swal-blocked-content__footer {
@@ -2075,7 +2129,7 @@ html[data-theme="dark"] .swal-requirement__information small {
 .academic-statistic__label {
   color: #64748b;
   font-size: 0.72rem;
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.4;
 }
 
@@ -2097,7 +2151,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   padding-top: 12px;
   color: #94a3b8;
   font-size: 0.68rem;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.45;
 }
 
@@ -2421,8 +2475,19 @@ html[data-theme="dark"] .swal-requirement__information small {
 }
 
 @media (max-width: 760px) {
+  .header__intro {
+    order: 1;
+    max-width: none;
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .header__description {
+    margin: 24px 0 0;
+  }
 
   .header__actions {
+    order: 2;
     width: 100%;
     align-items: stretch;
     flex-direction: column;
@@ -2451,6 +2516,10 @@ html[data-theme="dark"] .swal-requirement__information small {
 }
 
 @media (max-width: 620px) {
+  .header h1 {
+    white-space: normal;
+  }
+
   .summary--four {
     grid-template-columns: 1fr;
   }
@@ -2604,7 +2673,7 @@ html[data-theme="dark"] .swal-requirement__information small {
 .semester-progress__label {
   color: #64748b;
   font-size: 0.72rem;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .semester-progress__percentage {
@@ -2670,7 +2739,7 @@ html[data-theme="dark"] .swal-requirement__information small {
 .semester-progress__statistic span {
   color: #94a3b8;
   font-size: 0.65rem;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .semester-progress__divider {
@@ -2711,7 +2780,7 @@ html[data-theme="dark"] .swal-requirement__information small {
 .curriculum-filter__label {
   color: #64748b;
   font-size: 0.72rem;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .curriculum-filter__input,
@@ -2724,7 +2793,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   background-color: #ffffff;
   font-family: inherit;
   font-size: 0.82rem;
-  font-weight: 650;
+  font-weight: 600;
   outline: none;
   transition:
     border-color 160ms ease,
@@ -2739,7 +2808,7 @@ html[data-theme="dark"] .swal-requirement__information small {
 
 .curriculum-filter__input::placeholder {
   color: #94a3b8;
-  font-weight: 550;
+  font-weight: 500;
 }
 
 .curriculum-filter__input:hover,
@@ -2896,7 +2965,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   gap: 12px;
   color: #0369a1;
   font-size: 0.78rem;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
   list-style: none;
   user-select: none;
@@ -2984,7 +3053,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   min-width: 0;
   color: #475569;
   font-size: 0.74rem;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.4;
 }
 
@@ -3093,11 +3162,9 @@ html[data-theme="dark"] .swal-requirement__information small {
   padding: 24px 26px;
   border: 1px solid var(--regulatory-border);
   border-radius: 26px;
-  background: linear-gradient(
-    145deg,
-    var(--regulatory-soft),
-    rgba(255, 255, 255, 0.98)
-  );
+  background: linear-gradient(145deg,
+      var(--regulatory-soft),
+      rgba(255, 255, 255, 0.98));
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
 }
 
@@ -3173,7 +3240,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   color: var(--regulatory-color);
   background-color: rgba(255, 255, 255, 0.72);
   font-size: 0.7rem;
-  font-weight: 750;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -3196,7 +3263,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   background-color: rgba(255, 255, 255, 0.84);
 }
 
-.regulatory-alerts__stat > span {
+.regulatory-alerts__stat>span {
   display: grid;
   width: 35px;
   height: 35px;
@@ -3216,20 +3283,20 @@ html[data-theme="dark"] .swal-requirement__information small {
 .regulatory-alerts__stat small {
   color: #64748b;
   font-size: 0.66rem;
-  font-weight: 650;
+  font-weight: 600;
 }
 
-.regulatory-alerts__stat--r1 > span {
+.regulatory-alerts__stat--r1>span {
   color: #92400e;
   background-color: #fef3c7;
 }
 
-.regulatory-alerts__stat--r2 > span {
+.regulatory-alerts__stat--r2>span {
   color: #c2410c;
   background-color: #ffedd5;
 }
 
-.regulatory-alerts__stat--r3 > span {
+.regulatory-alerts__stat--r3>span {
   color: #b91c1c;
   background-color: #fee2e2;
 }
@@ -3253,8 +3320,8 @@ html[data-theme="dark"] .swal-requirement__information small {
   background-color: rgba(254, 242, 242, 0.92);
 }
 
-.regulatory-alerts__restriction > svg,
-.regulatory-alerts__critical-note > svg {
+.regulatory-alerts__restriction>svg,
+.regulatory-alerts__critical-note>svg {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
@@ -3270,7 +3337,7 @@ html[data-theme="dark"] .swal-requirement__information small {
 .regulatory-alerts__critical-note p {
   margin: 3px 0 0;
   font-size: 0.72rem;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.5;
 }
 
@@ -3317,18 +3384,15 @@ html[data-theme="dark"] .swal-requirement__information small {
   transition: transform 160ms ease;
 }
 
-.disciplinary-sanction-toggle input:checked
-  + .disciplinary-sanction-toggle__box {
+.disciplinary-sanction-toggle input:checked+.disciplinary-sanction-toggle__box {
   background-color: #dc2626;
 }
 
-.disciplinary-sanction-toggle input:checked
-  + .disciplinary-sanction-toggle__box::after {
+.disciplinary-sanction-toggle input:checked+.disciplinary-sanction-toggle__box::after {
   transform: translateX(16px);
 }
 
-.disciplinary-sanction-toggle input:focus-visible
-  + .disciplinary-sanction-toggle__box {
+.disciplinary-sanction-toggle input:focus-visible+.disciplinary-sanction-toggle__box {
   outline: 3px solid rgba(99, 102, 241, 0.24);
   outline-offset: 3px;
 }
@@ -3399,7 +3463,7 @@ html[data-theme="dark"] .swal-requirement__information small {
   background-color: rgba(254, 242, 242, 0.92);
 }
 
-.subject-card__regulatory-message > svg {
+.subject-card__regulatory-message>svg {
   width: 17px;
   height: 17px;
   flex-shrink: 0;
@@ -3474,11 +3538,9 @@ html[data-theme="dark"] .regulatory-alerts {
   --regulatory-soft: rgba(15, 23, 42, 0.96);
   --regulatory-border: #334155;
 
-  background: linear-gradient(
-    145deg,
-    rgba(15, 23, 42, 0.98),
-    rgba(2, 6, 23, 0.98)
-  );
+  background: linear-gradient(145deg,
+      rgba(15, 23, 42, 0.98),
+      rgba(2, 6, 23, 0.98));
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
 }
 
@@ -3634,11 +3696,9 @@ html[data-theme="dark"] .subject-card__failure-button:disabled {
   padding: 52px 24px 98px;
   color: #ffffff;
   background:
-    radial-gradient(
-      circle at top right,
+    radial-gradient(circle at top right,
       rgba(99, 102, 241, 0.58),
-      transparent 38%
-    ),
+      transparent 38%),
     linear-gradient(135deg, #0f172a, #172554 55%, #312e81);
 }
 
@@ -3670,7 +3730,7 @@ html[data-theme="dark"] .subject-card__failure-button:disabled {
   gap: 14px;
 }
 
-.student-record-header__title-row > svg {
+.student-record-header__title-row>svg {
   width: 38px;
   height: 38px;
   flex-shrink: 0;
@@ -3684,7 +3744,7 @@ html[data-theme="dark"] .subject-card__failure-button:disabled {
   letter-spacing: -0.045em;
 }
 
-.student-record-header__intro > p:last-child {
+.student-record-header__intro>p:last-child {
   max-width: 720px;
   margin: 20px 0 0;
   color: #e0e7ff;
@@ -3773,7 +3833,7 @@ html[data-theme="dark"] .subject-card__failure-button:disabled {
   gap: 13px;
 }
 
-.student-record-panel__heading > span {
+.student-record-panel__heading>span {
   display: grid;
   width: 43px;
   height: 43px;
@@ -3784,20 +3844,17 @@ html[data-theme="dark"] .subject-card__failure-button:disabled {
   background-color: #eef2ff;
 }
 
-.student-record-panel--low-performance
-  .student-record-panel__heading > span {
+.student-record-panel--low-performance .student-record-panel__heading>span {
   color: #b45309;
   background-color: #fef3c7;
 }
 
-.student-record-panel--conditional-enrollment
-  .student-record-panel__heading > span {
+.student-record-panel--conditional-enrollment .student-record-panel__heading>span {
   color: #c2410c;
   background-color: #ffedd5;
 }
 
-.student-record-panel--lost-right
-  .student-record-panel__heading > span {
+.student-record-panel--lost-right .student-record-panel__heading>span {
   color: #b91c1c;
   background-color: #fee2e2;
 }
@@ -3837,7 +3894,7 @@ html[data-theme="dark"] .subject-card__failure-button:disabled {
   margin: 20px 0 0;
 }
 
-.student-record-facts > div {
+.student-record-facts>div {
   padding: 12px;
   border: 1px solid #e2e8f0;
   border-radius: 13px;
@@ -3873,7 +3930,7 @@ html[data-theme="dark"] .subject-card__failure-button:disabled {
   color: #475569;
   background-color: #f8fafc;
   font-size: 0.74rem;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.5;
 }
 
@@ -3895,7 +3952,7 @@ html[data-theme="dark"] .subject-card__failure-button:disabled {
   margin-top: 17px;
 }
 
-.student-record-repeat-summary > div {
+.student-record-repeat-summary>div {
   display: grid;
   min-height: 78px;
   place-items: center;
@@ -3952,7 +4009,7 @@ html[data-theme="dark"] .subject-card__failure-button:disabled {
   letter-spacing: -0.025em;
 }
 
-.student-record-table-panel__header > span {
+.student-record-table-panel__header>span {
   padding: 8px 11px;
   border-radius: 999px;
   color: #4338ca;
@@ -4157,9 +4214,9 @@ html[data-theme="dark"] .student-record-disclaimer {
   color: #94a3b8;
 }
 
-html[data-theme="dark"] .student-record-facts > div,
+html[data-theme="dark"] .student-record-facts>div,
 html[data-theme="dark"] .student-record-restrictions li,
-html[data-theme="dark"] .student-record-repeat-summary > div {
+html[data-theme="dark"] .student-record-repeat-summary>div {
   border-color: #334155;
   background-color: #111827;
 }
@@ -4195,6 +4252,7 @@ html[data-theme="dark"] .student-record-attempts li strong {
 }
 
 @media (max-width: 900px) {
+
   .student-record-header__content,
   .student-record-header__actions {
     flex-direction: column;
@@ -4229,7 +4287,7 @@ html[data-theme="dark"] .student-record-attempts li strong {
     align-items: flex-start;
   }
 
-  .student-record-header__title-row > svg {
+  .student-record-header__title-row>svg {
     width: 31px;
     height: 31px;
   }
