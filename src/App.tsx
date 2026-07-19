@@ -28,6 +28,8 @@ import { degreeRequirements } from "./data/degreeRequirements";
 import { externalPrerequisiteNames } from "./data/prerequisites";
 import { DEFAULT_STUDENT_PROFILE } from "./data/defaultStudentProfile";
 
+import { DEFAULT_STUDENT_SCHEDULE, STUDENT_SCHEDULE_STORAGE_KEY, } from "./data/defaultSchedule";
+
 import { useLocalStorage } from "./hooks/useLocalStorage";
 
 import type {
@@ -43,6 +45,8 @@ import type {
   SubjectStatus,
 } from "./types/curriculum";
 import type { StudentProfile } from "./types/studentProfile";
+
+import type { ScheduleClass, StudentSchedule, } from "./types/schedule";
 
 type SubjectFilter = "all" | "pending" | "in-progress" | "approved" | "blocked";
 type ThemeMode = "light" | "dark";
@@ -64,6 +68,19 @@ const createAttemptId = () => {
   }
 
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const createScheduleClassId = () => {
+  if (
+    typeof crypto !== "undefined" &&
+    "randomUUID" in crypto
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `schedule-${Date.now()}-${Math.random()
+    .toString(16)
+    .slice(2)}`;
 };
 
 const createSubjectAttempt = (
@@ -109,6 +126,19 @@ const escapeHtml = (value: string) => {
     .replaceAll("'", "&#039;");
 };
 
+const normalizeScheduleSubjectName = (
+  value: string,
+) => {
+  return value
+    .normalize("NFD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      "",
+    )
+    .toLowerCase()
+    .trim();
+};
+
 function App() {
   const requestedView =
     new URLSearchParams(
@@ -147,6 +177,28 @@ function App() {
   const semesterSections = curriculum.filter(
     (section) => section.semester !== undefined,
   );
+
+  /*
+ * Materias disponibles para el autocompletado
+ * del formulario del horario.
+ */
+  const availableScheduleSubjectNames =
+    Array.from(
+      new Set(
+        semesterSections.flatMap(
+          (section) =>
+            section.subjects.map(
+              (subject) =>
+                subject.name,
+            ),
+        ),
+      ),
+    ).sort((firstName, secondName) =>
+      firstName.localeCompare(
+        secondName,
+        "es",
+      ),
+    );
 
   const additionalRequirementsSection = curriculum.find(
     (section) => section.semester === undefined,
@@ -300,6 +352,30 @@ function App() {
       ...DEFAULT_STUDENT_PROFILE.personalInformation,
       ...savedStudentProfile.personalInformation,
     },
+  };
+
+  /*
+ * =====================================================
+ * HORARIO ACADÉMICO
+ * =====================================================
+ */
+
+  const [
+    savedStudentSchedule,
+    setSavedStudentSchedule,
+  ] = useLocalStorage<StudentSchedule>(
+    STUDENT_SCHEDULE_STORAGE_KEY,
+    DEFAULT_STUDENT_SCHEDULE,
+  );
+
+  const studentSchedule: StudentSchedule = {
+    version: 1,
+
+    classes: Array.isArray(
+      savedStudentSchedule.classes,
+    )
+      ? savedStudentSchedule.classes
+      : [],
   };
 
   /*
@@ -855,6 +931,182 @@ function App() {
         ...updatedProfile.personalInformation,
       },
     });
+  };
+
+  /*
+ * =====================================================
+ * AGREGAR BLOQUE AL HORARIO
+ * =====================================================
+ */
+
+  /*
+ * =====================================================
+ * AGREGAR UNA O DOS FRANJAS AL HORARIO
+ * =====================================================
+ */
+
+  const handleAddScheduleClasses = (
+    newScheduleClasses: Array<
+      Omit<ScheduleClass, "id">
+    >,
+  ) => {
+    const scheduleClassesWithId:
+      ScheduleClass[] =
+      newScheduleClasses.map(
+        (newScheduleClass) => ({
+          id: createScheduleClassId(),
+
+          subjectName:
+            newScheduleClass.subjectName,
+
+          day:
+            newScheduleClass.day,
+
+          startTime:
+            newScheduleClass.startTime,
+
+          endTime:
+            newScheduleClass.endTime,
+        }),
+      );
+
+    setSavedStudentSchedule(
+      (currentSchedule) => {
+        const currentClasses =
+          Array.isArray(
+            currentSchedule.classes,
+          )
+            ? currentSchedule.classes
+            : [];
+
+        return {
+          version: 1,
+
+          classes: [
+            ...currentClasses,
+            ...scheduleClassesWithId,
+          ],
+        };
+      },
+    );
+  };
+
+  /*
+ * =====================================================
+ * ACTUALIZAR UNA MATERIA DEL HORARIO
+ * =====================================================
+ */
+
+  const handleUpdateScheduleSubject = (
+    originalSubjectName: string,
+    updatedScheduleClasses: Array<
+      Omit<ScheduleClass, "id">
+    >,
+  ) => {
+    const normalizedOriginalName =
+      normalizeScheduleSubjectName(
+        originalSubjectName,
+      );
+
+    setSavedStudentSchedule(
+      (currentSchedule) => {
+        const currentClasses =
+          Array.isArray(
+            currentSchedule.classes,
+          )
+            ? currentSchedule.classes
+            : [];
+
+        const originalClasses =
+          currentClasses.filter(
+            (scheduleClass) =>
+              normalizeScheduleSubjectName(
+                scheduleClass.subjectName,
+              ) === normalizedOriginalName,
+          );
+
+        const remainingClasses =
+          currentClasses.filter(
+            (scheduleClass) =>
+              normalizeScheduleSubjectName(
+                scheduleClass.subjectName,
+              ) !== normalizedOriginalName,
+          );
+
+        const updatedClassesWithId:
+          ScheduleClass[] =
+          updatedScheduleClasses.map(
+            (
+              updatedScheduleClass,
+              index,
+            ) => ({
+              id:
+                originalClasses[index]?.id ??
+                createScheduleClassId(),
+
+              subjectName:
+                updatedScheduleClass.subjectName,
+
+              day:
+                updatedScheduleClass.day,
+
+              startTime:
+                updatedScheduleClass.startTime,
+
+              endTime:
+                updatedScheduleClass.endTime,
+            }),
+          );
+
+        return {
+          version: 1,
+
+          classes: [
+            ...remainingClasses,
+            ...updatedClassesWithId,
+          ],
+        };
+      },
+    );
+  };
+
+  /*
+ * =====================================================
+ * ELIMINAR UNA MATERIA DEL HORARIO
+ * =====================================================
+ */
+
+  const handleDeleteScheduleSubject = (
+    subjectName: string,
+  ) => {
+    const normalizedSubjectName =
+      normalizeScheduleSubjectName(
+        subjectName,
+      );
+
+    setSavedStudentSchedule(
+      (currentSchedule) => {
+        const currentClasses =
+          Array.isArray(
+            currentSchedule.classes,
+          )
+            ? currentSchedule.classes
+            : [];
+
+        return {
+          version: 1,
+
+          classes:
+            currentClasses.filter(
+              (scheduleClass) =>
+                normalizeScheduleSubjectName(
+                  scheduleClass.subjectName,
+                ) !==
+                normalizedSubjectName,
+            ),
+        };
+      },
+    );
   };
 
   /*
@@ -2127,9 +2379,12 @@ function App() {
 
         <SchedulePage
           themeMode={themeMode}
-          onToggleTheme={
-            handleToggleTheme
-          }
+          scheduleClasses={studentSchedule.classes}
+          availableSubjectNames={availableScheduleSubjectNames}
+          onToggleTheme={handleToggleTheme}
+          onAddClasses={handleAddScheduleClasses}
+          onUpdateSubject={handleUpdateScheduleSubject}
+          onDeleteSubject={handleDeleteScheduleSubject}
         />
       </div>
     );
