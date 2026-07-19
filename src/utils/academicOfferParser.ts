@@ -791,7 +791,12 @@ const readAcademicOfferWorkbook = (
 
     if (isProtectedFile) {
         throw new Error(
-            "El archivo XLS está protegido con un método que el lector web no puede descifrar. Para importarlo, ábrelo en Google Sheets, Excel o LibreOffice y guárdalo como XLSX sin contraseña.",
+            [
+                "Formato requerido: .xlsx",
+                "Formato subido: .xls",
+                "",
+                "El archivo XLS está protegido con un método que el lector web no puede descifrar. Para importarlo, ábrelo en Google Sheets, Excel o LibreOffice y guárdalo como XLSX sin contraseña.",
+            ].join("\n"),
         );
     }
 

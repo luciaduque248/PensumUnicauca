@@ -25,6 +25,7 @@ import AcademicOfferClassForm from "./AcademicOfferClassForm";
 import AcademicOfferImportCard from "./AcademicOfferImportCard";
 
 import type {
+    AcademicOfferImportResult,
     ImportedAcademicOffer,
     ScheduleClass,
     ScheduleDay,
@@ -48,7 +49,9 @@ interface SchedulePageProps {
     onImportOffer: (
         importedOffer:
             ImportedAcademicOffer,
-    ) => void | Promise<void>;
+    ) =>
+        | AcademicOfferImportResult
+        | Promise<AcademicOfferImportResult>;
 
     onRemoveOffer:
     () => void | Promise<void>;

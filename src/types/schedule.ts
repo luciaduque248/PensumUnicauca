@@ -51,6 +51,32 @@ export interface ImportedAcademicOffer {
     groups: AcademicOfferGroup[];
 }
 
+export interface AcademicOfferImportResult {
+    /*
+     * Materias cuyo horario, docente, salón
+     * o información de grupo cambió.
+     */
+    updatedSubjects: number;
+
+    /*
+     * Materias que se encontraron en la nueva
+     * oferta, pero mantuvieron la misma información.
+     */
+    unchangedSubjects: number;
+
+    /*
+     * Materias o grupos del horario actual que
+     * no aparecieron en la nueva oferta.
+     */
+    unmatchedSubjects: string[];
+
+    /*
+     * Cruces encontrados después de realizar
+     * la sincronización automática.
+     */
+    conflictCount: number;
+}
+
 export interface ScheduleClass {
     id: string;
 

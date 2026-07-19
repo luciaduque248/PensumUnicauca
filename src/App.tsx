@@ -47,6 +47,8 @@ import type {
 import type { StudentProfile } from "./types/studentProfile";
 
 import type {
+  AcademicOfferGroup,
+  AcademicOfferImportResult,
   ImportedAcademicOffer,
   ScheduleClass,
   StudentSchedule,
@@ -170,6 +172,567 @@ const normalizeScheduleSubjectName = (
     )
     .toLowerCase()
     .trim();
+};
+
+interface ScheduleSynchronizationResult
+  extends AcademicOfferImportResult {
+  classes: ScheduleClass[];
+}
+
+/*
+ * Normaliza códigos, grupos, nombres y otros
+ * valores utilizados para comparar la oferta.
+ */
+const normalizeScheduleComparisonValue = (
+  value: string | undefined,
+) => {
+  return normalizeScheduleSubjectName(
+    value ?? "",
+  );
+};
+
+/*
+ * Identifica una franja que fue creada a partir
+ * de una oferta académica importada.
+ *
+ * Se revisan source y offerGroupId para conservar
+ * compatibilidad con datos guardados previamente.
+ */
+const isImportedScheduleClass = (
+  scheduleClass: ScheduleClass,
+) => {
+  return (
+    scheduleClass.source ===
+    "academic-offer" ||
+    Boolean(
+      scheduleClass.offerGroupId,
+    )
+  );
+};
+
+/*
+ * Agrupa todas las franjas que pertenecen a la
+ * misma materia y al mismo grupo.
+ */
+const getImportedScheduleGroupKey = (
+  scheduleClass: ScheduleClass,
+) => {
+  const offerGroupId =
+    scheduleClass.offerGroupId
+      ?.trim();
+
+  if (offerGroupId) {
+    return `offer:${offerGroupId}`;
+  }
+
+  const subjectIdentity =
+    normalizeScheduleComparisonValue(
+      scheduleClass.subjectCode,
+    ) ||
+    normalizeScheduleComparisonValue(
+      scheduleClass.subjectName,
+    );
+
+  const group =
+    normalizeScheduleComparisonValue(
+      scheduleClass.group,
+    );
+
+  return [
+    "subject",
+    subjectIdentity,
+    "group",
+    group,
+  ].join(":");
+};
+
+/*
+ * Busca en la nueva oferta el grupo equivalente
+ * a la materia que ya estaba en el horario.
+ *
+ * Orden de prioridad:
+ *
+ * 1. Identificador exacto del grupo.
+ * 2. Código de materia y grupo.
+ * 3. Nombre de materia y grupo.
+ */
+const findEquivalentOfferGroup = (
+  representativeClass:
+    ScheduleClass,
+  importedOffer:
+    ImportedAcademicOffer,
+): AcademicOfferGroup | undefined => {
+  const currentOfferGroupId =
+    representativeClass
+      .offerGroupId
+      ?.trim();
+
+  if (currentOfferGroupId) {
+    const exactGroup =
+      importedOffer.groups.find(
+        (offerGroup) =>
+          offerGroup.id ===
+          currentOfferGroupId,
+      );
+
+    if (exactGroup) {
+      return exactGroup;
+    }
+  }
+
+  const currentSubjectCode =
+    normalizeScheduleComparisonValue(
+      representativeClass
+        .subjectCode,
+    );
+
+  const currentSubjectName =
+    normalizeScheduleComparisonValue(
+      representativeClass
+        .subjectName,
+    );
+
+  const currentGroup =
+    normalizeScheduleComparisonValue(
+      representativeClass.group,
+    );
+
+  if (currentSubjectCode !== "") {
+    const groupByCode =
+      importedOffer.groups.find(
+        (offerGroup) =>
+          normalizeScheduleComparisonValue(
+            offerGroup.subjectCode,
+          ) ===
+          currentSubjectCode &&
+          normalizeScheduleComparisonValue(
+            offerGroup.group,
+          ) ===
+          currentGroup,
+      );
+
+    if (groupByCode) {
+      return groupByCode;
+    }
+  }
+
+  return importedOffer.groups.find(
+    (offerGroup) =>
+      normalizeScheduleComparisonValue(
+        offerGroup.subjectName,
+      ) ===
+      currentSubjectName &&
+      normalizeScheduleComparisonValue(
+        offerGroup.group,
+      ) ===
+      currentGroup,
+  );
+};
+
+/*
+ * Crea una firma comparable para saber si la
+ * información oficial realmente cambió.
+ */
+const getCurrentScheduleGroupSignature = (
+  scheduleClasses:
+    ScheduleClass[],
+) => {
+  const representativeClass =
+    scheduleClasses[0];
+
+  const meetings =
+    scheduleClasses
+      .map((scheduleClass) =>
+        [
+          scheduleClass.day,
+          scheduleClass.startTime,
+          scheduleClass.endTime,
+          normalizeScheduleComparisonValue(
+            scheduleClass.classroom,
+          ),
+        ].join("|"),
+      )
+      .sort()
+      .join("::");
+
+  return [
+    normalizeScheduleComparisonValue(
+      representativeClass
+        ?.subjectCode,
+    ),
+    normalizeScheduleComparisonValue(
+      representativeClass
+        ?.subjectName,
+    ),
+    normalizeScheduleComparisonValue(
+      representativeClass
+        ?.group,
+    ),
+    normalizeScheduleComparisonValue(
+      representativeClass
+        ?.teacher,
+    ),
+    meetings,
+  ].join("###");
+};
+
+const getOfferGroupSignature = (
+  offerGroup:
+    AcademicOfferGroup,
+) => {
+  const meetings =
+    offerGroup.meetings
+      .map((meeting) =>
+        [
+          meeting.day,
+          meeting.startTime,
+          meeting.endTime,
+          normalizeScheduleComparisonValue(
+            meeting.classroom,
+          ),
+        ].join("|"),
+      )
+      .sort()
+      .join("::");
+
+  return [
+    normalizeScheduleComparisonValue(
+      offerGroup.subjectCode,
+    ),
+    normalizeScheduleComparisonValue(
+      offerGroup.subjectName,
+    ),
+    normalizeScheduleComparisonValue(
+      offerGroup.group,
+    ),
+    normalizeScheduleComparisonValue(
+      offerGroup.teacher,
+    ),
+    meetings,
+  ].join("###");
+};
+
+const scheduleTimeToMinutes = (
+  value: string,
+) => {
+  const [
+    hourText,
+    minuteText = "0",
+  ] = value.split(":");
+
+  return (
+    Number(hourText) * 60 +
+    Number(minuteText)
+  );
+};
+
+/*
+ * Cuenta cruces entre materias diferentes
+ * después de aplicar la nueva oferta.
+ */
+const countScheduleConflicts = (
+  scheduleClasses:
+    ScheduleClass[],
+) => {
+  let conflictCount = 0;
+
+  for (
+    let firstIndex = 0;
+    firstIndex <
+    scheduleClasses.length;
+    firstIndex += 1
+  ) {
+    const firstClass =
+      scheduleClasses[
+      firstIndex
+      ];
+
+    for (
+      let secondIndex =
+        firstIndex + 1;
+      secondIndex <
+      scheduleClasses.length;
+      secondIndex += 1
+    ) {
+      const secondClass =
+        scheduleClasses[
+        secondIndex
+        ];
+
+      if (
+        firstClass.day !==
+        secondClass.day
+      ) {
+        continue;
+      }
+
+      /*
+       * No se contabilizan como cruce dos
+       * franjas de la misma materia.
+       */
+      if (
+        normalizeScheduleSubjectName(
+          firstClass.subjectName,
+        ) ===
+        normalizeScheduleSubjectName(
+          secondClass.subjectName,
+        )
+      ) {
+        continue;
+      }
+
+      const overlaps =
+        scheduleTimeToMinutes(
+          firstClass.startTime,
+        ) <
+        scheduleTimeToMinutes(
+          secondClass.endTime,
+        ) &&
+        scheduleTimeToMinutes(
+          firstClass.endTime,
+        ) >
+        scheduleTimeToMinutes(
+          secondClass.startTime,
+        );
+
+      if (overlaps) {
+        conflictCount += 1;
+      }
+    }
+  }
+
+  return conflictCount;
+};
+
+/*
+ * Sincroniza las materias que fueron agregadas
+ * desde la oferta académica.
+ *
+ * Las materias manuales permanecen intactas.
+ */
+const synchronizeScheduleWithOffer = (
+  currentClasses:
+    ScheduleClass[],
+  importedOffer:
+    ImportedAcademicOffer,
+): ScheduleSynchronizationResult => {
+  const importedClassGroups =
+    new Map<
+      string,
+      ScheduleClass[]
+    >();
+
+  currentClasses.forEach(
+    (scheduleClass) => {
+      if (
+        !isImportedScheduleClass(
+          scheduleClass,
+        )
+      ) {
+        return;
+      }
+
+      const groupKey =
+        getImportedScheduleGroupKey(
+          scheduleClass,
+        );
+
+      const currentGroup =
+        importedClassGroups.get(
+          groupKey,
+        ) ?? [];
+
+      currentGroup.push(
+        scheduleClass,
+      );
+
+      importedClassGroups.set(
+        groupKey,
+        currentGroup,
+      );
+    },
+  );
+
+  const processedGroups =
+    new Set<string>();
+
+  const synchronizedClasses:
+    ScheduleClass[] = [];
+
+  const unmatchedSubjects =
+    new Set<string>();
+
+  let updatedSubjects = 0;
+  let unchangedSubjects = 0;
+
+  currentClasses.forEach(
+    (scheduleClass) => {
+      /*
+       * Las materias manuales no dependen
+       * del archivo importado.
+       */
+      if (
+        !isImportedScheduleClass(
+          scheduleClass,
+        )
+      ) {
+        synchronizedClasses.push(
+          scheduleClass,
+        );
+
+        return;
+      }
+
+      const groupKey =
+        getImportedScheduleGroupKey(
+          scheduleClass,
+        );
+
+      /*
+       * Cada grupo se procesa una sola vez,
+       * aunque tenga dos o más franjas.
+       */
+      if (
+        processedGroups.has(
+          groupKey,
+        )
+      ) {
+        return;
+      }
+
+      processedGroups.add(
+        groupKey,
+      );
+
+      const currentGroupClasses =
+        importedClassGroups.get(
+          groupKey,
+        ) ?? [
+          scheduleClass,
+        ];
+
+      const representativeClass =
+        currentGroupClasses[0];
+
+      const equivalentOfferGroup =
+        findEquivalentOfferGroup(
+          representativeClass,
+          importedOffer,
+        );
+
+      /*
+       * No se borra ni se cambia de grupo
+       * automáticamente cuando no hay coincidencia.
+       */
+      if (!equivalentOfferGroup) {
+        synchronizedClasses.push(
+          ...currentGroupClasses,
+        );
+
+        unmatchedSubjects.add(
+          `${representativeClass.subjectName} · grupo ${representativeClass.group ||
+          "sin grupo"
+          }`,
+        );
+
+        return;
+      }
+
+      const currentSignature =
+        getCurrentScheduleGroupSignature(
+          currentGroupClasses,
+        );
+
+      const newSignature =
+        getOfferGroupSignature(
+          equivalentOfferGroup,
+        );
+
+      if (
+        currentSignature ===
+        newSignature
+      ) {
+        unchangedSubjects += 1;
+      } else {
+        updatedSubjects += 1;
+      }
+
+      const replacementClasses:
+        ScheduleClass[] =
+        equivalentOfferGroup
+          .meetings
+          .map(
+            (
+              meeting,
+              meetingIndex,
+            ) => ({
+              id:
+                currentGroupClasses[
+                  meetingIndex
+                ]?.id ??
+                createScheduleClassId(),
+
+              subjectName:
+                equivalentOfferGroup
+                  .subjectName,
+
+              subjectCode:
+                equivalentOfferGroup
+                  .subjectCode,
+
+              group:
+                equivalentOfferGroup
+                  .group,
+
+              teacher:
+                equivalentOfferGroup
+                  .teacher,
+
+              classroom:
+                meeting.classroom,
+
+              day:
+                meeting.day,
+
+              startTime:
+                meeting.startTime,
+
+              endTime:
+                meeting.endTime,
+
+              source:
+                "academic-offer",
+
+              offerGroupId:
+                equivalentOfferGroup
+                  .id,
+            }),
+          );
+
+      synchronizedClasses.push(
+        ...replacementClasses,
+      );
+    },
+  );
+
+  return {
+    classes:
+      synchronizedClasses,
+
+    updatedSubjects,
+
+    unchangedSubjects,
+
+    unmatchedSubjects:
+      Array.from(
+        unmatchedSubjects,
+      ),
+
+    conflictCount:
+      countScheduleConflicts(
+        synchronizedClasses,
+      ),
+  };
 };
 
 function App() {
@@ -1731,32 +2294,60 @@ function App() {
   const handleImportAcademicOffer = (
     importedOffer:
       ImportedAcademicOffer,
-  ) => {
+  ): AcademicOfferImportResult => {
     /*
-     * Aunque la interfaz oculta el botón, también
-     * se protege la función para impedir una
-     * importación después de confirmar.
+     * El reemplazo continúa bloqueado después
+     * de confirmar el horario.
      */
     if (
       studentSchedule.isConfirmed
     ) {
-      return;
+      return {
+        updatedSubjects: 0,
+        unchangedSubjects: 0,
+        unmatchedSubjects: [],
+        conflictCount: 0,
+      };
     }
 
-    setSavedStudentSchedule(
-      (currentSchedule) => {
-        const normalizedSchedule =
-          normalizeStudentSchedule(
-            currentSchedule,
-          );
+    const synchronizationResult =
+      synchronizeScheduleWithOffer(
+        studentSchedule.classes,
+        importedOffer,
+      );
 
-        return {
-          ...normalizedSchedule,
+    setSavedStudentSchedule({
+      ...studentSchedule,
 
-          importedOffer,
-        };
-      },
-    );
+      importedOffer,
+
+      /*
+       * Las materias importadas se reemplazan
+       * por la información equivalente del
+       * nuevo archivo.
+       */
+      classes:
+        synchronizationResult
+          .classes,
+    });
+
+    return {
+      updatedSubjects:
+        synchronizationResult
+          .updatedSubjects,
+
+      unchangedSubjects:
+        synchronizationResult
+          .unchangedSubjects,
+
+      unmatchedSubjects:
+        synchronizationResult
+          .unmatchedSubjects,
+
+      conflictCount:
+        synchronizationResult
+          .conflictCount,
+    };
   };
 
   /*

@@ -24,6 +24,7 @@ import {
 } from "../utils/academicOfferParser";
 
 import type {
+    AcademicOfferImportResult,
     ImportedAcademicOffer,
 } from "../types/schedule";
 
@@ -35,7 +36,9 @@ interface AcademicOfferImportCardProps {
     onImportOffer: (
         offer:
             ImportedAcademicOffer,
-    ) => void | Promise<void>;
+    ) =>
+        | AcademicOfferImportResult
+        | Promise<AcademicOfferImportResult>;
 
     onRemoveOffer:
     () => void | Promise<void>;
@@ -100,7 +103,7 @@ function AcademicOfferImportCard({
                         "¿Reemplazar la oferta importada?",
 
                     text:
-                        "El nuevo archivo reemplazará el catálogo de materias y grupos. Las materias que ya agregaste al horario permanecerán.",
+                        "El nuevo archivo reemplazará el catálogo de materias y grupos. Las materias que agregaste desde la oferta se actualizarán automáticamente por código y grupo, incluyendo horario, docente y salón. Las materias manuales no cambiarán. Si un grupo ya no aparece en la nueva oferta, se conservará su horario actual y se mostrará una advertencia.",
 
                     showCancelButton:
                         true,
@@ -248,9 +251,13 @@ function AcademicOfferImportCard({
             parsedOffer:
                 ImportedAcademicOffer,
         ) => {
-            await onImportOffer(
-                parsedOffer,
-            );
+            const isReplacement =
+                importedOffer !== null;
+
+            const importResult =
+                await onImportOffer(
+                    parsedOffer,
+                );
 
             const importedSubjectCount =
                 new Set(
@@ -260,25 +267,112 @@ function AcademicOfferImportCard({
                     ),
                 ).size;
 
-            const detectedTableMessage =
-                parsedOffer.sourceSheetName
-                    ? ` Se revisaron ${parsedOffer.workbookSheetCount ?? 1} hojas y se utilizó la hoja “${parsedOffer.sourceSheetName}”.`
-                    : "";
+            const resultMessages: string[] = [
+                `Se encontraron ${importedSubjectCount} materias y ${parsedOffer.groups.length} grupos para el periodo ${parsedOffer.period}.`,
+            ];
+
+            if (isReplacement) {
+                if (
+                    importResult.updatedSubjects >
+                    0
+                ) {
+                    resultMessages.push(
+                        `${importResult.updatedSubjects} ${importResult.updatedSubjects ===
+                            1
+                            ? "materia fue actualizada automáticamente"
+                            : "materias fueron actualizadas automáticamente"
+                        } con los nuevos horarios, docentes y salones.`,
+                    );
+                }
+
+                if (
+                    importResult.unchangedSubjects >
+                    0
+                ) {
+                    resultMessages.push(
+                        `${importResult.unchangedSubjects} ${importResult.unchangedSubjects ===
+                            1
+                            ? "materia no presentó cambios"
+                            : "materias no presentaron cambios"
+                        }.`,
+                    );
+                }
+
+                if (
+                    importResult
+                        .unmatchedSubjects
+                        .length >
+                    0
+                ) {
+                    const visibleSubjects =
+                        importResult
+                            .unmatchedSubjects
+                            .slice(
+                                0,
+                                5,
+                            )
+                            .join(", ");
+
+                    const remainingCount =
+                        importResult
+                            .unmatchedSubjects
+                            .length - 5;
+
+                    resultMessages.push(
+                        `No se encontró una coincidencia en la nueva oferta para: ${visibleSubjects}${remainingCount > 0
+                            ? ` y ${remainingCount} más`
+                            : ""
+                        }. Sus horarios anteriores se conservaron.`,
+                    );
+                }
+
+                if (
+                    importResult.conflictCount >
+                    0
+                ) {
+                    resultMessages.push(
+                        `Después de la actualización se detectaron ${importResult.conflictCount} ${importResult.conflictCount ===
+                            1
+                            ? "cruce de horario"
+                            : "cruces de horario"
+                        }. Revisa la distribución semanal antes de confirmar.`,
+                    );
+                }
+            }
+
+            const hasWarnings =
+                importResult
+                    .unmatchedSubjects
+                    .length >
+                0 ||
+                importResult.conflictCount >
+                0;
 
             await Swal.fire({
-                icon: "success",
+                icon:
+                    hasWarnings
+                        ? "warning"
+                        : "success",
 
                 title:
-                    "Oferta académica importada",
+                    hasWarnings
+                        ? "Oferta reemplazada con observaciones"
+                        : isReplacement
+                            ? "Oferta y horario actualizados"
+                            : "Oferta académica importada",
 
                 text:
-                    `Se encontraron ${importedSubjectCount} materias y ${parsedOffer.groups.length} grupos para el periodo ${parsedOffer.period}.${detectedTableMessage}`,
+                    resultMessages.join(
+                        " ",
+                    ),
 
                 confirmButtonText:
                     "Continuar",
 
                 confirmButtonColor:
-                    "#16a34a",
+                    hasWarnings
+                        ? "#f59e0b"
+                        : "#16a34a",
             });
         };
 
