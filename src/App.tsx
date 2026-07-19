@@ -4,7 +4,6 @@ import "sweetalert2/dist/sweetalert2.min.css";
 import "./App.css";
 
 import {
-  LuBookOpen,
   LuCheck,
   LuChevronDown,
   LuRotateCcw,
@@ -16,11 +15,13 @@ import {
 } from "react-icons/lu";
 
 import AcademicStatistics from "./components/AcademicStatistics";
+import AppNavigation, { type AppView, } from "./components/AppNavigation";
 import DegreeRequirementsCard from "./components/DegreeRequirementsCard";
-import RegulatoryAlerts from "./components/RegulatoryAlerts";
-import StudentAcademicRecordPage from "./components/StudentAcademicRecordPage";
 import HomePage from "./components/HomePage";
+import RegulatoryAlerts from "./components/RegulatoryAlerts";
+import SchedulePage from "./components/SchedulePage";
 import SemesterCard from "./components/SemesterCard";
+import StudentAcademicRecordPage from "./components/StudentAcademicRecordPage";
 
 import { curriculum } from "./data/curriculum";
 import { degreeRequirements } from "./data/degreeRequirements";
@@ -109,15 +110,26 @@ const escapeHtml = (value: string) => {
 };
 
 function App() {
-  const currentView = new URLSearchParams(
-    window.location.search,
-  ).get("view");
+  const requestedView =
+    new URLSearchParams(
+      window.location.search,
+    ).get("view");
+
+  const currentView: AppView =
+    requestedView === "academic-life" ||
+      requestedView === "student-record" ||
+      requestedView === "schedule"
+      ? requestedView
+      : "home";
 
   const isStudentRecordView =
     currentView === "student-record";
 
   const isAcademicLifeView =
     currentView === "academic-life";
+
+  const isScheduleView =
+    currentView === "schedule";
 
   /*
    * =====================================================
@@ -1917,17 +1929,6 @@ function App() {
     });
   };
 
-  const handleOpenAcademicLife = () => {
-    const url = new URL(window.location.href);
-
-    url.searchParams.set(
-      "view",
-      "academic-life",
-    );
-
-    window.location.href = url.toString();
-  };
-
   const handleOpenStudentRecord = () => {
     const url = new URL(window.location.href);
     url.searchParams.set("view", "student-record");
@@ -2097,19 +2098,40 @@ function App() {
 
   if (isStudentRecordView) {
     return (
-      <StudentAcademicRecordPage
-        curriculum={curriculum}
-        subjectStatuses={subjectStatuses}
-        subjectAcademicRecords={subjectAcademicRecords}
-        regulatoryRecord={studentRegulatoryRecord}
-        situation={studentAcademicSituation}
-        historicalRepeatCounts={historicalRepeatCounts}
-        activeRepeatCounts={activeRepeatCounts}
-        completedSemesters={completedSemesters}
-        themeMode={themeMode}
-        onToggleTheme={handleToggleTheme}
-        onBack={handleReturnToDashboard}
-      />
+      <div className="app">
+        <AppNavigation currentView={currentView} />
+
+        <StudentAcademicRecordPage
+          curriculum={curriculum}
+          subjectStatuses={subjectStatuses}
+          subjectAcademicRecords={subjectAcademicRecords}
+          regulatoryRecord={studentRegulatoryRecord}
+          situation={studentAcademicSituation}
+          historicalRepeatCounts={historicalRepeatCounts}
+          activeRepeatCounts={activeRepeatCounts}
+          completedSemesters={completedSemesters}
+          themeMode={themeMode}
+          onToggleTheme={handleToggleTheme}
+          onBack={handleReturnToDashboard}
+        />
+      </div>
+    );
+  }
+
+  if (isScheduleView) {
+    return (
+      <div className="app">
+        <AppNavigation
+          currentView={currentView}
+        />
+
+        <SchedulePage
+          themeMode={themeMode}
+          onToggleTheme={
+            handleToggleTheme
+          }
+        />
+      </div>
     );
   }
 
@@ -2122,6 +2144,10 @@ function App() {
   if (!isAcademicLifeView) {
     return (
       <div className="app home-shell">
+        <AppNavigation
+          currentView={currentView}
+        />
+
         <header className="home-header">
           <div className="home-header__content">
             <div className="home-header__brand">
@@ -2165,15 +2191,6 @@ function App() {
                     : "Modo oscuro"}
                 </span>
               </button>
-
-              <button
-                className="home-header__academic-button"
-                type="button"
-                onClick={handleOpenAcademicLife}
-              >
-                <LuBookOpen aria-hidden="true" />
-                Ver vida académica
-              </button>
             </div>
           </div>
         </header>
@@ -2190,6 +2207,10 @@ function App() {
 
   return (
     <div className="app">
+      <AppNavigation
+        currentView={currentView}
+      />
+
       <header className="header">
         <div className="header__content">
           <div className="header__intro">

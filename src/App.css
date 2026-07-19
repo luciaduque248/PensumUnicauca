@@ -5101,3 +5101,492 @@ html[data-theme="dark"] .student-profile-field--locked input {
 html[data-theme="dark"] .student-profile-field--locked>small {
   color: #64748b;
 }
+
+/*
+ * =========================================================
+ * NAVEGACIÓN PRINCIPAL
+ * =========================================================
+ */
+
+.app-navigation {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid #e2e8f0;
+  background-color:
+    rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.07);
+  backdrop-filter: blur(18px);
+}
+
+.app-navigation__content {
+  display: flex;
+  width: min(1280px,
+      calc(100% - 32px));
+  min-height: 72px;
+  margin: 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.app-navigation__brand {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 11px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background-color: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-navigation__brand-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 13px;
+  color: #ffffff;
+  background:
+    linear-gradient(135deg,
+      #4f46e5,
+      #7c3aed);
+  box-shadow:
+    0 9px 20px rgba(79, 70, 229, 0.22);
+}
+
+.app-navigation__brand-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.app-navigation__brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-navigation__brand-copy strong {
+  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.app-navigation__brand-copy small {
+  color: #64748b;
+  font-size: 0.62rem;
+  font-weight: 650;
+}
+
+.app-navigation__links {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.app-navigation__link {
+  display: inline-flex;
+  min-height: 42px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: #64748b;
+  background-color: transparent;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 750;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.app-navigation__link svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.app-navigation__link:hover {
+  transform: translateY(-1px);
+  color: #4338ca;
+  border-color: #e0e7ff;
+  background-color: #f5f3ff;
+}
+
+.app-navigation__link--active {
+  color: #3730a3;
+  border-color: #c7d2fe;
+  background-color: #eef2ff;
+}
+
+.app-navigation__link:focus-visible,
+.app-navigation__brand:focus-visible {
+  outline:
+    3px solid rgba(99, 102, 241, 0.25);
+  outline-offset: 3px;
+}
+
+/*
+ * Modo oscuro
+ */
+
+html[data-theme="dark"] .app-navigation {
+  border-color: #334155;
+  background-color:
+    rgba(15, 23, 42, 0.94);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+html[data-theme="dark"] .app-navigation__brand-copy strong {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .app-navigation__brand-copy small {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .app-navigation__link {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .app-navigation__link:hover {
+  color: #e0e7ff;
+  border-color: #4338ca;
+  background-color: #312e81;
+}
+
+html[data-theme="dark"] .app-navigation__link--active {
+  color: #e0e7ff;
+  border-color: #6366f1;
+  background-color: #312e81;
+}
+
+/*
+ * Responsive
+ */
+
+@media (max-width: 980px) {
+  .app-navigation__content {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 0;
+  }
+
+  .app-navigation__brand {
+    align-self: flex-start;
+  }
+
+  .app-navigation__links {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: thin;
+  }
+
+  .app-navigation__link {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-navigation__content {
+    width: min(100% - 22px,
+        1280px);
+  }
+
+  .app-navigation__brand-icon {
+    width: 37px;
+    height: 37px;
+  }
+
+  .app-navigation__link {
+    padding: 0 11px;
+    font-size: 0.66rem;
+  }
+}
+
+/*
+ * =========================================================
+ * PÁGINA DE HORARIO
+ * =========================================================
+ */
+
+.schedule-page {
+  min-height: calc(100vh - 72px);
+  color: #0f172a;
+  background-color: #f8fafc;
+}
+
+.schedule-header {
+  padding: 54px 24px 96px;
+  color: #ffffff;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(14, 165, 233, 0.42),
+      transparent 37%
+    ),
+    linear-gradient(
+      135deg,
+      #0f172a,
+      #172554 55%,
+      #164e63
+    );
+}
+
+.schedule-header__content {
+  display: flex;
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.schedule-header__intro {
+  max-width: 760px;
+}
+
+.schedule-header__eyebrow {
+  margin: 0 0 12px;
+  color: #bae6fd;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.schedule-header__title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.schedule-header__title svg {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  color: #bae6fd;
+}
+
+.schedule-header h1 {
+  margin: 0;
+  font-size:
+    clamp(
+      2.4rem,
+      6vw,
+      4.5rem
+    );
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.schedule-header__description {
+  max-width: 680px;
+  margin: 20px 0 0;
+  color: #e0f2fe;
+  line-height: 1.7;
+}
+
+.schedule-header__theme-button {
+  display: inline-flex;
+  min-height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 15px;
+  border:
+    1px solid
+    rgba(224, 242, 254, 0.38);
+  border-radius: 13px;
+  color: #e0f2fe;
+  background-color:
+    rgba(255, 255, 255, 0.08);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
+.schedule-header__theme-button:hover {
+  color: #ffffff;
+  border-color:
+    rgba(255, 255, 255, 0.62);
+  background-color:
+    rgba(255, 255, 255, 0.15);
+}
+
+.schedule-header__theme-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.schedule-main {
+  width: min(
+    1200px,
+    calc(100% - 32px)
+  );
+  margin: -54px auto 0;
+  padding-bottom: 72px;
+}
+
+.schedule-empty {
+  display: flex;
+  min-height: 370px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 42px 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 26px;
+  background-color: #ffffff;
+  box-shadow:
+    0 18px 44px
+    rgba(15, 23, 42, 0.1);
+  text-align: center;
+}
+
+.schedule-empty__icon {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border-radius: 22px;
+  color: #ffffff;
+  background:
+    linear-gradient(
+      135deg,
+      #0284c7,
+      #4f46e5
+    );
+  box-shadow:
+    0 14px 28px
+    rgba(2, 132, 199, 0.22);
+}
+
+.schedule-empty__icon svg {
+  width: 31px;
+  height: 31px;
+}
+
+.schedule-empty__eyebrow {
+  margin: 24px 0 7px;
+  color: #0284c7;
+  font-size: 0.73rem;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.schedule-empty h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(
+    1.6rem,
+    4vw,
+    2.4rem
+  );
+  letter-spacing: -0.035em;
+}
+
+.schedule-empty > p:last-child {
+  max-width: 610px;
+  margin: 14px 0 0;
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+/*
+ * Modo oscuro
+ */
+
+html[data-theme="dark"]
+.schedule-page {
+  color: #e2e8f0;
+  background-color: #020617;
+}
+
+html[data-theme="dark"]
+.schedule-empty {
+  border-color: #334155;
+  background-color: #0f172a;
+  box-shadow:
+    0 18px 44px
+    rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"]
+.schedule-empty h2 {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"]
+.schedule-empty > p:last-child {
+  color: #94a3b8;
+}
+
+/*
+ * Responsive
+ */
+
+@media (max-width: 760px) {
+  .schedule-header__content {
+    flex-direction: column;
+  }
+
+  .schedule-header__theme-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .schedule-header {
+    padding:
+      42px 18px
+      88px;
+  }
+
+  .schedule-header__title {
+    align-items: flex-start;
+  }
+
+  .schedule-header__title svg {
+    width: 31px;
+    height: 31px;
+  }
+
+  .schedule-main {
+    width: min(
+      100% - 22px,
+      1200px
+    );
+  }
+
+  .schedule-empty {
+    min-height: 330px;
+    padding: 34px 19px;
+    border-radius: 21px;
+  }
+}
