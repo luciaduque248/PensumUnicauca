@@ -4,6 +4,7 @@ import "sweetalert2/dist/sweetalert2.min.css";
 import "./App.css";
 
 import {
+  LuBookOpen,
   LuCheck,
   LuChevronDown,
   LuRotateCcw,
@@ -18,11 +19,13 @@ import AcademicStatistics from "./components/AcademicStatistics";
 import DegreeRequirementsCard from "./components/DegreeRequirementsCard";
 import RegulatoryAlerts from "./components/RegulatoryAlerts";
 import StudentAcademicRecordPage from "./components/StudentAcademicRecordPage";
+import HomePage from "./components/HomePage";
 import SemesterCard from "./components/SemesterCard";
 
 import { curriculum } from "./data/curriculum";
 import { degreeRequirements } from "./data/degreeRequirements";
 import { externalPrerequisiteNames } from "./data/prerequisites";
+import { DEFAULT_STUDENT_PROFILE } from "./data/defaultStudentProfile";
 
 import { useLocalStorage } from "./hooks/useLocalStorage";
 
@@ -38,6 +41,7 @@ import type {
   SubjectAttempt,
   SubjectStatus,
 } from "./types/curriculum";
+import type { StudentProfile } from "./types/studentProfile";
 
 type SubjectFilter = "all" | "pending" | "in-progress" | "approved" | "blocked";
 type ThemeMode = "light" | "dark";
@@ -80,7 +84,7 @@ const getApprovedRepeatLevelFromRecord = (
   }
 
   if (record.approvedRepeatLevel !== null &&
-      record.approvedRepeatLevel !== undefined) {
+    record.approvedRepeatLevel !== undefined) {
     return record.approvedRepeatLevel;
   }
 
@@ -111,6 +115,9 @@ function App() {
 
   const isStudentRecordView =
     currentView === "student-record";
+
+  const isAcademicLifeView =
+    currentView === "academic-life";
 
   /*
    * =====================================================
@@ -239,6 +246,51 @@ function App() {
   };
 
   /*
+ * =====================================================
+ * PERFIL DEL ESTUDIANTE
+ * =====================================================
+ */
+
+  const [
+    savedStudentProfile,
+    setSavedStudentProfile,
+  ] = useLocalStorage<StudentProfile>(
+    "pensum-student-profile",
+    DEFAULT_STUDENT_PROFILE,
+  );
+  /*
+   * Se combinan los valores predeterminados con los
+   * almacenados en el navegador.
+   *
+   * Esto evita errores si en futuras versiones se agregan
+   * campos nuevos al perfil.
+   */
+  const studentProfile: StudentProfile = {
+    ...DEFAULT_STUDENT_PROFILE,
+    ...savedStudentProfile,
+
+    /*
+     * La universidad y el programa pertenecen
+     * exclusivamente al pensum de esta aplicación.
+     */
+    university:
+      DEFAULT_STUDENT_PROFILE.university,
+
+    program:
+      DEFAULT_STUDENT_PROFILE.program,
+
+    freeTuition: {
+      ...DEFAULT_STUDENT_PROFILE.freeTuition,
+      ...savedStudentProfile.freeTuition,
+    },
+
+    personalInformation: {
+      ...DEFAULT_STUDENT_PROFILE.personalInformation,
+      ...savedStudentProfile.personalInformation,
+    },
+  };
+
+  /*
    * =====================================================
    * ESTADOS DE LOS REQUISITOS DE GRADO
    * =====================================================
@@ -297,6 +349,20 @@ function App() {
     document.documentElement.style.colorScheme =
       themeMode;
   }, [themeMode]);
+
+  useEffect(() => {
+    const studentName =
+      studentProfile.fullName.trim();
+
+    document.title =
+      studentProfile.isConfigured &&
+        studentName !== ""
+        ? `${studentName} · Mi pensum interactivo`
+        : "Mi pensum interactivo";
+  }, [
+    studentProfile.fullName,
+    studentProfile.isConfigured,
+  ]);
 
   const [showCompletedSemesters, setShowCompletedSemesters,] = useLocalStorage<boolean>(
     "pensum-show-completed-semesters",
@@ -746,6 +812,37 @@ function App() {
         ? "light"
         : "dark",
     );
+  };
+
+  /*
+ * =====================================================
+ * GUARDAR PERFIL DEL ESTUDIANTE
+ * =====================================================
+ */
+
+  const handleSaveStudentProfile = (
+    updatedProfile: StudentProfile,
+  ) => {
+    setSavedStudentProfile({
+      ...DEFAULT_STUDENT_PROFILE,
+      ...updatedProfile,
+
+      university:
+        DEFAULT_STUDENT_PROFILE.university,
+
+      program:
+        DEFAULT_STUDENT_PROFILE.program,
+
+      freeTuition: {
+        ...DEFAULT_STUDENT_PROFILE.freeTuition,
+        ...updatedProfile.freeTuition,
+      },
+
+      personalInformation: {
+        ...DEFAULT_STUDENT_PROFILE.personalInformation,
+        ...updatedProfile.personalInformation,
+      },
+    });
   };
 
   /*
@@ -1820,6 +1917,17 @@ function App() {
     });
   };
 
+  const handleOpenAcademicLife = () => {
+    const url = new URL(window.location.href);
+
+    url.searchParams.set(
+      "view",
+      "academic-life",
+    );
+
+    window.location.href = url.toString();
+  };
+
   const handleOpenStudentRecord = () => {
     const url = new URL(window.location.href);
     url.searchParams.set("view", "student-record");
@@ -1828,12 +1936,13 @@ function App() {
 
   const handleReturnToDashboard = () => {
     const url = new URL(window.location.href);
-    url.searchParams.delete("view");
 
-    const remainingQuery = url.searchParams.toString();
-    window.location.href = `${url.pathname}${
-      remainingQuery ? `?${remainingQuery}` : ""
-    }${url.hash}`;
+    url.searchParams.set(
+      "view",
+      "academic-life",
+    );
+
+    window.location.href = url.toString();
   };
 
   /*
@@ -2004,6 +2113,81 @@ function App() {
     );
   }
 
+  /*
+ * La página Inicio se muestra cuando no se ha
+ * seleccionado explícitamente Vida académica.
+ *
+ * La hoja de vida se evalúa antes de este bloque.
+ */
+  if (!isAcademicLifeView) {
+    return (
+      <div className="app home-shell">
+        <header className="home-header">
+          <div className="home-header__content">
+            <div className="home-header__brand">
+              <p className="home-header__university">
+                Universidad del Cauca
+              </p>
+
+              <h1>Mi pensum interactivo</h1>
+
+              <p className="home-header__description">
+                Consulta tu información personal y accede al
+                seguimiento de tu proceso académico.
+              </p>
+            </div>
+
+            <div className="home-header__actions">
+              <button
+                className="home-header__theme-button"
+                type="button"
+                onClick={handleToggleTheme}
+                aria-label={
+                  themeMode === "dark"
+                    ? "Activar modo claro"
+                    : "Activar modo oscuro"
+                }
+                title={
+                  themeMode === "dark"
+                    ? "Activar modo claro"
+                    : "Activar modo oscuro"
+                }
+              >
+                {themeMode === "dark" ? (
+                  <LuSun aria-hidden="true" />
+                ) : (
+                  <LuMoon aria-hidden="true" />
+                )}
+
+                <span>
+                  {themeMode === "dark"
+                    ? "Modo claro"
+                    : "Modo oscuro"}
+                </span>
+              </button>
+
+              <button
+                className="home-header__academic-button"
+                type="button"
+                onClick={handleOpenAcademicLife}
+              >
+                <LuBookOpen aria-hidden="true" />
+                Ver vida académica
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <HomePage
+          studentProfile={studentProfile}
+          onSaveProfile={
+            handleSaveStudentProfile
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -2167,13 +2351,13 @@ function App() {
 
         {shouldShowRegulatoryTracking && (
           <RegulatoryAlerts
-          situation={studentAcademicSituation}
-          regulatoryRecord={studentRegulatoryRecord}
-          historicalRepeatCounts={historicalRepeatCounts}
-          activeRepeatCounts={activeRepeatCounts}
-          onDisciplinarySanctionChange={
-            handleDisciplinarySanctionChange
-          }
+            situation={studentAcademicSituation}
+            regulatoryRecord={studentRegulatoryRecord}
+            historicalRepeatCounts={historicalRepeatCounts}
+            activeRepeatCounts={activeRepeatCounts}
+            onDisciplinarySanctionChange={
+              handleDisciplinarySanctionChange
+            }
           />
         )}
 
