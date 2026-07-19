@@ -1892,7 +1892,7 @@ function SchedulePage({
 
                 <ScheduleGrid
                     scheduleClasses={
-                        sortedScheduleClasses
+                        scheduleClasses
                     }
                 />
             </main>

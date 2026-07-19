@@ -8020,3 +8020,121 @@ html[data-theme="dark"] .swal-offer-update__warning li {
     grid-row: auto;
   }
 }
+
+/*
+ * =========================================================
+ * COLORES ADICIONALES DEL HORARIO
+ * =========================================================
+ */
+
+.schedule-class-block--tone-7 {
+  color: #115e59;
+  border-color: #99f6e4;
+  background-color: #ccfbf1;
+}
+
+.schedule-class-block--tone-8 {
+  color: #9a3412;
+  border-color: #fdba74;
+  background-color: #ffedd5;
+}
+
+.schedule-class-block--tone-9 {
+  color: #86198f;
+  border-color: #f0abfc;
+  background-color: #fae8ff;
+}
+
+.schedule-class-block--tone-10 {
+  color: #3f6212;
+  border-color: #bef264;
+  background-color: #ecfccb;
+}
+
+.schedule-class-block--tone-11 {
+  color: #155e75;
+  border-color: #67e8f9;
+  background-color: #cffafe;
+}
+
+.schedule-class-block--tone-12 {
+  color: #334155;
+  border-color: #cbd5e1;
+  background-color: #f1f5f9;
+}
+
+/*
+ * Colores del horario en modo oscuro
+ */
+
+html[data-theme="dark"] .schedule-class-block--tone-1 {
+  color: #e0e7ff;
+  border-color: #6366f1;
+  background-color: #312e81;
+}
+
+html[data-theme="dark"] .schedule-class-block--tone-2 {
+  color: #bae6fd;
+  border-color: #0284c7;
+  background-color: #0c4a6e;
+}
+
+html[data-theme="dark"] .schedule-class-block--tone-3 {
+  color: #bbf7d0;
+  border-color: #16a34a;
+  background-color: #14532d;
+}
+
+html[data-theme="dark"] .schedule-class-block--tone-4 {
+  color: #fde68a;
+  border-color: #d97706;
+  background-color: #78350f;
+}
+
+html[data-theme="dark"] .schedule-class-block--tone-5 {
+  color: #fecdd3;
+  border-color: #e11d48;
+  background-color: #881337;
+}
+
+html[data-theme="dark"] .schedule-class-block--tone-6 {
+  color: #e9d5ff;
+  border-color: #a855f7;
+  background-color: #581c87;
+}
+
+html[data-theme="dark"] .schedule-class-block--tone-7 {
+  color: #99f6e4;
+  border-color: #14b8a6;
+  background-color: #134e4a;
+}
+
+html[data-theme="dark"] .schedule-class-block--tone-8 {
+  color: #fed7aa;
+  border-color: #f97316;
+  background-color: #7c2d12;
+}
+
+html[data-theme="dark"] .schedule-class-block--tone-9 {
+  color: #f5d0fe;
+  border-color: #d946ef;
+  background-color: #701a75;
+}
+
+html[data-theme="dark"] .schedule-class-block--tone-10 {
+  color: #d9f99d;
+  border-color: #84cc16;
+  background-color: #365314;
+}
+
+html[data-theme="dark"] .schedule-class-block--tone-11 {
+  color: #a5f3fc;
+  border-color: #06b6d4;
+  background-color: #164e63;
+}
+
+html[data-theme="dark"] .schedule-class-block--tone-12 {
+  color: #e2e8f0;
+  border-color: #64748b;
+  background-color: #334155;
+}

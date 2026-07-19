@@ -1,5 +1,6 @@
 import {
     Fragment,
+    useMemo,
     type CSSProperties,
 } from "react";
 
@@ -84,30 +85,92 @@ const getHourFromTime = (
     );
 };
 
-const getSubjectToneClass = (
+const SCHEDULE_TONE_COUNT =
+    12;
+
+const normalizeSubjectName = (
     subjectName: string,
 ) => {
-    let hash = 0;
-
-    for (
-        let index = 0;
-        index < subjectName.length;
-        index += 1
-    ) {
-        hash =
-            subjectName.charCodeAt(index) +
-            ((hash << 5) - hash);
-    }
-
-    const tone =
-        (Math.abs(hash) % 6) + 1;
-
-    return `schedule-class-block--tone-${tone}`;
+    return subjectName
+        .normalize("NFD")
+        .replace(
+            /[\u0300-\u036f]/g,
+            "",
+        )
+        .toLowerCase()
+        .replace(
+            /\s+/g,
+            " ",
+        )
+        .trim();
 };
 
 function ScheduleGrid({
     scheduleClasses,
 }: ScheduleGridProps) {
+    /*
+     * Cada materia recibe un color diferente según
+     * el orden en que aparece dentro del horario.
+     *
+     * Cuando una materia tiene dos o más franjas,
+     * todas conservan el mismo color.
+     */
+    const subjectToneClasses =
+        useMemo(() => {
+            const tonesBySubject =
+                new Map<
+                    string,
+                    string
+                >();
+
+            scheduleClasses.forEach(
+                (scheduleClass) => {
+                    const normalizedName =
+                        normalizeSubjectName(
+                            scheduleClass.subjectName,
+                        );
+
+                    if (
+                        tonesBySubject.has(
+                            normalizedName,
+                        )
+                    ) {
+                        return;
+                    }
+
+                    const toneNumber =
+                        (
+                            tonesBySubject.size %
+                            SCHEDULE_TONE_COUNT
+                        ) + 1;
+
+                    tonesBySubject.set(
+                        normalizedName,
+
+                        `schedule-class-block--tone-${toneNumber}`,
+                    );
+                },
+            );
+
+            return tonesBySubject;
+        }, [scheduleClasses]);
+
+    const getSubjectToneClass = (
+        subjectName: string,
+    ) => {
+        const normalizedName =
+            normalizeSubjectName(
+                subjectName,
+            );
+
+        return (
+            subjectToneClasses.get(
+                normalizedName,
+            ) ??
+            "schedule-class-block--tone-1"
+        );
+    };
+
     return (
         <section className="schedule-grid-panel">
             <div className="schedule-grid-panel__header">
