@@ -12,6 +12,8 @@ import Swal from "sweetalert2";
 
 import {
     LuArrowLeft,
+    LuEye,
+    LuEyeOff,
     LuBookOpen,
     LuCloud,
     LuGraduationCap,
@@ -56,6 +58,50 @@ const GUEST_ACCESS_STORAGE_KEY =
 
 const INTRO_DURATION_MS = 1900;
 
+const getAuthenticationErrorCode = (
+    error: unknown,
+): string => {
+    if (
+        typeof error !== "object" ||
+        error === null ||
+        !("code" in error)
+    ) {
+        return "";
+    }
+
+    const errorCode = (
+        error as {
+            code?: unknown;
+        }
+    ).code;
+
+    return typeof errorCode === "string"
+        ? errorCode
+        : "";
+};
+
+const isInvalidCredentialsError = (
+    error: unknown,
+): boolean => {
+    const errorCode =
+        getAuthenticationErrorCode(
+            error,
+        );
+
+    const errorMessage =
+        error instanceof Error
+            ? error.message.toLowerCase()
+            : "";
+
+    return (
+        errorCode ===
+        "invalid_credentials" ||
+        errorMessage.includes(
+            "invalid login credentials",
+        )
+    );
+};
+
 const GUEST_INFORMATION_HTML = `
     <div class="auth-guest-notice">
         <p>Los datos permanecen únicamente en este navegador.</p>
@@ -77,11 +123,11 @@ const getAuthenticationErrorMessage = (
         originalMessage.toLowerCase();
 
     if (
-        normalizedMessage.includes(
-            "invalid login credentials",
+        isInvalidCredentialsError(
+            error,
         )
     ) {
-        return "El correo electrónico o la contraseña son incorrectos.";
+        return "No pudimos verificar una combinación válida de correo y contraseña. Revisa los datos o crea una cuenta si todavía no estás registrado.";
     }
 
     if (
@@ -319,10 +365,26 @@ const AccessPortal = ({
     ] =
         useState(false);
 
+    const [
+        showPassword,
+        setShowPassword,
+    ] =
+        useState(false);
+
+    const [
+        showPasswordConfirmation,
+        setShowPasswordConfirmation,
+    ] =
+        useState(false);
+
     const resetPasswords =
         (): void => {
             setPassword("");
             setPasswordConfirmation("");
+            setShowPassword(false);
+            setShowPasswordConfirmation(
+                false,
+            );
         };
 
     const returnToOptions =
@@ -389,14 +451,63 @@ const AccessPortal = ({
             );
 
             try {
+                cleanCurrentView();
+
                 await signInWithEmail(
                     email,
                     password,
                 );
             } catch (error) {
-                await showAuthenticationError(
-                    error,
-                );
+                if (
+                    isInvalidCredentialsError(
+                        error,
+                    )
+                ) {
+                    const result =
+                        await Swal.fire({
+                            icon: "error",
+                            title:
+                                "No fue posible iniciar sesión",
+                            text:
+                                "No pudimos verificar una combinación válida de correo y contraseña. Revisa los datos. Si todavía no tienes cuenta, puedes crearla.",
+                            showDenyButton:
+                                true,
+                            confirmButtonText:
+                                "Revisar datos",
+                            denyButtonText:
+                                "Crear cuenta",
+                            confirmButtonColor:
+                                "#6366f1",
+                            denyButtonColor:
+                                "#7c3aed",
+                            background:
+                                "#0f172a",
+                            color:
+                                "#e2e8f0",
+                            reverseButtons:
+                                true,
+                            customClass: {
+                                popup:
+                                    "auth-swal-popup",
+                                confirmButton:
+                                    "auth-swal-confirm",
+                            },
+                        });
+
+                    if (
+                        result.isDenied
+                    ) {
+                        resetPasswords();
+
+                        setActivePanel(
+                            "sign-up",
+                        );
+                    }
+                } else {
+                    await showAuthenticationError(
+                        error,
+                    );
+                }
             } finally {
                 setIsSubmitting(
                     false,
@@ -500,6 +611,8 @@ const AccessPortal = ({
             );
 
             try {
+                cleanCurrentView();
+
                 const result =
                     await signUpWithEmail(
                         email,
@@ -790,6 +903,7 @@ const AccessPortal = ({
                                         </div>
                                     </label>
 
+                                    {/* Iniciar sesion */}
                                     <label className="access-field">
                                         <span>
                                             Contraseña
@@ -801,7 +915,11 @@ const AccessPortal = ({
                                             />
 
                                             <input
-                                                type="password"
+                                                type={
+                                                    showPassword
+                                                        ? "text"
+                                                        : "password"
+                                                }
                                                 value={
                                                     password
                                                 }
@@ -820,6 +938,40 @@ const AccessPortal = ({
                                                     isSubmitting
                                                 }
                                             />
+
+                                            <button
+                                                className="access-field__toggle"
+                                                type="button"
+                                                onClick={() =>
+                                                    setShowPassword(
+                                                        (
+                                                            currentValue,
+                                                        ) =>
+                                                            !currentValue,
+                                                    )
+                                                }
+                                                aria-label={
+                                                    showPassword
+                                                        ? "Ocultar contraseña"
+                                                        : "Mostrar contraseña"
+                                                }
+                                                aria-pressed={
+                                                    showPassword
+                                                }
+                                                disabled={
+                                                    isSubmitting
+                                                }
+                                            >
+                                                {showPassword ? (
+                                                    <LuEyeOff
+                                                        aria-hidden="true"
+                                                    />
+                                                ) : (
+                                                    <LuEye
+                                                        aria-hidden="true"
+                                                    />
+                                                )}
+                                            </button>
                                         </div>
                                     </label>
 
@@ -941,7 +1093,11 @@ const AccessPortal = ({
                                             />
 
                                             <input
-                                                type="password"
+                                                type={
+                                                    showPassword
+                                                        ? "text"
+                                                        : "password"
+                                                }
                                                 value={
                                                     password
                                                 }
@@ -963,7 +1119,56 @@ const AccessPortal = ({
                                                     isSubmitting
                                                 }
                                             />
+
+                                            <button
+                                                className="access-field__toggle"
+                                                type="button"
+                                                onClick={() =>
+                                                    setShowPassword(
+                                                        (
+                                                            currentValue,
+                                                        ) =>
+                                                            !currentValue,
+                                                    )
+                                                }
+                                                aria-label={
+                                                    showPassword
+                                                        ? "Ocultar contraseña"
+                                                        : "Mostrar contraseña"
+                                                }
+                                                aria-pressed={
+                                                    showPassword
+                                                }
+                                                disabled={
+                                                    isSubmitting
+                                                }
+                                            >
+                                                {showPassword ? (
+                                                    <LuEyeOff
+                                                        aria-hidden="true"
+                                                    />
+                                                ) : (
+                                                    <LuEye
+                                                        aria-hidden="true"
+                                                    />
+                                                )}
+                                            </button>
                                         </div>
+
+                                        <p
+                                            className={`access-field__requirement ${password.length >= 8
+                                                ? "access-field__requirement--success"
+                                                : ""
+                                                }`}
+                                        >
+                                            <LuShieldCheck
+                                                aria-hidden="true"
+                                            />
+
+                                            <span>
+                                                Debe tener mínimo 8 caracteres.
+                                            </span>
+                                        </p>
                                     </label>
 
                                     <label className="access-field">
@@ -977,7 +1182,11 @@ const AccessPortal = ({
                                             />
 
                                             <input
-                                                type="password"
+                                                type={
+                                                    showPasswordConfirmation
+                                                        ? "text"
+                                                        : "password"
+                                                }
                                                 value={
                                                     passwordConfirmation
                                                 }
@@ -999,7 +1208,63 @@ const AccessPortal = ({
                                                     isSubmitting
                                                 }
                                             />
+
+                                            <button
+                                                className="access-field__toggle"
+                                                type="button"
+                                                onClick={() =>
+                                                    setShowPasswordConfirmation(
+                                                        (
+                                                            currentValue,
+                                                        ) =>
+                                                            !currentValue,
+                                                    )
+                                                }
+                                                aria-label={
+                                                    showPasswordConfirmation
+                                                        ? "Ocultar confirmación de contraseña"
+                                                        : "Mostrar confirmación de contraseña"
+                                                }
+                                                aria-pressed={
+                                                    showPasswordConfirmation
+                                                }
+                                                disabled={
+                                                    isSubmitting
+                                                }
+                                            >
+                                                {showPasswordConfirmation ? (
+                                                    <LuEyeOff
+                                                        aria-hidden="true"
+                                                    />
+                                                ) : (
+                                                    <LuEye
+                                                        aria-hidden="true"
+                                                    />
+                                                )}
+                                            </button>
                                         </div>
+
+                                        {passwordConfirmation !==
+                                            "" && (
+                                                <p
+                                                    className={`access-field__requirement ${password ===
+                                                            passwordConfirmation
+                                                            ? "access-field__requirement--success"
+                                                            : "access-field__requirement--error"
+                                                        }`}
+                                                >
+                                                    <LuShieldCheck
+                                                        aria-hidden="true"
+                                                    />
+
+                                                    <span>
+                                                        {password ===
+                                                            passwordConfirmation
+                                                            ? "Las contraseñas coinciden."
+                                                            : "Las contraseñas no coinciden."}
+                                                    </span>
+                                                </p>
+                                            )}
                                     </label>
 
                                     <button
@@ -1178,6 +1443,8 @@ export const ApplicationAccessGate = ({
                 ) {
                     return;
                 }
+
+                cleanCurrentView();
 
                 localStorage.setItem(
                     GUEST_ACCESS_STORAGE_KEY,

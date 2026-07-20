@@ -277,36 +277,42 @@ html[data-theme="dark"] .app-navigation__link--active {
  * =========================================================
  */
 
-.app-navigation__right {
+.app-navigation__content {
     display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 11px;
+}
+
+.app-navigation__top {
+    display: flex;
+    width: 100%;
     min-width: 0;
     align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
+    justify-content: space-between;
+    gap: 16px;
 }
 
 .app-navigation__account {
     display: flex;
+    min-width: 0;
     flex-shrink: 0;
     align-items: center;
+    justify-content: flex-end;
     gap: 8px;
-    padding-left: 11px;
-    border-left:
-        1px solid #e2e8f0;
 }
 
 .app-navigation__identity {
     display: flex;
-    max-width: 205px;
+    max-width: 210px;
     min-height: 42px;
     align-items: center;
     gap: 8px;
-    padding: 5px 8px;
+    padding: 5px 9px;
     border: 0;
     border-radius: 12px;
     color: inherit;
-    background-color:
-        #f8fafc;
+    background-color: #f8fafc;
     font-family: inherit;
     text-align: left;
 }
@@ -319,10 +325,8 @@ html[data-theme="dark"] .app-navigation__link--active {
 }
 
 .app-navigation__identity--button:hover {
-    transform:
-        translateY(-1px);
-    background-color:
-        #eef2ff;
+    transform: translateY(-1px);
+    background-color: #eef2ff;
 }
 
 .app-navigation__identity-icon {
@@ -333,8 +337,7 @@ html[data-theme="dark"] .app-navigation__link--active {
     place-items: center;
     border-radius: 10px;
     color: #4338ca;
-    background-color:
-        #e0e7ff;
+    background-color: #e0e7ff;
 }
 
 .app-navigation__identity-icon svg {
@@ -374,13 +377,11 @@ html[data-theme="dark"] .app-navigation__link--active {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 0 11px;
-    border:
-        1px solid #fecaca;
+    padding: 0 12px;
+    border: 1px solid #fecaca;
     border-radius: 11px;
     color: #b91c1c;
-    background-color:
-        #fff7f7;
+    background-color: #fff7f7;
     font-family: inherit;
     font-size: 0.62rem;
     font-weight: 800;
@@ -393,12 +394,9 @@ html[data-theme="dark"] .app-navigation__link--active {
 }
 
 .app-navigation__logout:hover {
-    transform:
-        translateY(-1px);
-    border-color:
-        #fca5a5;
-    background-color:
-        #fef2f2;
+    transform: translateY(-1px);
+    border-color: #fca5a5;
+    background-color: #fef2f2;
 }
 
 .app-navigation__logout svg {
@@ -409,10 +407,6 @@ html[data-theme="dark"] .app-navigation__link--active {
 /*
  * Modo oscuro
  */
-
-html[data-theme="dark"] .app-navigation__account {
-    border-color: #334155;
-}
 
 html[data-theme="dark"] .app-navigation__identity {
     background-color: #111827;
@@ -452,95 +446,77 @@ html[data-theme="dark"] .app-navigation__logout:hover {
  * Responsive
  */
 
-@media (max-width: 1180px) {
-    .app-navigation__right {
-        gap: 8px;
+@media (max-width: 700px) {
+    .app-navigation__top {
+        gap: 10px;
     }
 
     .app-navigation__identity {
-        max-width: 175px;
+        max-width: none;
     }
 
     .app-navigation__identity-copy small {
-        max-width: 116px;
-    }
-
-    .app-navigation__logout span {
         display: none;
     }
 
     .app-navigation__logout {
-        width: 40px;
-        padding: 0;
+        padding: 0 10px;
     }
 }
 
-@media (max-width: 980px) {
-    .app-navigation__right {
-        width: 100%;
-        flex-direction: column;
-        align-items: stretch;
+@media (max-width: 460px) {
+    .app-navigation__top {
+        flex-wrap: wrap;
     }
 
-    .app-navigation__links {
-        width: 100%;
+    .app-navigation__brand {
+        flex-grow: 1;
     }
 
     .app-navigation__account {
         width: 100%;
-        justify-content:
-            space-between;
-        padding:
-            9px 0 0;
-        border-top:
-            1px solid #e2e8f0;
-        border-left: 0;
+        justify-content: space-between;
+        padding-top: 9px;
+        border-top: 1px solid #e2e8f0;
     }
 
     .app-navigation__identity {
-        max-width: none;
-    }
-
-    .app-navigation__identity-copy small {
-        max-width:
-            min(280px,
-                52vw);
-    }
-
-    .app-navigation__logout {
-        width: auto;
-        padding: 0 12px;
-    }
-
-    .app-navigation__logout span {
-        display: inline;
-    }
-
-    html[data-theme="dark"] .app-navigation__account {
-        border-top-color:
-            #334155;
-    }
-}
-
-@media (max-width: 520px) {
-    .app-navigation__account {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .app-navigation__identity,
-    .app-navigation__logout {
-        width: 100%;
-        max-width: none;
-        box-sizing: border-box;
+        flex-grow: 1;
     }
 
     .app-navigation__logout {
         min-height: 42px;
     }
 
-    .app-navigation__identity-copy small {
-        max-width:
-            calc(100vw - 115px);
+    html[data-theme="dark"] .app-navigation__account {
+        border-top-color: #334155;
+    }
+}
+
+/*
+ * =========================================================
+ * ESPACIADO VERTICAL DEL ENCABEZADO
+ * =========================================================
+ */
+
+.app-navigation {
+    box-sizing: border-box;
+    padding-top: 14px;
+    padding-bottom: 12px;
+}
+
+.app-navigation__content {
+    gap: 16px;
+}
+
+@media (max-width: 700px) {
+    .app-navigation {
+        padding-top:
+            calc(env(safe-area-inset-top, 0px) + 14px);
+        padding-bottom: 14px;
+    }
+
+    .app-navigation__content {
+        gap: 14px;
     }
 }

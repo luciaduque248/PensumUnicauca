@@ -34,25 +34,31 @@ const navigationItems: Array<{
             icon: LuHouse,
         },
         {
-            view: "academic-life",
-            label: "Vida académica",
+            view:
+                "academic-life",
+            label:
+                "Vida académica",
             icon: LuBookOpen,
         },
         {
-            view: "student-record",
+            view:
+                "student-record",
             label:
                 "Hoja de vida académica",
-            icon: LuGraduationCap,
+            icon:
+                LuGraduationCap,
         },
         {
             view: "schedule",
             label: "Horario",
-            icon: LuCalendarDays,
+            icon:
+                LuCalendarDays,
         },
         {
             view: "grades",
             label: "Notas",
-            icon: LuCalculator,
+            icon:
+                LuCalculator,
         },
     ];
 
@@ -72,7 +78,7 @@ function AppNavigation({
 
     const handleNavigate = (
         destination: AppView,
-    ) => {
+    ): void => {
         if (
             destination ===
             currentView
@@ -109,82 +115,34 @@ function AppNavigation({
             aria-label="Navegación principal"
         >
             <div className="app-navigation__content">
-                <button
-                    className="app-navigation__brand"
-                    type="button"
-                    onClick={() =>
-                        handleNavigate(
-                            "home",
-                        )
-                    }
-                    aria-label="Ir al inicio"
-                >
-                    <span
-                        className="app-navigation__brand-icon"
-                        aria-hidden="true"
+                <div className="app-navigation__top">
+                    <button
+                        className="app-navigation__brand"
+                        type="button"
+                        onClick={() =>
+                            handleNavigate(
+                                "home",
+                            )
+                        }
+                        aria-label="Ir al inicio"
                     >
-                        <LuGraduationCap />
-                    </span>
+                        <span
+                            className="app-navigation__brand-icon"
+                            aria-hidden="true"
+                        >
+                            <LuGraduationCap />
+                        </span>
 
-                    <span className="app-navigation__brand-copy">
-                        <strong>
-                            Mi pensum
-                        </strong>
+                        <span className="app-navigation__brand-copy">
+                            <strong>
+                                Mi pensum
+                            </strong>
 
-                        <small>
-                            Universidad del Cauca
-                        </small>
-                    </span>
-                </button>
-
-                <div className="app-navigation__right">
-                    <div className="app-navigation__links">
-                        {navigationItems.map(
-                            (
-                                item,
-                            ) => {
-                                const Icon =
-                                    item.icon;
-
-                                const isActive =
-                                    currentView ===
-                                    item.view;
-
-                                return (
-                                    <button
-                                        className={`app-navigation__link ${isActive
-                                                ? "app-navigation__link--active"
-                                                : ""
-                                            }`}
-                                        type="button"
-                                        key={
-                                            item.view
-                                        }
-                                        onClick={() =>
-                                            handleNavigate(
-                                                item.view,
-                                            )
-                                        }
-                                        aria-current={
-                                            isActive
-                                                ? "page"
-                                                : undefined
-                                        }
-                                    >
-                                        <Icon
-                                            aria-hidden="true"
-                                        />
-
-                                        <span>
-                                            {
-                                                item.label
-                                            }
-                                        </span>
-                                    </button>
-                                );
-                            },
-                        )}
-                    </div>
+                            <small>
+                                Universidad del Cauca
+                            </small>
+                        </span>
+                    </button>
 
                     <div className="app-navigation__account">
                         {isGuest ? (
@@ -256,6 +214,54 @@ function AppNavigation({
                             </span>
                         </button>
                     </div>
+                </div>
+
+                <div className="app-navigation__links">
+                    {navigationItems.map(
+                        (
+                            item,
+                        ) => {
+                            const Icon =
+                                item.icon;
+
+                            const isActive =
+                                currentView ===
+                                item.view;
+
+                            return (
+                                <button
+                                    className={`app-navigation__link ${isActive
+                                            ? "app-navigation__link--active"
+                                            : ""
+                                        }`}
+                                    type="button"
+                                    key={
+                                        item.view
+                                    }
+                                    onClick={() =>
+                                        handleNavigate(
+                                            item.view,
+                                        )
+                                    }
+                                    aria-current={
+                                        isActive
+                                            ? "page"
+                                            : undefined
+                                    }
+                                >
+                                    <Icon
+                                        aria-hidden="true"
+                                    />
+
+                                    <span>
+                                        {
+                                            item.label
+                                        }
+                                    </span>
+                                </button>
+                            );
+                        },
+                    )}
                 </div>
             </div>
         </nav>

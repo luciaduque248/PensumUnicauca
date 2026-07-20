@@ -3407,3 +3407,254 @@ html[data-theme="dark"] .curriculum-pagination__direction:disabled {
         transition: none;
     }
 }
+
+/*
+ * =========================================================
+ * MATERIAS APROBADAS AGRUPADAS
+ * =========================================================
+ */
+
+.approved-subjects {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #bbf7d0;
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg,
+            rgba(240, 253, 244, 0.98),
+            rgba(255, 255, 255, 0.98));
+}
+
+.approved-subjects__summary {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 74px;
+    padding: 14px 16px;
+    color: #166534;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    transition:
+        background-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.approved-subjects__summary::-webkit-details-marker {
+    display: none;
+}
+
+.approved-subjects__summary::marker {
+    content: "";
+}
+
+.approved-subjects__summary:hover {
+    background-color: rgba(220, 252, 231, 0.58);
+}
+
+.approved-subjects__summary:focus-visible {
+    outline: 3px solid rgba(34, 197, 94, 0.22);
+    outline-offset: -3px;
+}
+
+.approved-subjects[open] .approved-subjects__summary {
+    border-bottom: 1px solid #bbf7d0;
+    background-color: rgba(220, 252, 231, 0.52);
+}
+
+.approved-subjects__icon {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 13px;
+    color: #15803d;
+    background-color: #dcfce7;
+}
+
+.approved-subjects__icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.approved-subjects__copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.approved-subjects__copy strong {
+    color: #166534;
+    font-size: 0.82rem;
+    font-weight: 850;
+}
+
+.approved-subjects__copy small {
+    color: #4b7c5b;
+    font-size: 0.66rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.approved-subjects__metrics {
+    display: flex;
+    min-width: 66px;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 10px;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.78);
+    text-align: center;
+}
+
+.approved-subjects__metrics strong {
+    color: #15803d;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.approved-subjects__metrics small {
+    color: #4b7c5b;
+    font-size: 0.58rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.approved-subjects__toggle {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 10px;
+    color: #15803d;
+    background-color: #dcfce7;
+}
+
+.approved-subjects__toggle svg {
+    width: 16px;
+    height: 16px;
+}
+
+.approved-subjects__toggle-open {
+    display: none;
+}
+
+.approved-subjects[open] .approved-subjects__toggle-closed {
+    display: none;
+}
+
+.approved-subjects[open] .approved-subjects__toggle-open {
+    display: block;
+}
+
+.approved-subjects__list {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+}
+
+/*
+ * Al abrir el recuadro se conservan las tarjetas completas.
+ * Así el usuario todavía puede corregir el estado de una
+ * materia aprobada sin perder ninguna función existente.
+ */
+.approved-subjects__list .subject-card--approved {
+    background-color: rgba(255, 255, 255, 0.88);
+}
+
+/*
+ * =========================================================
+ * MODO OSCURO
+ * =========================================================
+ */
+
+html[data-theme="dark"] .approved-subjects {
+    border-color: #166534;
+    background:
+        linear-gradient(135deg,
+            rgba(20, 83, 45, 0.24),
+            rgba(15, 23, 42, 0.98));
+}
+
+html[data-theme="dark"] .approved-subjects__summary:hover,
+html[data-theme="dark"] .approved-subjects[open] .approved-subjects__summary {
+    background-color: rgba(20, 83, 45, 0.22);
+}
+
+html[data-theme="dark"] .approved-subjects[open] .approved-subjects__summary {
+    border-color: #166534;
+}
+
+html[data-theme="dark"] .approved-subjects__icon,
+html[data-theme="dark"] .approved-subjects__toggle {
+    color: #86efac;
+    background-color: rgba(20, 83, 45, 0.48);
+}
+
+html[data-theme="dark"] .approved-subjects__copy strong,
+html[data-theme="dark"] .approved-subjects__metrics strong {
+    color: #bbf7d0;
+}
+
+html[data-theme="dark"] .approved-subjects__copy small,
+html[data-theme="dark"] .approved-subjects__metrics small {
+    color: #86a992;
+}
+
+html[data-theme="dark"] .approved-subjects__metrics {
+    border-color: #166534;
+    background-color: rgba(15, 23, 42, 0.78);
+}
+
+html[data-theme="dark"] .approved-subjects__list .subject-card--approved {
+    background-color: rgba(20, 83, 45, 0.2);
+}
+
+/*
+ * =========================================================
+ * CELULARES
+ * =========================================================
+ */
+
+@media (max-width: 520px) {
+    .approved-subjects__summary {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 10px;
+        min-height: 68px;
+        padding: 12px;
+    }
+
+    .approved-subjects__icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+    }
+
+    .approved-subjects__copy small {
+        display: none;
+    }
+
+    .approved-subjects__metrics {
+        min-width: 58px;
+        padding: 7px 8px;
+    }
+
+    .approved-subjects__toggle {
+        grid-column: 1 / -1;
+        width: 100%;
+        height: 28px;
+        border-radius: 9px;
+    }
+
+    .approved-subjects__list {
+        padding: 10px;
+    }
+}
