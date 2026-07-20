@@ -3055,3 +3055,355 @@ html[data-theme="dark"] .curriculum-empty p {
         min-width: 0;
     }
 }
+
+/*
+ * =========================================================
+ * PAGINACIÓN TIPO BANNER PARA LOS SEMESTRES
+ * =========================================================
+ */
+
+.curriculum-pages {
+    width: 100%;
+    min-width: 0;
+    scroll-margin-top: 170px;
+}
+
+.curriculum-pagination {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 22px;
+    padding: 16px 18px;
+    border: 1px solid #dbeafe;
+    border-radius: 20px;
+    background:
+        linear-gradient(135deg,
+            rgba(238, 242, 255, 0.96),
+            rgba(248, 250, 252, 0.98));
+    box-shadow:
+        0 12px 30px rgba(79, 70, 229, 0.08);
+}
+
+.curriculum-pagination--bottom {
+    justify-content: center;
+    margin-top: 22px;
+    margin-bottom: 0;
+}
+
+.curriculum-pagination__information {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.curriculum-pagination__eyebrow {
+    color: #6366f1;
+    font-size: 0.65rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.curriculum-pagination__information strong {
+    color: #0f172a;
+    font-size: 0.96rem;
+    line-height: 1.35;
+}
+
+.curriculum-pagination__information small {
+    overflow-wrap: anywhere;
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 650;
+    line-height: 1.45;
+}
+
+.curriculum-pagination__controls {
+    display: flex;
+    min-width: 0;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+}
+
+.curriculum-pagination__pages {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.curriculum-pagination__direction,
+.curriculum-pagination__page {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    background-color: #ffffff;
+    font-family: inherit;
+    font-size: 0.7rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition:
+        transform 160ms ease,
+        color 160ms ease,
+        border-color 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.curriculum-pagination__direction {
+    gap: 6px;
+    padding: 0 12px;
+    border-radius: 12px;
+}
+
+.curriculum-pagination__direction svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.curriculum-pagination__page {
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+    border-radius: 12px;
+}
+
+.curriculum-pagination__direction:hover:not(:disabled),
+.curriculum-pagination__page:hover:not(:disabled) {
+    transform: translateY(-1px);
+    color: #4338ca;
+    border-color: #a5b4fc;
+    background-color: #f5f3ff;
+}
+
+.curriculum-pagination__page--active {
+    color: #ffffff;
+    border-color: #4f46e5;
+    background:
+        linear-gradient(135deg,
+            #4f46e5,
+            #7c3aed);
+    box-shadow:
+        0 8px 18px rgba(79, 70, 229, 0.22);
+}
+
+.curriculum-pagination__page--active:hover:not(:disabled) {
+    color: #ffffff;
+    border-color: #4338ca;
+    background:
+        linear-gradient(135deg,
+            #4338ca,
+            #6d28d9);
+}
+
+.curriculum-pagination__direction:disabled {
+    color: #94a3b8;
+    border-color: #e2e8f0;
+    background-color: #f8fafc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.curriculum-pagination__direction:focus-visible,
+.curriculum-pagination__page:focus-visible {
+    outline:
+        3px solid rgba(99, 102, 241, 0.24);
+    outline-offset: 3px;
+}
+
+/*
+ * Transición suave al cambiar de página.
+ *
+ * No desplaza horizontalmente los formularios ni
+ * intercepta los gestos táctiles del usuario.
+ */
+.curriculum-grid--paginated {
+    animation:
+        curriculum-page-enter 230ms ease-out;
+}
+
+@keyframes curriculum-page-enter {
+    from {
+        opacity: 0;
+        transform:
+            translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform:
+            translateY(0);
+    }
+}
+
+/*
+ * =========================================================
+ * MODO OSCURO DE LA PAGINACIÓN
+ * =========================================================
+ */
+
+html[data-theme="dark"] .curriculum-pagination {
+    border-color: #334155;
+    background:
+        linear-gradient(135deg,
+            rgba(30, 41, 59, 0.98),
+            rgba(15, 23, 42, 0.98));
+    box-shadow:
+        0 14px 32px rgba(0, 0, 0, 0.22);
+}
+
+html[data-theme="dark"] .curriculum-pagination__information strong {
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .curriculum-pagination__information small {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .curriculum-pagination__eyebrow {
+    color: #a5b4fc;
+}
+
+html[data-theme="dark"] .curriculum-pagination__direction,
+html[data-theme="dark"] .curriculum-pagination__page {
+    color: #cbd5e1;
+    border-color: #475569;
+    background-color: #1e293b;
+}
+
+html[data-theme="dark"] .curriculum-pagination__direction:hover:not(:disabled),
+html[data-theme="dark"] .curriculum-pagination__page:hover:not(:disabled) {
+    color: #e0e7ff;
+    border-color: #6366f1;
+    background-color: #312e81;
+}
+
+html[data-theme="dark"] .curriculum-pagination__page--active {
+    color: #ffffff;
+    border-color: #818cf8;
+    background:
+        linear-gradient(135deg,
+            #4f46e5,
+            #7c3aed);
+}
+
+html[data-theme="dark"] .curriculum-pagination__direction:disabled {
+    color: #64748b;
+    border-color: #334155;
+    background-color: #111827;
+}
+
+/*
+ * =========================================================
+ * RESPONSIVE DE LA PAGINACIÓN
+ * =========================================================
+ */
+
+@media (max-width: 760px) {
+    .curriculum-pages {
+        scroll-margin-top: 160px;
+    }
+
+    .curriculum-pagination {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 14px;
+        padding: 15px;
+        border-radius: 18px;
+    }
+
+    .curriculum-pagination--bottom {
+        align-items: center;
+    }
+
+    .curriculum-pagination__information {
+        text-align: center;
+    }
+
+    .curriculum-pagination__controls {
+        display: grid;
+        width: 100%;
+        grid-template-columns:
+            auto minmax(0, 1fr) auto;
+        gap: 7px;
+    }
+
+    .curriculum-pagination__pages {
+        justify-content: center;
+        overflow-x: auto;
+        padding: 2px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .curriculum-pagination__pages::-webkit-scrollbar {
+        display: none;
+    }
+
+    .curriculum-pagination__direction {
+        width: 42px;
+        min-width: 42px;
+        padding: 0;
+    }
+
+    .curriculum-pagination__direction span {
+        display: none;
+    }
+
+    /*
+     * La cuadrícula existente ya cambia a una columna
+     * por debajo de 900 px.
+     *
+     * Así, los dos semestres de la página aparecen
+     * uno debajo del otro en celular.
+     */
+    .curriculum-grid--paginated {
+        grid-template-columns:
+            minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 420px) {
+    .curriculum-pagination {
+        padding: 12px;
+    }
+
+    .curriculum-pagination__controls {
+        gap: 5px;
+    }
+
+    .curriculum-pagination__page {
+        width: 36px;
+        min-width: 36px;
+        min-height: 38px;
+        border-radius: 10px;
+    }
+
+    .curriculum-pagination__direction {
+        width: 38px;
+        min-width: 38px;
+        min-height: 38px;
+        border-radius: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .curriculum-grid--paginated {
+        animation: none;
+    }
+
+    .curriculum-pagination__direction,
+    .curriculum-pagination__page {
+        transition: none;
+    }
+}

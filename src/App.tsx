@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 
@@ -17,6 +17,8 @@ import "./styles/regulatory.css";
 import {
   LuCheck,
   LuChevronDown,
+  LuChevronLeft,
+  LuChevronRight,
   LuRotateCcw,
   LuSearch,
   LuX,
@@ -81,8 +83,10 @@ import type {
   StudentSchedule,
 } from "./types/schedule";
 
-type SubjectFilter = "all" | "pending" | "in-progress" | "approved" | "blocked";
+type SubjectFilter = | "all" | "pending" | "in-progress" | "approved" | "blocked";
 type ThemeMode = "light" | "dark";
+
+const SEMESTERS_PER_PAGE = 2;
 
 const DEFAULT_STUDENT_REGULATORY_RECORD: StudentRegulatoryRecord = {
   hasLowPerformanceHistory: false,
@@ -1430,6 +1434,8 @@ function App() {
     false,
   );
 
+  const [currentCurriculumPage, setCurrentCurriculumPage,] = useState(1);
+
   /*
    * =====================================================
    * NOMBRES DE MATERIAS POR CÓDIGO
@@ -1833,6 +1839,224 @@ function App() {
     .filter(({ visibleSubjects }) => visibleSubjects.length > 0);
 
   /*
+* =====================================================
+* PAGINACIÓN DE SEMESTRES
+* =====================================================
+*
+* La paginación se calcula después de:
+*
+* 1. Ocultar o mostrar semestres completados.
+* 2. Aplicar el filtro por semestre.
+* 3. Aplicar el filtro por estado.
+* 4. Aplicar la búsqueda.
+*
+* Por esta razón, los semestres ocultos no generan
+* páginas vacías.
+*/
+
+  const totalCurriculumPages = Math.max(
+    1,
+    Math.ceil(
+      filteredSections.length /
+      SEMESTERS_PER_PAGE,
+    ),
+  );
+
+  /*
+   * Si un semestre se completa y desaparece de la vista,
+   * puede disminuir el total de páginas.
+   *
+   * Esta variable evita que se intente mostrar una página
+   * que ya no existe.
+   */
+  const activeCurriculumPage = Math.min(
+    currentCurriculumPage,
+    totalCurriculumPages,
+  );
+
+  const firstCurriculumSectionIndex =
+    (
+      activeCurriculumPage -
+      1
+    ) *
+    SEMESTERS_PER_PAGE;
+
+  const paginatedSections =
+    filteredSections.slice(
+      firstCurriculumSectionIndex,
+      firstCurriculumSectionIndex +
+      SEMESTERS_PER_PAGE,
+    );
+
+  const curriculumPageNumbers =
+    Array.from(
+      {
+        length:
+          totalCurriculumPages,
+      },
+      (_, index) =>
+        index + 1,
+    );
+
+  const currentPageSectionLabel =
+    paginatedSections
+      .map(
+        ({ section }) =>
+          section.title,
+      )
+      .join(" y ");
+
+  const handleCurriculumPageChange = (
+    pageNumber: number,
+  ) => {
+    const nextPage = Math.min(
+      Math.max(
+        pageNumber,
+        1,
+      ),
+      totalCurriculumPages,
+    );
+
+    setCurrentCurriculumPage(
+      nextPage,
+    );
+
+    /*
+     * Cuando el usuario cambia de página desde el control
+     * inferior, regresamos suavemente al inicio de las
+     * tarjetas.
+     */
+    window.requestAnimationFrame(
+      () => {
+        document
+          .getElementById(
+            "curriculum-semester-pages",
+          )
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+      },
+    );
+  };
+
+  const renderCurriculumPagination = (
+    placement:
+      | "top"
+      | "bottom",
+  ) => {
+    return (
+      <nav
+        className={`curriculum-pagination curriculum-pagination--${placement}`}
+        aria-label={
+          placement === "top"
+            ? "Paginación superior de semestres"
+            : "Paginación inferior de semestres"
+        }
+      >
+        {placement === "top" && (
+          <div className="curriculum-pagination__information">
+            <span className="curriculum-pagination__eyebrow">
+              Vista por páginas
+            </span>
+
+            <strong aria-live="polite">
+              Página{" "}
+              {activeCurriculumPage}{" "}
+              de{" "}
+              {totalCurriculumPages}
+            </strong>
+
+            <small>
+              {currentPageSectionLabel}
+            </small>
+          </div>
+        )}
+
+        <div className="curriculum-pagination__controls">
+          <button
+            className="curriculum-pagination__direction"
+            type="button"
+            disabled={
+              activeCurriculumPage ===
+              1
+            }
+            onClick={() =>
+              handleCurriculumPageChange(
+                activeCurriculumPage -
+                1,
+              )
+            }
+            aria-label="Ir a la página anterior"
+          >
+            <LuChevronLeft aria-hidden="true" />
+
+            <span>Anterior</span>
+          </button>
+
+          <div
+            className="curriculum-pagination__pages"
+            role="group"
+            aria-label="Páginas disponibles"
+          >
+            {curriculumPageNumbers.map(
+              (pageNumber) => {
+                const isCurrentPage =
+                  pageNumber ===
+                  activeCurriculumPage;
+
+                return (
+                  <button
+                    className={`curriculum-pagination__page ${isCurrentPage
+                      ? "curriculum-pagination__page--active"
+                      : ""
+                      }`}
+                    type="button"
+                    key={pageNumber}
+                    onClick={() =>
+                      handleCurriculumPageChange(
+                        pageNumber,
+                      )
+                    }
+                    aria-label={`Ir a la página ${pageNumber}`}
+                    aria-current={
+                      isCurrentPage
+                        ? "page"
+                        : undefined
+                    }
+                  >
+                    {pageNumber}
+                  </button>
+                );
+              },
+            )}
+          </div>
+
+          <button
+            className="curriculum-pagination__direction"
+            type="button"
+            disabled={
+              activeCurriculumPage ===
+              totalCurriculumPages
+            }
+            onClick={() =>
+              handleCurriculumPageChange(
+                activeCurriculumPage +
+                1,
+              )
+            }
+            aria-label="Ir a la página siguiente"
+          >
+            <span>Siguiente</span>
+
+            <LuChevronRight aria-hidden="true" />
+          </button>
+        </div>
+      </nav>
+    );
+  };
+
+  /*
    * Los requisitos adicionales se filtran con los mismos
    * controles, pero se renderizan en el bloque de requisitos.
    */
@@ -2088,12 +2312,14 @@ function App() {
    */
 
   const handleClearFilters = () => {
+    setCurrentCurriculumPage(1);
     setSelectedSectionId("all");
     setSelectedStatusFilter("all");
     setSearchTerm("");
   };
 
   const showNextPendingSemesters = () => {
+    setCurrentCurriculumPage(1);
     setShowCompletedSemesters(false);
     setSelectedSectionId("all");
     setSelectedStatusFilter("all");
@@ -2103,14 +2329,25 @@ function App() {
   const handleCompletedSemestersVisibility = (
     shouldShow: boolean,
   ) => {
-    setShowCompletedSemesters(shouldShow);
+    setCurrentCurriculumPage(1);
+
+    setShowCompletedSemesters(
+      shouldShow,
+    );
 
     const selectedCompletedSemester =
       selectedSectionId !== "all" &&
-      completedSemesterIds.has(selectedSectionId);
+      completedSemesterIds.has(
+        selectedSectionId,
+      );
 
-    if (!shouldShow && selectedCompletedSemester) {
-      setSelectedSectionId("all");
+    if (
+      !shouldShow &&
+      selectedCompletedSemester
+    ) {
+      setSelectedSectionId(
+        "all",
+      );
     }
   };
 
@@ -4016,9 +4253,13 @@ function App() {
                     value={searchTerm}
                     placeholder="Nombre o código"
                     autoComplete="off"
-                    onChange={(event) =>
-                      setSearchTerm(event.target.value)
-                    }
+                    onChange={(event) => {
+                      setCurrentCurriculumPage(1);
+
+                      setSearchTerm(
+                        event.target.value,
+                      );
+                    }}
                   />
                 </div>
               </div>
@@ -4035,7 +4276,13 @@ function App() {
                   id="semester-filter"
                   className="curriculum-filter__select"
                   value={activeSectionId}
-                  onChange={(event) => setSelectedSectionId(event.target.value)}
+                  onChange={(event) => {
+                    setCurrentCurriculumPage(1);
+
+                    setSelectedSectionId(
+                      event.target.value,
+                    );
+                  }}
                 >
                   <option value="all">Todos los semestres</option>
 
@@ -4064,9 +4311,14 @@ function App() {
                   id="status-filter"
                   className="curriculum-filter__select"
                   value={selectedStatusFilter}
-                  onChange={(event) =>
-                    setSelectedStatusFilter(event.target.value as SubjectFilter)
-                  }
+                  onChange={(event) => {
+                    setCurrentCurriculumPage(1);
+
+                    setSelectedStatusFilter(
+                      event.target
+                        .value as SubjectFilter,
+                    );
+                  }}
                 >
                   <option value="all">Todas las materias</option>
 
@@ -4150,29 +4402,75 @@ function App() {
           </div>
 
           {filteredSections.length > 0 && (
-            <div className="curriculum-grid">
-              {filteredSections.map(({ section, visibleSubjects }) => (
-                <SemesterCard
-                  key={section.id}
-                  section={section}
-                  visibleSubjects={visibleSubjects}
-                  prerequisiteNamesByCode={prerequisiteNamesByCode}
-                  unlockedSubjectsByCode={unlockedSubjectsByCode}
-                  subjectStatuses={subjectStatuses}
-                  subjectAcademicRecords={subjectAcademicRecords}
-                  conditionalEnrollmentActive={
-                    studentRegulatoryRecord
-                      .conditionalEnrollmentActive
-                  }
-                  lostRightToContinue={
-                    studentRegulatoryRecord
-                      .lostRightToContinue
-                  }
-                  onStatusChange={handleStatusChange}
-                  onRegisterFailure={handleRegisterFailure}
-                  onApproveAll={() => handleApproveSection(section)}
-                />
-              ))}
+            <div
+              id="curriculum-semester-pages"
+              className="curriculum-pages"
+            >
+              {renderCurriculumPagination(
+                "top",
+              )}
+
+              <div
+                className="curriculum-grid curriculum-grid--paginated"
+                key={`curriculum-page-${activeCurriculumPage}-${paginatedSections
+                  .map(
+                    ({ section }) =>
+                      section.id,
+                  )
+                  .join("-")}`}
+              >
+                {paginatedSections.map(
+                  ({
+                    section,
+                    visibleSubjects,
+                  }) => (
+                    <SemesterCard
+                      key={section.id}
+                      section={section}
+                      visibleSubjects={
+                        visibleSubjects
+                      }
+                      prerequisiteNamesByCode={
+                        prerequisiteNamesByCode
+                      }
+                      unlockedSubjectsByCode={
+                        unlockedSubjectsByCode
+                      }
+                      subjectStatuses={
+                        subjectStatuses
+                      }
+                      subjectAcademicRecords={
+                        subjectAcademicRecords
+                      }
+                      conditionalEnrollmentActive={
+                        studentRegulatoryRecord
+                          .conditionalEnrollmentActive
+                      }
+                      lostRightToContinue={
+                        studentRegulatoryRecord
+                          .lostRightToContinue
+                      }
+                      onStatusChange={
+                        handleStatusChange
+                      }
+                      onRegisterFailure={
+                        handleRegisterFailure
+                      }
+                      onApproveAll={() =>
+                        handleApproveSection(
+                          section,
+                        )
+                      }
+                    />
+                  ),
+                )}
+              </div>
+
+              {totalCurriculumPages >
+                1 &&
+                renderCurriculumPagination(
+                  "bottom",
+                )}
             </div>
           )}
 
