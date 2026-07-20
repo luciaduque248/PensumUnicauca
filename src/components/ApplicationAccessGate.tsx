@@ -56,6 +56,9 @@ type AccessPanel =
 const GUEST_ACCESS_STORAGE_KEY =
     "pensum-access-mode";
 
+const INTRO_SESSION_STORAGE_KEY =
+    "pensum-intro-shown";
+
 const INTRO_DURATION_MS = 1900;
 
 const getAuthenticationErrorCode = (
@@ -377,6 +380,23 @@ const AccessPortal = ({
     ] =
         useState(false);
 
+    const isPasswordTooShort =
+        password !== "" &&
+        password.length < 8;
+
+    const isPasswordValid =
+        password.length >= 8;
+
+    const isPasswordConfirmationInvalid =
+        passwordConfirmation !== "" &&
+        password !==
+        passwordConfirmation;
+
+    const isPasswordConfirmationValid =
+        passwordConfirmation !== "" &&
+        password ===
+        passwordConfirmation;
+
     const resetPasswords =
         (): void => {
             setPassword("");
@@ -554,27 +574,6 @@ const AccessPortal = ({
             if (
                 password.length < 8
             ) {
-                await Swal.fire({
-                    icon:
-                        "warning",
-                    title:
-                        "Contraseña muy corta",
-                    text:
-                        "La contraseña debe tener al menos 8 caracteres.",
-                    confirmButtonText:
-                        "Corregir",
-                    confirmButtonColor:
-                        "#6366f1",
-                    background:
-                        "#0f172a",
-                    color:
-                        "#e2e8f0",
-                    customClass: {
-                        popup:
-                            "auth-swal-popup",
-                    },
-                });
-
                 return;
             }
 
@@ -1087,7 +1086,15 @@ const AccessPortal = ({
                                             Contraseña
                                         </span>
 
-                                        <div className="access-field__control">
+                                        <div
+                                            className={`access-field__control ${isPasswordTooShort
+                                                ? "access-field__control--error"
+                                                : ""
+                                                } ${isPasswordValid
+                                                    ? "access-field__control--success"
+                                                    : ""
+                                                }`}
+                                        >
                                             <LuLock
                                                 aria-hidden="true"
                                             />
@@ -1110,14 +1117,15 @@ const AccessPortal = ({
                                                             .value,
                                                     )
                                                 }
-                                                minLength={
-                                                    8
-                                                }
                                                 autoComplete="new-password"
                                                 placeholder="Mínimo 8 caracteres"
                                                 disabled={
                                                     isSubmitting
                                                 }
+                                                aria-invalid={
+                                                    isPasswordTooShort
+                                                }
+                                                aria-describedby="password-requirement"
                                             />
 
                                             <button
@@ -1156,9 +1164,13 @@ const AccessPortal = ({
                                         </div>
 
                                         <p
-                                            className={`access-field__requirement ${password.length >= 8
-                                                ? "access-field__requirement--success"
+                                            id="password-requirement"
+                                            className={`access-field__requirement ${isPasswordTooShort
+                                                ? "access-field__requirement--error"
                                                 : ""
+                                                } ${isPasswordValid
+                                                    ? "access-field__requirement--success"
+                                                    : ""
                                                 }`}
                                         >
                                             <LuShieldCheck
@@ -1176,7 +1188,15 @@ const AccessPortal = ({
                                             Confirmar contraseña
                                         </span>
 
-                                        <div className="access-field__control">
+                                        <div
+                                            className={`access-field__control ${isPasswordConfirmationInvalid
+                                                ? "access-field__control--error"
+                                                : ""
+                                                } ${isPasswordConfirmationValid
+                                                    ? "access-field__control--success"
+                                                    : ""
+                                                }`}
+                                        >
                                             <LuLock
                                                 aria-hidden="true"
                                             />
@@ -1199,14 +1219,15 @@ const AccessPortal = ({
                                                             .value,
                                                     )
                                                 }
-                                                minLength={
-                                                    8
-                                                }
                                                 autoComplete="new-password"
                                                 placeholder="Repite la contraseña"
                                                 disabled={
                                                     isSubmitting
                                                 }
+                                                aria-invalid={
+                                                    isPasswordConfirmationInvalid
+                                                }
+                                                aria-describedby="password-confirmation-requirement"
                                             />
 
                                             <button
@@ -1247,10 +1268,13 @@ const AccessPortal = ({
                                         {passwordConfirmation !==
                                             "" && (
                                                 <p
-                                                    className={`access-field__requirement ${password ===
-                                                            passwordConfirmation
+                                                    id="password-confirmation-requirement"
+                                                    className={`access-field__requirement ${isPasswordConfirmationInvalid
+                                                        ? "access-field__requirement--error"
+                                                        : ""
+                                                        } ${isPasswordConfirmationValid
                                                             ? "access-field__requirement--success"
-                                                            : "access-field__requirement--error"
+                                                            : ""
                                                         }`}
                                                 >
                                                     <LuShieldCheck
@@ -1258,8 +1282,7 @@ const AccessPortal = ({
                                                     />
 
                                                     <span>
-                                                        {password ===
-                                                            passwordConfirmation
+                                                        {isPasswordConfirmationValid
                                                             ? "Las contraseñas coinciden."
                                                             : "Las contraseñas no coinciden."}
                                                     </span>
@@ -1323,7 +1346,12 @@ export const ApplicationAccessGate = ({
         hasFinishedIntro,
         setHasFinishedIntro,
     ] =
-        useState(false);
+        useState(
+            () =>
+                sessionStorage.getItem(
+                    INTRO_SESSION_STORAGE_KEY,
+                ) === "true",
+        );
 
     const [
         hasGuestAccess,
@@ -1337,9 +1365,18 @@ export const ApplicationAccessGate = ({
         );
 
     useEffect(() => {
+        if (hasFinishedIntro) {
+            return;
+        }
+
         const timer =
             window.setTimeout(
                 () => {
+                    sessionStorage.setItem(
+                        INTRO_SESSION_STORAGE_KEY,
+                        "true",
+                    );
+
                     setHasFinishedIntro(
                         true,
                     );
@@ -1352,7 +1389,7 @@ export const ApplicationAccessGate = ({
                 timer,
             );
         };
-    }, []);
+    }, [hasFinishedIntro]);
 
     useEffect(() => {
         if (!user) {
@@ -1505,6 +1542,14 @@ export const ApplicationAccessGate = ({
                             GUEST_ACCESS_STORAGE_KEY,
                         );
 
+                        sessionStorage.removeItem(
+                            INTRO_SESSION_STORAGE_KEY,
+                        );
+
+                        setHasFinishedIntro(
+                            false,
+                        );
+
                         cleanCurrentView();
                     } catch (error) {
                         await showAuthenticationError(
@@ -1555,7 +1600,15 @@ export const ApplicationAccessGate = ({
                     GUEST_ACCESS_STORAGE_KEY,
                 );
 
+                sessionStorage.removeItem(
+                    INTRO_SESSION_STORAGE_KEY,
+                );
+
                 setHasGuestAccess(
+                    false,
+                );
+
+                setHasFinishedIntro(
                     false,
                 );
 
