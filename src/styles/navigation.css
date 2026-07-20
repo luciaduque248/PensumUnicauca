@@ -219,3 +219,54 @@ html[data-theme="dark"] .app-navigation__link--active {
         font-size: 0.66rem;
     }
 }
+
+/*
+ * =========================================================
+ * CONTENCIÓN MÓVIL DE LA NAVEGACIÓN
+ * =========================================================
+ */
+
+.app-navigation {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.app-navigation__content {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.app-navigation__links {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.app-navigation__links::-webkit-scrollbar {
+    display: none;
+}
+
+@media (max-width: 520px) {
+    .app-navigation__content {
+        width: 100%;
+        padding: 12px 11px;
+    }
+
+    .app-navigation__brand {
+        max-width: 100%;
+    }
+
+    .app-navigation__links {
+        width: 100%;
+        max-width: 100%;
+        padding-bottom: 2px;
+    }
+
+    .app-navigation__link {
+        max-width: none;
+    }
+}

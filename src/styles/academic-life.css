@@ -2896,3 +2896,162 @@ html[data-theme="dark"] .curriculum-empty p {
     width: 13px;
     height: 13px;
 }
+
+/*
+ * =========================================================
+ * CORRECCIÓN FINAL DE DESBORDAMIENTO MÓVIL
+ * =========================================================
+ *
+ * Este bloque debe permanecer al final del archivo porque
+ * academic-life.css contiene reglas generales declaradas
+ * después de algunos media queries.
+ */
+
+.main-content,
+.curriculum,
+.section-heading,
+.section-heading__information,
+.curriculum-filters,
+.curriculum-filter,
+.curriculum-filter__control,
+.curriculum-grid,
+.semester-card,
+.semester-card__header,
+.subject-list,
+.subject-card {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.curriculum-filter__input,
+.curriculum-filter__select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 760px) {
+    .main-content {
+        width: calc(100% - 24px);
+    }
+
+    .section-heading--filters {
+        width: 100%;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .section-heading__information {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .curriculum-filters {
+        width: 100%;
+        max-width: 100%;
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .curriculum-filter--search {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 520px) {
+    .main-content {
+        width: calc(100% - 22px);
+    }
+
+    .curriculum {
+        width: 100%;
+    }
+
+    .curriculum-filters {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .curriculum-filter--search {
+        grid-column: auto;
+    }
+
+    .curriculum-filter,
+    .curriculum-filter__control,
+    .curriculum-filter__input,
+    .curriculum-filter__select {
+        width: 100%;
+    }
+
+    .completed-semesters-toggle {
+        width: 100%;
+        align-items: flex-start;
+    }
+
+    .completed-semesters-toggle__copy {
+        min-width: 0;
+    }
+
+    .completed-semesters-toggle__copy strong,
+    .completed-semesters-toggle__copy small {
+        overflow-wrap: anywhere;
+    }
+
+    .status-legend {
+        width: 100%;
+    }
+
+    .semester-card__header {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+    .semester-card__actions {
+        width: 100%;
+        min-width: 0;
+        flex-wrap: wrap;
+    }
+
+    .semester-card__approve-button {
+        min-width: 0;
+        flex: 1 1 150px;
+    }
+
+    .semester-card__credits {
+        min-width: 64px;
+    }
+
+    .subject-card__information,
+    .subject-card__top,
+    .subject-card__code-row {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 390px) {
+    .main-content {
+        width: calc(100% - 18px);
+    }
+
+    .semester-card__header {
+        padding: 16px;
+    }
+
+    .semester-card__actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .semester-card__approve-button,
+    .semester-card__credits {
+        width: 100%;
+    }
+
+    .semester-card__credits {
+        min-width: 0;
+    }
+}
