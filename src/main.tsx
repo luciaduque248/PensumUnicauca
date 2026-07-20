@@ -1,27 +1,24 @@
-import {
-  StrictMode,
-} from "react";
+import {StrictMode,} from "react";
 
-import {
-  createRoot,
-} from "react-dom/client";
+import {createRoot,} from "react-dom/client";
 
 import "./index.css";
 import "./styles/auth.css";
+import "./styles/oauth-consent.css";
 
 import App from "./App.tsx";
 
-import {
-  ApplicationAccessGate,
-} from "./components/ApplicationAccessGate";
+import {AcademicSyncGate,} from "./components/AcademicSyncGate";
 
-import {
-  AcademicSyncGate,
-} from "./components/AcademicSyncGate";
+import {ApplicationAccessGate,} from "./components/ApplicationAccessGate";
 
-import {
-  AuthProvider,
-} from "./providers/AuthProvider";
+import OAuthConsentPage from "./components/OAuthConsentPage";
+
+import {AuthProvider,} from "./providers/AuthProvider";
+
+const isOAuthConsentPage =
+  window.location.pathname ===
+  "/oauth/consent";
 
 createRoot(
   document.getElementById(
@@ -30,11 +27,15 @@ createRoot(
 ).render(
   <StrictMode>
     <AuthProvider>
-      <ApplicationAccessGate>
-        <AcademicSyncGate>
-          <App />
-        </AcademicSyncGate>
-      </ApplicationAccessGate>
+      {isOAuthConsentPage ? (
+        <OAuthConsentPage />
+      ) : (
+        <ApplicationAccessGate>
+          <AcademicSyncGate>
+            <App />
+          </AcademicSyncGate>
+        </ApplicationAccessGate>
+      )}
     </AuthProvider>
   </StrictMode>,
 );
