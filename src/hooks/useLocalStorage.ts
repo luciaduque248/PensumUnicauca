@@ -5,28 +5,15 @@ import {
   type SetStateAction,
 } from "react";
 
-import { useAuth } from "./useAuth";
+import {
+  useAuth,
+} from "./useAuth";
 
-const buildStorageKey = (
-  originalKey: string,
-  userId: string | null,
-): string => {
-  /*
-   * El invitado continúa usando las claves originales.
-   *
-   * De esta manera conserva todos los datos que ya tenía
-   * antes de agregar la autenticación.
-   */
-  if (!userId) {
-    return originalKey;
-  }
-
-  /*
-   * Cada cuenta autenticada recibe un espacio local
-   * independiente.
-   */
-  return `pensum-account:${userId}:${originalKey}`;
-};
+import {
+  buildAccountStorageKey,
+  markAccountStorageDirty,
+  notifyAcademicStorageChanged,
+} from "../utils/accountStorage";
 
 const readStoredValue = <T>(
   storageKey: string,
@@ -38,7 +25,9 @@ const readStoredValue = <T>(
         storageKey,
       );
 
-    if (savedValue !== null) {
+    if (
+      savedValue !== null
+    ) {
       return JSON.parse(
         savedValue,
       ) as T;
@@ -60,27 +49,37 @@ export function useLocalStorage<T>(
   initialValue: T,
 ): [
     T,
-    Dispatch<SetStateAction<T>>,
+    Dispatch<
+      SetStateAction<T>
+    >,
   ] {
   const {
     user,
   } = useAuth();
 
+  const userId =
+    user?.id ??
+    null;
+
   const storageKey =
-    buildStorageKey(
-      key,
-      user?.id ?? null,
-    );
+    userId
+      ? buildAccountStorageKey(
+        userId,
+        key,
+      )
+      : key;
 
   const [
     storedValue,
     setStoredValue,
-  ] = useState<T>(() =>
-    readStoredValue(
-      storageKey,
-      initialValue,
-    ),
-  );
+  ] =
+    useState<T>(
+      () =>
+        readStoredValue(
+          storageKey,
+          initialValue,
+        ),
+    );
 
   useEffect(() => {
     try {
@@ -90,6 +89,24 @@ export function useLocalStorage<T>(
           storedValue,
         ),
       );
+
+      /*
+       * Solo las cuentas registradas se
+       * marcan para sincronización.
+       *
+       * El modo invitado nunca genera
+       * solicitudes a Supabase.
+       */
+      if (userId) {
+        markAccountStorageDirty(
+          userId,
+        );
+
+        notifyAcademicStorageChanged(
+          userId,
+          storageKey,
+        );
+      }
     } catch (error) {
       console.error(
         `No se pudo guardar la información en "${storageKey}".`,
@@ -99,6 +116,7 @@ export function useLocalStorage<T>(
   }, [
     storageKey,
     storedValue,
+    userId,
   ]);
 
   return [

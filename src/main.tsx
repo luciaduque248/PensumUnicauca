@@ -16,6 +16,10 @@ import {
 } from "./components/ApplicationAccessGate";
 
 import {
+  AcademicSyncGate,
+} from "./components/AcademicSyncGate";
+
+import {
   AuthProvider,
 } from "./providers/AuthProvider";
 
@@ -27,7 +31,9 @@ createRoot(
   <StrictMode>
     <AuthProvider>
       <ApplicationAccessGate>
-        <App />
+        <AcademicSyncGate>
+          <App />
+        </AcademicSyncGate>
       </ApplicationAccessGate>
     </AuthProvider>
   </StrictMode>,

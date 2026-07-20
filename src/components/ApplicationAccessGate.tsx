@@ -31,6 +31,10 @@ import {
 } from "../context/AppAccessContext";
 
 import {
+    clearAccountInitialSyncLoaded,
+} from "../utils/accountStorage";
+
+import {
     useAuth,
 } from "../hooks/useAuth";
 
@@ -1536,6 +1540,10 @@ export const ApplicationAccessGate = ({
                     }
 
                     try {
+                        clearAccountInitialSyncLoaded(
+                            user.id,
+                        );
+
                         await signOut();
 
                         localStorage.removeItem(
