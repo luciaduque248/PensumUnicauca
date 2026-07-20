@@ -19,6 +19,12 @@ interface ParsedStudentSchedule {
     confirmedAt: string | null;
 }
 
+interface NextScheduleClassOccurrence {
+    scheduleClass: ScheduleClass;
+    daysUntil: number;
+    dayLabel: string;
+}
+
 const STUDENT_SCHEDULE_KEY =
     "pensum-student-schedule";
 
@@ -50,6 +56,53 @@ const WEEKDAY_KEYS:
 
     friday:
         "friday",
+};
+
+const WEEKDAY_INDEXES:
+    Record<
+        string,
+        number
+    > = {
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+};
+
+const SCHEDULE_DAY_INDEXES:
+    Record<
+        ScheduleDay,
+        number
+    > = {
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+};
+
+const SCHEDULE_DAY_LABELS:
+    Record<
+        ScheduleDay,
+        string
+    > = {
+    monday:
+        "lunes",
+
+    tuesday:
+        "martes",
+
+    wednesday:
+        "miércoles",
+
+    thursday:
+        "jueves",
+
+    friday:
+        "viernes",
 };
 
 const isRecord = (
@@ -340,6 +393,33 @@ const getCurrentDay = (
     );
 };
 
+const getCurrentWeekdayIndex = (
+    currentDate: Date,
+): number => {
+    const weekday =
+        new Intl.DateTimeFormat(
+            "en-US",
+            {
+                timeZone:
+                    BOGOTA_TIME_ZONE,
+
+                weekday:
+                    "long",
+            },
+        )
+            .format(
+                currentDate,
+            )
+            .toLowerCase();
+
+    return (
+        WEEKDAY_INDEXES[
+        weekday
+        ] ??
+        0
+    );
+};
+
 const getCurrentDayLabel = (
     currentDate: Date,
 ): string => {
@@ -431,6 +511,155 @@ const getCurrentTime = (
 
     return `${hour}:${minute}`;
 };
+
+const getCurrentScheduleClass = (
+    classes:
+        ScheduleClass[],
+    currentDay:
+        ScheduleDay | null,
+    currentTime:
+        string,
+): ScheduleClass | null => {
+    if (
+        currentDay ===
+        null
+    ) {
+        return null;
+    }
+
+    const currentClasses =
+        classes
+            .filter(
+                (
+                    scheduleClass:
+                        ScheduleClass,
+                ): boolean =>
+                    scheduleClass
+                        .day ===
+                    currentDay &&
+                    scheduleClass
+                        .startTime <=
+                    currentTime &&
+                    currentTime <
+                    scheduleClass
+                        .endTime,
+            )
+            .sort(
+                (
+                    firstClass:
+                        ScheduleClass,
+                    secondClass:
+                        ScheduleClass,
+                ): number =>
+                    firstClass
+                        .startTime
+                        .localeCompare(
+                            secondClass
+                                .startTime,
+                        ),
+            );
+
+    return (
+        currentClasses[0] ??
+        null
+    );
+};
+
+const getNextScheduleClass =
+    (
+        classes:
+            ScheduleClass[],
+        currentWeekdayIndex:
+            number,
+        currentTime:
+            string,
+    ): NextScheduleClassOccurrence | null => {
+        let nextOccurrence:
+            NextScheduleClassOccurrence | null =
+            null;
+
+        for (
+            const scheduleClass
+            of classes
+        ) {
+            const scheduleDayIndex =
+                SCHEDULE_DAY_INDEXES[
+                scheduleClass.day
+                ];
+
+            let daysUntil =
+                (
+                    scheduleDayIndex -
+                    currentWeekdayIndex +
+                    7
+                ) %
+                7;
+
+            /*
+             * Si la clase era hoy, pero su hora de inicio
+             * ya ocurrió, se considera la clase de la
+             * semana siguiente.
+             */
+            if (
+                daysUntil ===
+                0 &&
+                scheduleClass
+                    .startTime <=
+                currentTime
+            ) {
+                daysUntil =
+                    7;
+            }
+
+            const occurrence:
+                NextScheduleClassOccurrence = {
+                scheduleClass,
+
+                daysUntil,
+
+                dayLabel:
+                    SCHEDULE_DAY_LABELS[
+                    scheduleClass.day
+                    ],
+            };
+
+            if (
+                nextOccurrence ===
+                null
+            ) {
+                nextOccurrence =
+                    occurrence;
+
+                continue;
+            }
+
+            if (
+                occurrence.daysUntil <
+                nextOccurrence.daysUntil
+            ) {
+                nextOccurrence =
+                    occurrence;
+
+                continue;
+            }
+
+            if (
+                occurrence.daysUntil ===
+                nextOccurrence.daysUntil &&
+                occurrence
+                    .scheduleClass
+                    .startTime <
+                nextOccurrence
+                    .scheduleClass
+                    .startTime
+            ) {
+                nextOccurrence =
+                    occurrence;
+            }
+        }
+
+        return nextOccurrence;
+    };
 
 const getBearerToken = (
     request: Request,
@@ -710,6 +939,16 @@ const handleGetRequest =
                 currentDate,
             );
 
+        const currentTime =
+            getCurrentTime(
+                currentDate,
+            );
+
+        const currentWeekdayIndex =
+            getCurrentWeekdayIndex(
+                currentDate,
+            );
+
         const todayClasses =
             currentDay ===
                 null
@@ -739,6 +978,22 @@ const handleGetRequest =
                                         .startTime,
                                 ),
                     );
+
+        const currentClass =
+            getCurrentScheduleClass(
+                studentSchedule
+                    .classes,
+                currentDay,
+                currentTime,
+            );
+
+        const nextClassOccurrence =
+            getNextScheduleClass(
+                studentSchedule
+                    .classes,
+                currentWeekdayIndex,
+                currentTime,
+            );
 
         return createJsonResponse(
             request,
@@ -778,6 +1033,24 @@ const handleGetRequest =
                             .classes
                             .length,
 
+                    currentClass,
+
+                    nextClass:
+                        nextClassOccurrence
+                            ? {
+                                ...nextClassOccurrence
+                                    .scheduleClass,
+
+                                daysUntil:
+                                    nextClassOccurrence
+                                        .daysUntil,
+
+                                dayLabel:
+                                    nextClassOccurrence
+                                        .dayLabel,
+                            }
+                            : null,
+
                     today: {
                         day:
                             currentDay,
@@ -792,10 +1065,7 @@ const handleGetRequest =
                                 currentDate,
                             ),
 
-                        currentTime:
-                            getCurrentTime(
-                                currentDate,
-                            ),
+                        currentTime,
 
                         classes:
                             todayClasses,
