@@ -247,7 +247,7 @@ const AlexaCompatibilityBadge =
                                 ? "access-alexa__image access-alexa__image--visible"
                                 : "access-alexa__image"
                         }
-                        src="/alexa-logo.png"
+                        src="../../public/logo_alexa.png"
                         alt=""
                         onLoad={() =>
                             setIsLogoLoaded(
