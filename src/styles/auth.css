@@ -1,0 +1,892 @@
+/*
+ * =========================================================
+ * PANTALLA DE ACCESO
+ * =========================================================
+ */
+
+.access-gate {
+    position: relative;
+    display: grid;
+    min-height: 100vh;
+    overflow: hidden;
+    place-items: center;
+    padding: 34px;
+    color: #f8fafc;
+    background:
+        radial-gradient(circle at top right,
+            rgba(99, 102, 241, 0.24),
+            transparent 34%),
+        radial-gradient(circle at bottom left,
+            rgba(124, 58, 237, 0.2),
+            transparent 36%),
+        #020617;
+    isolation: isolate;
+}
+
+.access-gate__grid {
+    position: absolute;
+    z-index: -3;
+    inset: 0;
+    opacity: 0.16;
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.14) 1px,
+            transparent 1px),
+        linear-gradient(90deg,
+            rgba(148, 163, 184, 0.14) 1px,
+            transparent 1px);
+    background-size: 48px 48px;
+    mask-image:
+        radial-gradient(circle at center,
+            black,
+            transparent 78%);
+}
+
+.access-gate__orb {
+    position: absolute;
+    z-index: -2;
+    display: block;
+    border-radius: 999px;
+    filter: blur(16px);
+    pointer-events: none;
+}
+
+.access-gate__orb--one {
+    top: -140px;
+    right: -90px;
+    width: 430px;
+    height: 430px;
+    background:
+        rgba(79, 70, 229, 0.28);
+    animation:
+        access-orb-one 9s ease-in-out infinite alternate;
+}
+
+.access-gate__orb--two {
+    bottom: -180px;
+    left: -120px;
+    width: 520px;
+    height: 520px;
+    background:
+        rgba(124, 58, 237, 0.2);
+    animation:
+        access-orb-two 11s ease-in-out infinite alternate;
+}
+
+/*
+ * =========================================================
+ * ANIMACIÓN INICIAL
+ * =========================================================
+ */
+
+.access-gate--splash {
+    text-align: center;
+}
+
+.access-splash {
+    display: flex;
+    max-width: 700px;
+    flex-direction: column;
+    align-items: center;
+    animation:
+        access-reveal 600ms ease both;
+}
+
+.access-splash__logo {
+    display: grid;
+    width: 92px;
+    height: 92px;
+    place-items: center;
+    border: 1px solid rgba(199, 210, 254, 0.32);
+    border-radius: 29px;
+    color: #ffffff;
+    background:
+        linear-gradient(135deg,
+            rgba(79, 70, 229, 0.95),
+            rgba(124, 58, 237, 0.88));
+    box-shadow:
+        0 24px 70px rgba(79, 70, 229, 0.38);
+    animation:
+        access-logo-float 2.4s ease-in-out infinite;
+}
+
+.access-splash__logo svg {
+    width: 46px;
+    height: 46px;
+}
+
+.access-splash__eyebrow {
+    margin: 26px 0 10px;
+    color: #a5b4fc;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.access-splash h1 {
+    margin: 0;
+    font-size:
+        clamp(2.6rem,
+            7vw,
+            5.3rem);
+    line-height: 1;
+    letter-spacing: -0.055em;
+}
+
+.access-splash__description {
+    margin: 18px 0 0;
+    color: #94a3b8;
+    font-size:
+        clamp(0.84rem,
+            2vw,
+            1rem);
+    font-weight: 650;
+}
+
+.access-splash__loader {
+    width: min(280px, 72vw);
+    height: 4px;
+    margin-top: 38px;
+    overflow: hidden;
+    border-radius: 999px;
+    background:
+        rgba(148, 163, 184, 0.18);
+}
+
+.access-splash__loader span {
+    display: block;
+    width: 45%;
+    height: 100%;
+    border-radius: inherit;
+    background:
+        linear-gradient(90deg,
+            #818cf8,
+            #c4b5fd);
+    animation:
+        access-loading 1.25s ease-in-out infinite;
+}
+
+/*
+ * =========================================================
+ * CONTENIDO PRINCIPAL
+ * =========================================================
+ */
+
+.access-portal {
+    display: grid;
+    width: min(1120px, 100%);
+    grid-template-columns:
+        minmax(0, 1.1fr) minmax(360px, 0.8fr);
+    align-items: center;
+    gap: 70px;
+    animation:
+        access-reveal 500ms ease both;
+}
+
+.access-portal__presentation {
+    max-width: 630px;
+}
+
+.access-portal__brand {
+    display: grid;
+    width: 64px;
+    height: 64px;
+    place-items: center;
+    border: 1px solid rgba(199, 210, 254, 0.28);
+    border-radius: 21px;
+    color: #ffffff;
+    background:
+        linear-gradient(135deg,
+            #4f46e5,
+            #7c3aed);
+    box-shadow:
+        0 18px 45px rgba(79, 70, 229, 0.3);
+}
+
+.access-portal__brand svg {
+    width: 31px;
+    height: 31px;
+}
+
+.access-portal__eyebrow {
+    margin: 27px 0 12px;
+    color: #a5b4fc;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.access-portal__presentation h1 {
+    max-width: 650px;
+    margin: 0;
+    color: #f8fafc;
+    font-size:
+        clamp(2.8rem,
+            5.6vw,
+            5.4rem);
+    line-height: 0.98;
+    letter-spacing: -0.058em;
+}
+
+.access-portal__description {
+    max-width: 570px;
+    margin: 25px 0 0;
+    color: #94a3b8;
+    font-size: 0.98rem;
+    line-height: 1.8;
+}
+
+.access-portal__features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 31px;
+}
+
+.access-portal__features span {
+    display: inline-flex;
+    min-height: 38px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid rgba(148, 163, 184, 0.17);
+    border-radius: 999px;
+    color: #cbd5e1;
+    background:
+        rgba(15, 23, 42, 0.58);
+    font-size: 0.68rem;
+    font-weight: 750;
+    backdrop-filter: blur(12px);
+}
+
+.access-portal__features svg {
+    width: 15px;
+    height: 15px;
+    color: #a5b4fc;
+}
+
+/*
+ * =========================================================
+ * TARJETA DE ACCESO
+ * =========================================================
+ */
+
+.access-card {
+    min-width: 0;
+    padding: 30px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 30px;
+    background:
+        rgba(15, 23, 42, 0.84);
+    box-shadow:
+        0 34px 100px rgba(0, 0, 0, 0.44);
+    backdrop-filter: blur(24px);
+}
+
+.access-alexa {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 25px;
+    padding: 12px;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 17px;
+    background:
+        linear-gradient(135deg,
+            rgba(14, 116, 144, 0.16),
+            rgba(79, 70, 229, 0.16));
+}
+
+.access-alexa__icon {
+    position: relative;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 14px;
+    color: #7dd3fc;
+    background:
+        rgba(8, 47, 73, 0.72);
+}
+
+.access-alexa__fallback {
+    width: 22px;
+    height: 22px;
+    transition:
+        opacity 150ms ease;
+}
+
+.access-alexa__fallback--hidden {
+    opacity: 0;
+}
+
+.access-alexa__image {
+    position: absolute;
+    width: 31px;
+    height: 31px;
+    object-fit: contain;
+    opacity: 0;
+    transition:
+        opacity 150ms ease;
+}
+
+.access-alexa__image--visible {
+    opacity: 1;
+}
+
+.access-alexa__copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.access-alexa__copy strong {
+    color: #e0f2fe;
+    font-size: 0.75rem;
+}
+
+.access-alexa__copy small {
+    color: #7dd3fc;
+    font-size: 0.62rem;
+    line-height: 1.45;
+}
+
+.access-card__error {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 20px;
+    padding: 12px 13px;
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    border-radius: 14px;
+    color: #fecaca;
+    background:
+        rgba(127, 29, 29, 0.24);
+    font-size: 0.68rem;
+    line-height: 1.5;
+}
+
+.access-card__back {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 17px;
+    padding: 0;
+    border: 0;
+    color: #94a3b8;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.69rem;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.access-card__back:hover {
+    color: #e0e7ff;
+}
+
+.access-card__back svg {
+    width: 15px;
+    height: 15px;
+}
+
+.access-card__heading>span {
+    display: block;
+    margin-bottom: 7px;
+    color: #818cf8;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.access-card__heading h2 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: 1.75rem;
+    letter-spacing: -0.035em;
+}
+
+.access-card__heading p {
+    margin: 10px 0 0;
+    color: #94a3b8;
+    font-size: 0.73rem;
+    line-height: 1.6;
+}
+
+/*
+ * =========================================================
+ * OPCIONES DE ACCESO
+ * =========================================================
+ */
+
+.access-options {
+    display: grid;
+    gap: 11px;
+    margin-top: 23px;
+}
+
+.access-option {
+    display: flex;
+    width: 100%;
+    min-height: 78px;
+    align-items: center;
+    gap: 13px;
+    padding: 13px;
+    border-radius: 17px;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.access-option:hover {
+    transform: translateY(-2px);
+}
+
+.access-option__icon {
+    display: grid;
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 14px;
+}
+
+.access-option__icon svg {
+    width: 21px;
+    height: 21px;
+}
+
+.access-option__copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.access-option__copy strong {
+    font-size: 0.78rem;
+}
+
+.access-option__copy small {
+    font-size: 0.64rem;
+    line-height: 1.45;
+}
+
+.access-option--primary {
+    color: #ffffff;
+    border: 1px solid #6366f1;
+    background:
+        linear-gradient(135deg,
+            #4f46e5,
+            #6366f1);
+    box-shadow:
+        0 13px 28px rgba(79, 70, 229, 0.22);
+}
+
+.access-option--primary .access-option__icon {
+    background:
+        rgba(255, 255, 255, 0.15);
+}
+
+.access-option--primary small {
+    color: #e0e7ff;
+}
+
+.access-option--secondary {
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    background:
+        rgba(30, 41, 59, 0.72);
+}
+
+.access-option--secondary .access-option__icon {
+    color: #c4b5fd;
+    background:
+        rgba(88, 28, 135, 0.25);
+}
+
+.access-option--secondary small {
+    color: #94a3b8;
+}
+
+.access-option--guest {
+    color: #cbd5e1;
+    border: 1px solid #334155;
+    background:
+        rgba(15, 23, 42, 0.58);
+}
+
+.access-option--guest .access-option__icon {
+    color: #94a3b8;
+    background:
+        rgba(51, 65, 85, 0.5);
+}
+
+.access-option--guest small {
+    color: #64748b;
+}
+
+.access-option--secondary:hover,
+.access-option--guest:hover {
+    border-color: #6366f1;
+    background:
+        rgba(49, 46, 129, 0.24);
+}
+
+/*
+ * =========================================================
+ * FORMULARIOS
+ * =========================================================
+ */
+
+.access-form {
+    display: grid;
+    gap: 15px;
+    margin-top: 24px;
+}
+
+.access-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.access-field>span {
+    color: #cbd5e1;
+    font-size: 0.68rem;
+    font-weight: 750;
+}
+
+.access-field__control {
+    display: flex;
+    min-height: 49px;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    background:
+        rgba(15, 23, 42, 0.82);
+    transition:
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.access-field__control:focus-within {
+    border-color: #818cf8;
+    box-shadow:
+        0 0 0 3px rgba(99, 102, 241, 0.17);
+}
+
+.access-field__control svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    color: #64748b;
+}
+
+.access-field__control input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    color: #f8fafc;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.74rem;
+}
+
+.access-field__control input::placeholder {
+    color: #475569;
+}
+
+.access-form__submit {
+    display: inline-flex;
+    min-height: 50px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin-top: 4px;
+    border: 1px solid #6366f1;
+    border-radius: 14px;
+    color: #ffffff;
+    background:
+        linear-gradient(135deg,
+            #4f46e5,
+            #7c3aed);
+    font-family: inherit;
+    font-size: 0.74rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition:
+        transform 160ms ease,
+        box-shadow 160ms ease,
+        opacity 160ms ease;
+}
+
+.access-form__submit:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow:
+        0 13px 30px rgba(79, 70, 229, 0.3);
+}
+
+.access-form__submit:disabled {
+    opacity: 0.66;
+    cursor: wait;
+}
+
+.access-form__spinner {
+    width: 15px;
+    height: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.34);
+    border-top-color: #ffffff;
+    border-radius: 999px;
+    animation:
+        access-spinner 700ms linear infinite;
+}
+
+.access-form__switch {
+    display: block;
+    width: 100%;
+    margin-top: 18px;
+    padding: 0;
+    border: 0;
+    color: #94a3b8;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.67rem;
+    text-align: center;
+    cursor: pointer;
+}
+
+.access-form__switch strong {
+    color: #a5b4fc;
+}
+
+/*
+ * =========================================================
+ * SWEETALERT DE ACCESO
+ * =========================================================
+ */
+
+.auth-swal-popup {
+    border: 1px solid #334155;
+    border-radius: 24px;
+    box-shadow:
+        0 30px 90px rgba(0, 0, 0, 0.5);
+}
+
+.auth-swal-content {
+    color: #cbd5e1;
+}
+
+.auth-guest-notice {
+    display: grid;
+    gap: 9px;
+    margin-top: 6px;
+    text-align: left;
+}
+
+.auth-guest-notice p {
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    color: #cbd5e1;
+    background:
+        rgba(30, 41, 59, 0.72);
+    font-size: 0.75rem;
+    line-height: 1.55;
+}
+
+.auth-guest-notice p:last-child {
+    color: #fde68a;
+    border-color: #854d0e;
+    background:
+        rgba(113, 63, 18, 0.25);
+}
+
+/*
+ * =========================================================
+ * ANIMACIONES
+ * =========================================================
+ */
+
+@keyframes access-reveal {
+    from {
+        opacity: 0;
+        transform:
+            translateY(12px) scale(0.99);
+    }
+
+    to {
+        opacity: 1;
+        transform:
+            translateY(0) scale(1);
+    }
+}
+
+@keyframes access-logo-float {
+
+    0%,
+    100% {
+        transform:
+            translateY(0) rotate(-1deg);
+    }
+
+    50% {
+        transform:
+            translateY(-8px) rotate(1deg);
+    }
+}
+
+@keyframes access-loading {
+    0% {
+        transform:
+            translateX(-110%);
+    }
+
+    100% {
+        transform:
+            translateX(320%);
+    }
+}
+
+@keyframes access-spinner {
+    to {
+        transform:
+            rotate(360deg);
+    }
+}
+
+@keyframes access-orb-one {
+    from {
+        transform:
+            translate3d(0, 0, 0) scale(1);
+    }
+
+    to {
+        transform:
+            translate3d(-70px, 75px, 0) scale(1.12);
+    }
+}
+
+@keyframes access-orb-two {
+    from {
+        transform:
+            translate3d(0, 0, 0) scale(1);
+    }
+
+    to {
+        transform:
+            translate3d(90px, -60px, 0) scale(1.08);
+    }
+}
+
+/*
+ * =========================================================
+ * RESPONSIVE
+ * =========================================================
+ */
+
+@media (max-width: 900px) {
+    .access-portal {
+        width: min(620px, 100%);
+        grid-template-columns: 1fr;
+        gap: 38px;
+    }
+
+    .access-portal__presentation {
+        text-align: center;
+    }
+
+    .access-portal__brand {
+        margin: 0 auto;
+    }
+
+    .access-portal__description {
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    .access-portal__features {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 540px) {
+    .access-gate {
+        align-items: start;
+        padding: 20px 14px;
+    }
+
+    .access-gate--splash {
+        align-items: center;
+    }
+
+    .access-portal {
+        gap: 28px;
+    }
+
+    .access-portal__presentation h1 {
+        font-size:
+            clamp(2.35rem,
+                13vw,
+                3.5rem);
+    }
+
+    .access-portal__description {
+        font-size: 0.82rem;
+    }
+
+    .access-portal__features {
+        display: none;
+    }
+
+    .access-card {
+        padding: 22px 18px;
+        border-radius: 24px;
+    }
+
+    .access-option {
+        min-height: 72px;
+    }
+
+    .access-splash__logo {
+        width: 78px;
+        height: 78px;
+    }
+
+    .access-splash__logo svg {
+        width: 38px;
+        height: 38px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .access-gate__orb,
+    .access-splash,
+    .access-splash__logo,
+    .access-splash__loader span,
+    .access-portal,
+    .access-form__spinner {
+        animation: none;
+    }
+
+    .access-option,
+    .access-form__submit {
+        transition: none;
+    }
+}
