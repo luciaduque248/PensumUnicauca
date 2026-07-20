@@ -14,3 +14,10 @@ export type AuthStateChangeListener = (
     event: AuthChangeEvent,
     session: Session | null,
 ) => void;
+
+export interface AuthContextValue {
+    session: Session | null;
+    user: User | null;
+    isAuthLoading: boolean;
+    authInitializationError: string | null;
+}
