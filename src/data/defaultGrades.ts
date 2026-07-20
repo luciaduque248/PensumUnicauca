@@ -3,7 +3,7 @@ import type {
   GradeCutId,
   StudentGradeRecords,
   SubjectGradeRecord,
-} from "../types/grades";
+} from "../types/grades.js";
 
 export const SUBJECT_GRADE_RECORDS_STORAGE_KEY =
   "pensum-subject-grade-records";
@@ -84,8 +84,8 @@ export const normalizeSubjectGradeRecord = (
             record?.cuts?.first
               ?.activities,
           ) &&
-          record.cuts.first
-            .activities.length > 0
+            record.cuts.first
+              .activities.length > 0
             ? record.cuts.first
               .activities
             : defaultRecord.cuts
@@ -98,8 +98,8 @@ export const normalizeSubjectGradeRecord = (
             record?.cuts?.second
               ?.activities,
           ) &&
-          record.cuts.second
-            .activities.length > 0
+            record.cuts.second
+              .activities.length > 0
             ? record.cuts.second
               .activities
             : defaultRecord.cuts
@@ -112,8 +112,8 @@ export const normalizeSubjectGradeRecord = (
             record?.cuts?.third
               ?.activities,
           ) &&
-          record.cuts.third
-            .activities.length > 0
+            record.cuts.third
+              .activities.length > 0
             ? record.cuts.third
               .activities
             : defaultRecord.cuts

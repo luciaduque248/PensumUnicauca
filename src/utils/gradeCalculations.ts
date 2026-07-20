@@ -1,7 +1,7 @@
 import type {
   GradeCutRecord,
   SubjectGradeRecord,
-} from "../types/grades";
+} from "../types/grades.js";
 
 const PREVIOUS_NOTE_WEIGHT = 0.7;
 const FINAL_NOTE_WEIGHT = 0.3;
