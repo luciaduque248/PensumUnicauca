@@ -1,5 +1,11 @@
-import type { CurriculumSection } from '../types/curriculum'
-import { prerequisitesBySubject } from './prerequisites'
+import type {
+  CurriculumSection,
+  Subject,
+} from '../types/curriculum.js'
+
+import {
+  prerequisitesBySubject,
+} from './prerequisites.js'
 
 const curriculumBase: CurriculumSection[] = [
   {
@@ -431,7 +437,7 @@ const curriculumBase: CurriculumSection[] = [
 export const curriculum: CurriculumSection[] = curriculumBase.map(
   (section) => ({
     ...section,
-    subjects: section.subjects.map((subject) => ({
+    subjects: section.subjects.map((subject: Subject) => ({
       ...subject,
       prerequisites:
         prerequisitesBySubject[subject.code] ?? [],
