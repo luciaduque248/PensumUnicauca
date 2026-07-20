@@ -4,11 +4,13 @@ import {
 
 import {
     curriculum,
-} from "../src/data/curriculum.ts";
+} from "../src/data/curriculum.js";
 
 import type {
+    CurriculumSection,
+    Subject,
     SubjectStatus,
-} from "../src/types/curriculum.ts";
+} from "../src/types/curriculum.js";
 
 interface AcademicSnapshotRow {
     academic_data: unknown;
@@ -25,21 +27,26 @@ const ALLOWED_ORIGINS =
         "https://pensum-unicauca.vercel.app",
     ]);
 
-const allSubjects =
+const allSubjects: Subject[] =
     curriculum.flatMap(
-        (section) =>
+        (
+            section:
+                CurriculumSection,
+        ): Subject[] =>
             section.subjects,
     );
 
-const totalSubjects =
+const totalSubjects: number =
     allSubjects.length;
 
-const totalCredits =
+const totalCredits: number =
     allSubjects.reduce(
         (
-            accumulatedCredits,
-            subject,
-        ) =>
+            accumulatedCredits:
+                number,
+            subject:
+                Subject,
+        ): number =>
             accumulatedCredits +
             subject.credits,
         0,
@@ -418,28 +425,41 @@ const handleGetRequest =
                     .academic_data,
             );
 
-        const approvedSubjects =
+        const approvedSubjects:
+            Subject[] =
             allSubjects.filter(
-                (subject) =>
+                (
+                    subject:
+                        Subject,
+                ): boolean =>
                     subjectStatuses[
                     subject.code
                     ] ===
                     "approved",
             );
 
-        const inProgressSubjects =
+        const inProgressSubjects:
+            Subject[] =
             allSubjects.filter(
-                (subject) =>
+                (
+                    subject:
+                        Subject,
+                ): boolean =>
                     subjectStatuses[
                     subject.code
                     ] ===
                     "in-progress",
             );
 
-        const pendingSubjects =
+        const pendingSubjects:
+            Subject[] =
             allSubjects.filter(
-                (subject) => {
-                    const status =
+                (
+                    subject:
+                        Subject,
+                ): boolean => {
+                    const status:
+                        SubjectStatus =
                         subjectStatuses[
                         subject.code
                         ] ??
@@ -452,12 +472,15 @@ const handleGetRequest =
                 },
             );
 
-        const approvedCredits =
+        const approvedCredits:
+            number =
             approvedSubjects.reduce(
                 (
-                    accumulatedCredits,
-                    subject,
-                ) =>
+                    accumulatedCredits:
+                        number,
+                    subject:
+                        Subject,
+                ): number =>
                     accumulatedCredits +
                     subject.credits,
                 0,
