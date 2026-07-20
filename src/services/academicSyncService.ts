@@ -13,6 +13,10 @@ interface AcademicSnapshotDatabaseRow {
     updated_at: string;
 }
 
+interface AcademicSnapshotUpdatedRow {
+    updated_at: string;
+}
+
 const isAcademicData = (
     value: unknown,
 ): value is AcademicData => {
@@ -26,9 +30,7 @@ const isAcademicData = (
 export const getAcademicSnapshot =
     async (
         userId: string,
-    ): Promise<
-        AcademicSnapshot | null
-    > => {
+    ): Promise<AcademicSnapshot | null> => {
         const {
             data,
             error,
@@ -73,10 +75,8 @@ export const getAcademicSnapshot =
         return {
             academicData:
                 data.academic_data,
-
             schemaVersion:
                 data.schema_version,
-
             updatedAt:
                 data.updated_at,
         };
@@ -86,8 +86,12 @@ export const saveAcademicSnapshot =
     async (
         userId: string,
         academicData: AcademicData,
-    ): Promise<void> => {
+    ): Promise<string> => {
+        const requestedUpdatedAt =
+            new Date().toISOString();
+
         const {
+            data,
             error,
         } =
             await supabase
@@ -98,20 +102,31 @@ export const saveAcademicSnapshot =
                     {
                         user_id:
                             userId,
-
                         academic_data:
                             academicData,
-
                         schema_version:
                             1,
+                        updated_at:
+                            requestedUpdatedAt,
                     },
                     {
                         onConflict:
                             "user_id",
                     },
-                );
+                )
+                .select(
+                    "updated_at",
+                )
+                .single<
+                    AcademicSnapshotUpdatedRow
+                >();
 
         if (error) {
             throw error;
         }
+
+        return (
+            data?.updated_at ??
+            requestedUpdatedAt
+        );
     };

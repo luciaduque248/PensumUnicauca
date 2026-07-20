@@ -38,6 +38,40 @@ interface AcademicSyncGateProps {
 const SAVE_DELAY_MS =
     1200;
 
+const CLOUD_REFRESH_INTERVAL_MS =
+    20000;
+
+const CLOUD_REVISION_PREFIX =
+    "pensum-account-cloud-revision:";
+
+const getCloudRevisionKey = (
+    userId: string,
+): string => {
+    return `${CLOUD_REVISION_PREFIX}${userId}`;
+};
+
+const readCloudRevision = (
+    userId: string,
+): string | null => {
+    return window.sessionStorage.getItem(
+        getCloudRevisionKey(
+            userId,
+        ),
+    );
+};
+
+const saveCloudRevision = (
+    userId: string,
+    updatedAt: string,
+): void => {
+    window.sessionStorage.setItem(
+        getCloudRevisionKey(
+            userId,
+        ),
+        updatedAt,
+    );
+};
+
 const logSyncError = (
     context: string,
     error: unknown,
@@ -67,16 +101,28 @@ export const AcademicSyncGate = ({
                 ),
         );
 
-    /*
-     * La cola evita que dos guardados terminen
-     * en un orden diferente al esperado.
-     */
+    const lastKnownCloudUpdatedAtRef =
+        useRef<string | null>(
+            user
+                ? readCloudRevision(
+                    user.id,
+                )
+                : null,
+        );
+
     const saveQueueRef =
-        useRef<
-            Promise<void>
-        >(
+        useRef<Promise<void>>(
             Promise.resolve(),
         );
+
+    useEffect(() => {
+        lastKnownCloudUpdatedAtRef.current =
+            user
+                ? readCloudRevision(
+                    user.id,
+                )
+                : null;
+    }, [user]);
 
     const queueLocalSave =
         useCallback(
@@ -101,9 +147,18 @@ export const AcademicSyncGate = ({
                                         userId,
                                     );
 
-                                await saveAcademicSnapshot(
+                                const updatedAt =
+                                    await saveAcademicSnapshot(
+                                        userId,
+                                        academicData,
+                                    );
+
+                                lastKnownCloudUpdatedAtRef.current =
+                                    updatedAt;
+
+                                saveCloudRevision(
                                     userId,
-                                    academicData,
+                                    updatedAt,
                                 );
 
                                 clearAccountStorageDirty(
@@ -121,18 +176,9 @@ export const AcademicSyncGate = ({
             [],
         );
 
-    /*
-     * Carga inicial de la cuenta.
-     *
-     * Solo se ejecuta una vez por cuenta durante
-     * la sesión actual del navegador.
-     */
     useEffect(() => {
         if (!user) {
-            setIsReady(
-                true,
-            );
-
+            setIsReady(true);
             return;
         }
 
@@ -144,9 +190,7 @@ export const AcademicSyncGate = ({
                 userId,
             )
         ) {
-            setIsReady(
-                true,
-            );
+            setIsReady(true);
 
             if (
                 hasAccountStorageDirtyChanges(
@@ -171,20 +215,11 @@ export const AcademicSyncGate = ({
         let isActive =
             true;
 
-        setIsReady(
-            false,
-        );
+        setIsReady(false);
 
         const initializeAccount =
             async (): Promise<void> => {
                 try {
-                    /*
-                     * Si había cambios locales pendientes,
-                     * se guardan antes de descargar datos.
-                     *
-                     * Esto evita reemplazar cambios recientes
-                     * con una versión anterior de la nube.
-                     */
                     if (
                         hasAccountStorageDirtyChanges(
                             userId,
@@ -202,23 +237,23 @@ export const AcademicSyncGate = ({
                             userId,
                         );
 
-                    if (
-                        cloudSnapshot
-                    ) {
+                    if (cloudSnapshot) {
+                        lastKnownCloudUpdatedAtRef.current =
+                            cloudSnapshot.updatedAt;
+
+                        saveCloudRevision(
+                            userId,
+                            cloudSnapshot.updatedAt,
+                        );
+
                         replaceAccountAcademicData(
                             userId,
-                            cloudSnapshot
-                                .academicData,
+                            cloudSnapshot.academicData,
                         );
 
                         return;
                     }
 
-                    /*
-                     * Si todavía no existe una fila en
-                     * Supabase, conservamos cualquier
-                     * información local previa de esa cuenta.
-                     */
                     const localAcademicData =
                         readAccountAcademicData(
                             userId,
@@ -234,13 +269,6 @@ export const AcademicSyncGate = ({
                         );
                     }
                 } catch (error) {
-                    /*
-                     * La aplicación puede continuar usando
-                     * localStorage aunque Supabase falle.
-                     *
-                     * La marca de cambios pendientes queda
-                     * guardada para volver a intentarlo.
-                     */
                     logSyncError(
                         "No fue posible realizar la carga inicial.",
                         error,
@@ -250,12 +278,8 @@ export const AcademicSyncGate = ({
                         userId,
                     );
 
-                    if (
-                        isActive
-                    ) {
-                        setIsReady(
-                            true,
-                        );
+                    if (isActive) {
+                        setIsReady(true);
                     }
                 }
             };
@@ -271,9 +295,6 @@ export const AcademicSyncGate = ({
         queueLocalSave,
     ]);
 
-    /*
-     * Guardado automático después de los cambios.
-     */
     useEffect(() => {
         if (
             !user ||
@@ -342,10 +363,6 @@ export const AcademicSyncGate = ({
             handleStorageChanged,
         );
 
-        /*
-         * Si la página se recargó antes de terminar
-         * el guardado anterior, se vuelve a intentar.
-         */
         if (
             hasAccountStorageDirtyChanges(
                 userId,
@@ -376,12 +393,163 @@ export const AcademicSyncGate = ({
     ]);
 
     /*
-     * Esta pantalla solo debe aparecer en la primera
-     * carga de una cuenta durante la sesión actual.
-     *
-     * No aparece al cambiar entre Inicio, Horario,
-     * Notas u otras vistas.
+     * Alexa modifica el snapshot directamente en Supabase.
+     * Esta verificación trae esos cambios al navegador sin
+     * obligar al usuario a cerrar sesión o limpiar datos.
      */
+    useEffect(() => {
+        if (
+            !user ||
+            !isReady
+        ) {
+            return;
+        }
+
+        const userId =
+            user.id;
+
+        let isChecking =
+            false;
+
+        let isDisposed =
+            false;
+
+        const refreshFromCloud =
+            async (): Promise<void> => {
+                if (
+                    isChecking ||
+                    isDisposed ||
+                    hasAccountStorageDirtyChanges(
+                        userId,
+                    )
+                ) {
+                    return;
+                }
+
+                isChecking =
+                    true;
+
+                try {
+                    const cloudSnapshot =
+                        await getAcademicSnapshot(
+                            userId,
+                        );
+
+                    if (
+                        !cloudSnapshot ||
+                        isDisposed
+                    ) {
+                        return;
+                    }
+
+                    const knownUpdatedAt =
+                        lastKnownCloudUpdatedAtRef.current ??
+                        readCloudRevision(
+                            userId,
+                        );
+
+                    if (!knownUpdatedAt) {
+                        lastKnownCloudUpdatedAtRef.current =
+                            cloudSnapshot.updatedAt;
+
+                        saveCloudRevision(
+                            userId,
+                            cloudSnapshot.updatedAt,
+                        );
+
+                        return;
+                    }
+
+                    if (
+                        cloudSnapshot.updatedAt ===
+                        knownUpdatedAt
+                    ) {
+                        return;
+                    }
+
+                    replaceAccountAcademicData(
+                        userId,
+                        cloudSnapshot.academicData,
+                    );
+
+                    lastKnownCloudUpdatedAtRef.current =
+                        cloudSnapshot.updatedAt;
+
+                    saveCloudRevision(
+                        userId,
+                        cloudSnapshot.updatedAt,
+                    );
+
+                    window.location.reload();
+                } catch (error) {
+                    logSyncError(
+                        "No fue posible revisar cambios realizados desde Alexa.",
+                        error,
+                    );
+                } finally {
+                    isChecking =
+                        false;
+                }
+            };
+
+        const handleWindowFocus =
+            (): void => {
+                void refreshFromCloud();
+            };
+
+        const handleVisibilityChange =
+            (): void => {
+                if (
+                    document.visibilityState ===
+                    "visible"
+                ) {
+                    void refreshFromCloud();
+                }
+            };
+
+        const intervalId =
+            window.setInterval(
+                () => {
+                    void refreshFromCloud();
+                },
+                CLOUD_REFRESH_INTERVAL_MS,
+            );
+
+        window.addEventListener(
+            "focus",
+            handleWindowFocus,
+        );
+
+        document.addEventListener(
+            "visibilitychange",
+            handleVisibilityChange,
+        );
+
+        void refreshFromCloud();
+
+        return () => {
+            isDisposed =
+                true;
+
+            window.clearInterval(
+                intervalId,
+            );
+
+            window.removeEventListener(
+                "focus",
+                handleWindowFocus,
+            );
+
+            document.removeEventListener(
+                "visibilitychange",
+                handleVisibilityChange,
+            );
+        };
+    }, [
+        user,
+        isReady,
+    ]);
+
     if (!isReady) {
         return (
             <div

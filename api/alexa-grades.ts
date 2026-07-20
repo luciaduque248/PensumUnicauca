@@ -1,5 +1,7 @@
+/* eslint-disable no-useless-assignment */
 import {
     createClient,
+    type SupabaseClient,
 } from "@supabase/supabase-js";
 
 import {
@@ -23,6 +25,8 @@ import type {
 } from "../src/types/curriculum.js";
 
 import type {
+    GradeActivity,
+    GradeCutId,
     StudentGradeRecords,
     SubjectGradeRecord,
 } from "../src/types/grades.js";
@@ -50,6 +54,29 @@ interface EnrolledSubject {
     sectionTitle: string;
 }
 
+interface GradeUpdateRequestBody {
+    action?: unknown;
+    subject?: unknown;
+    cut?: unknown;
+    grade?: unknown;
+    activity?: unknown;
+}
+
+interface AuthenticatedContext {
+    ok: true;
+    supabase: SupabaseClient;
+    userId: string;
+}
+
+interface AuthenticationErrorContext {
+    ok: false;
+    errorResponse: Response;
+}
+
+type AuthenticationContext =
+    | AuthenticatedContext
+    | AuthenticationErrorContext;
+
 const SUBJECT_STATUSES_KEY =
     "pensum-subject-statuses";
 
@@ -65,19 +92,22 @@ const ALLOWED_ORIGINS =
         "https://pensum-unicauca.vercel.app",
     ]);
 
+const CUT_LABELS: Record<
+    GradeCutId,
+    string
+> = {
+    first: "Corte 1",
+    second: "Corte 2",
+    third: "Corte 3",
+};
+
 const isRecord = (
     value: unknown,
-): value is Record<
-    string,
-    unknown
-> => {
+): value is Record<string, unknown> => {
     return (
-        typeof value ===
-        "object" &&
+        typeof value === "object" &&
         value !== null &&
-        !Array.isArray(
-            value,
-        )
+        !Array.isArray(value)
     );
 };
 
@@ -85,29 +115,28 @@ const normalizeText = (
     value: string,
 ): string => {
     return value
-        .normalize(
-            "NFD",
-        )
+        .normalize("NFD")
         .replace(
             /[\u0300-\u036f]/g,
             "",
         )
         .toLowerCase()
+        .replace(
+            /[^a-z0-9]+/g,
+            " ",
+        )
+        .replace(
+            /\s+/g,
+            " ",
+        )
         .trim();
 };
 
 const normalizeCode = (
-    value:
-        string | undefined,
+    value: string | undefined,
 ): string => {
-    return (
-        value ??
-        ""
-    )
-        .replace(
-            /\s+/g,
-            "",
-        )
+    return (value ?? "")
+        .replace(/\s+/g, "")
         .toUpperCase()
         .trim();
 };
@@ -116,43 +145,26 @@ const isSubjectStatus = (
     value: unknown,
 ): value is SubjectStatus => {
     return (
-        value ===
-        "pending" ||
-        value ===
-        "in-progress" ||
-        value ===
-        "approved"
+        value === "pending" ||
+        value === "in-progress" ||
+        value === "approved"
     );
 };
 
 const getSubjectStatuses = (
-    academicData:
-        Record<
-            string,
-            unknown
-        >,
-): Record<
-    string,
-    SubjectStatus
-> => {
+    academicData: Record<string, unknown>,
+): Record<string, SubjectStatus> => {
     const storedStatuses =
         academicData[
         SUBJECT_STATUSES_KEY
         ];
 
-    if (
-        !isRecord(
-            storedStatuses,
-        )
-    ) {
+    if (!isRecord(storedStatuses)) {
         return {};
     }
 
     const subjectStatuses:
-        Record<
-            string,
-            SubjectStatus
-        > = {};
+        Record<string, SubjectStatus> = {};
 
     for (
         const [
@@ -162,14 +174,8 @@ const getSubjectStatuses = (
             storedStatuses,
         )
     ) {
-        if (
-            isSubjectStatus(
-                storedStatus,
-            )
-        ) {
-            subjectStatuses[
-                subjectCode
-            ] =
+        if (isSubjectStatus(storedStatus)) {
+            subjectStatuses[subjectCode] =
                 storedStatus;
         }
     }
@@ -178,40 +184,28 @@ const getSubjectStatuses = (
 };
 
 const getStudentSchedule = (
-    academicData:
-        Record<
-            string,
-            unknown
-        >,
+    academicData: Record<string, unknown>,
 ): ParsedSchedule => {
     const storedSchedule =
         academicData[
         STUDENT_SCHEDULE_KEY
         ];
 
-    if (
-        !isRecord(
-            storedSchedule,
-        )
-    ) {
+    if (!isRecord(storedSchedule)) {
         return {
             classes: [],
-            isConfirmed:
-                false,
+            isConfirmed: false,
         };
     }
 
     const storedClasses =
         Array.isArray(
-            storedSchedule
-                .classes,
+            storedSchedule.classes,
         )
-            ? storedSchedule
-                .classes
+            ? storedSchedule.classes
             : [];
 
-    const classes:
-        ScheduleClass[] =
+    const classes: ScheduleClass[] =
         storedClasses
             .filter(
                 (
@@ -219,21 +213,13 @@ const getStudentSchedule = (
                 ): value is Record<
                     string,
                     unknown
-                > =>
-                    isRecord(
-                        value,
-                    ),
+                > => isRecord(value),
             )
             .filter(
-                (
-                    value,
-                ): boolean =>
-                    typeof value
-                        .subjectName ===
+                (value): boolean =>
+                    typeof value.subjectName ===
                     "string" &&
-                    value
-                        .subjectName
-                        .trim() !==
+                    value.subjectName.trim() !==
                     "",
             )
             .map(
@@ -242,92 +228,67 @@ const getStudentSchedule = (
                     index,
                 ): ScheduleClass => ({
                     id:
-                        typeof value
-                            .id ===
+                        typeof value.id ===
                             "string"
                             ? value.id
                             : `alexa-grade-class-${index}`,
 
                     subjectName:
                         String(
-                            value
-                                .subjectName,
+                            value.subjectName,
                         ).trim(),
 
                     subjectCode:
-                        typeof value
-                            .subjectCode ===
+                        typeof value.subjectCode ===
                             "string"
-                            ? value
-                                .subjectCode
-                                .trim()
+                            ? value.subjectCode.trim()
                             : undefined,
 
                     day:
-                        value.day ===
-                            "monday" ||
-                            value.day ===
-                            "tuesday" ||
-                            value.day ===
-                            "wednesday" ||
-                            value.day ===
-                            "thursday" ||
-                            value.day ===
-                            "friday"
+                        value.day === "monday" ||
+                            value.day === "tuesday" ||
+                            value.day === "wednesday" ||
+                            value.day === "thursday" ||
+                            value.day === "friday"
                             ? value.day
                             : "monday",
 
                     startTime:
-                        typeof value
-                            .startTime ===
+                        typeof value.startTime ===
                             "string"
-                            ? value
-                                .startTime
+                            ? value.startTime
                             : "00:00",
 
                     endTime:
-                        typeof value
-                            .endTime ===
+                        typeof value.endTime ===
                             "string"
-                            ? value
-                                .endTime
+                            ? value.endTime
                             : "00:00",
                 }),
             );
 
     return {
         classes,
-
         isConfirmed:
-            storedSchedule
-                .isConfirmed ===
+            storedSchedule.isConfirmed ===
             true,
     };
 };
 
 const getGradeRecords = (
-    academicData:
-        Record<
-            string,
-            unknown
-        >,
+    academicData: Record<string, unknown>,
 ): StudentGradeRecords => {
     const storedGradeRecords =
         academicData[
         SUBJECT_GRADE_RECORDS_KEY
         ];
 
-    if (
-        !isRecord(
-            storedGradeRecords,
-        )
-    ) {
+    if (!isRecord(storedGradeRecords)) {
         return {};
     }
 
     const gradeRecords:
-        StudentGradeRecords =
-        {};
+        StudentGradeRecords = {};
 
     for (
         const [
@@ -337,14 +298,8 @@ const getGradeRecords = (
             storedGradeRecords,
         )
     ) {
-        if (
-            isRecord(
-                storedRecord,
-            )
-        ) {
-            gradeRecords[
-                subjectCode
-            ] =
+        if (isRecord(storedRecord)) {
+            gradeRecords[subjectCode] =
                 storedRecord as unknown as
                 SubjectGradeRecord;
         }
@@ -355,12 +310,8 @@ const getGradeRecords = (
 
 const getEnrolledSubjects = (
     subjectStatuses:
-        Record<
-            string,
-            SubjectStatus
-        >,
-    schedule:
-        ParsedSchedule,
+        Record<string, SubjectStatus>,
+    schedule: ParsedSchedule,
 ): EnrolledSubject[] => {
     const confirmedScheduleCodes =
         new Set<string>();
@@ -368,23 +319,17 @@ const getEnrolledSubjects = (
     const confirmedScheduleNames =
         new Set<string>();
 
-    if (
-        schedule.isConfirmed
-    ) {
+    if (schedule.isConfirmed) {
         for (
             const scheduleClass
             of schedule.classes
         ) {
             const normalizedCode =
                 normalizeCode(
-                    scheduleClass
-                        .subjectCode,
+                    scheduleClass.subjectCode,
                 );
 
-            if (
-                normalizedCode !==
-                ""
-            ) {
+            if (normalizedCode !== "") {
                 confirmedScheduleCodes.add(
                     normalizedCode,
                 );
@@ -392,14 +337,10 @@ const getEnrolledSubjects = (
 
             const normalizedName =
                 normalizeText(
-                    scheduleClass
-                        .subjectName,
+                    scheduleClass.subjectName,
                 );
 
-            if (
-                normalizedName !==
-                ""
-            ) {
+            if (normalizedName !== "") {
                 confirmedScheduleNames.add(
                     normalizedName,
                 );
@@ -415,23 +356,15 @@ const getEnrolledSubjects = (
             ): EnrolledSubject[] =>
                 section.subjects.map(
                     (
-                        subject:
-                            Subject,
+                        subject: Subject,
                     ): EnrolledSubject => ({
-                        code:
-                            subject.code,
-
-                        name:
-                            subject.name,
-
+                        code: subject.code,
+                        name: subject.name,
                         credits:
                             subject.credits,
-
                         semester:
-                            section
-                                .semester ??
+                            section.semester ??
                             null,
-
                         sectionTitle:
                             section.title,
                     }),
@@ -445,12 +378,10 @@ const getEnrolledSubjects = (
                 const isInProgress =
                     subjectStatuses[
                     subject.code
-                    ] ===
-                    "in-progress";
+                    ] === "in-progress";
 
                 const isInConfirmedSchedule =
-                    schedule
-                        .isConfirmed &&
+                    schedule.isConfirmed &&
                     (
                         confirmedScheduleCodes.has(
                             normalizeCode(
@@ -472,19 +403,15 @@ const getEnrolledSubjects = (
         )
         .sort(
             (
-                firstSubject:
-                    EnrolledSubject,
-                secondSubject:
-                    EnrolledSubject,
+                firstSubject,
+                secondSubject,
             ): number => {
                 const firstSemester =
-                    firstSubject
-                        .semester ??
+                    firstSubject.semester ??
                     99;
 
                 const secondSemester =
-                    secondSubject
-                        .semester ??
+                    secondSubject.semester ??
                     99;
 
                 if (
@@ -497,15 +424,367 @@ const getEnrolledSubjects = (
                     );
                 }
 
-                return firstSubject
-                    .name
+                return firstSubject.name
                     .localeCompare(
-                        secondSubject
-                            .name,
+                        secondSubject.name,
                         "es",
                     );
             },
         );
+};
+
+const cloneSubjectGradeRecord = (
+    record: SubjectGradeRecord,
+): SubjectGradeRecord => {
+    const cloneActivities = (
+        activities: GradeActivity[],
+    ): GradeActivity[] => {
+        return activities.map(
+            (activity) => ({
+                ...activity,
+            }),
+        );
+    };
+
+    return {
+        ...record,
+        cuts: {
+            first: {
+                activities:
+                    cloneActivities(
+                        record.cuts.first
+                            .activities,
+                    ),
+            },
+            second: {
+                activities:
+                    cloneActivities(
+                        record.cuts.second
+                            .activities,
+                    ),
+            },
+            third: {
+                activities:
+                    cloneActivities(
+                        record.cuts.third
+                            .activities,
+                    ),
+            },
+        },
+    };
+};
+
+const getCutGrade = (
+    calculation:
+        ReturnType<
+            typeof calculateSubjectGrade
+        >,
+    cutId: GradeCutId,
+): number | null => {
+    if (cutId === "first") {
+        return calculation.firstCutGrade;
+    }
+
+    if (cutId === "second") {
+        return calculation.secondCutGrade;
+    }
+
+    return calculation.thirdCutGrade;
+};
+
+const getCutFinalShare = (
+    record: SubjectGradeRecord,
+    cutId: GradeCutId,
+): number => {
+    if (cutId === "first") {
+        return (
+            record.firstCutShare *
+            0.7
+        );
+    }
+
+    if (cutId === "second") {
+        return (
+            record.secondCutShare *
+            0.7
+        );
+    }
+
+    return 30;
+};
+
+const createSubjectDetail = (
+    subject: EnrolledSubject,
+    record: SubjectGradeRecord,
+) => {
+    const calculation =
+        calculateSubjectGrade(
+            record,
+        );
+
+    const hasGrades =
+        hasRegisteredGrades(
+            record,
+        );
+
+    const createCutDetail = (
+        cutId: GradeCutId,
+    ) => ({
+        id: cutId,
+        label: CUT_LABELS[cutId],
+        finalShare:
+            getCutFinalShare(
+                record,
+                cutId,
+            ),
+        grade:
+            getCutGrade(
+                calculation,
+                cutId,
+            ),
+        activities:
+            record.cuts[
+                cutId
+            ].activities.map(
+                (activity) => ({
+                    id: activity.id,
+                    name: activity.name,
+                    percentage:
+                        activity.percentage,
+                    grade: activity.grade,
+                }),
+            ),
+    });
+
+    const officialGrade =
+        calculation.isComplete
+            ? calculation.officialOneDecimal
+            : null;
+
+    return {
+        code: subject.code,
+        name: subject.name,
+        credits: subject.credits,
+        semester: subject.semester,
+        sectionTitle:
+            subject.sectionTitle,
+        hasGrades,
+        isComplete:
+            calculation.isComplete,
+        status:
+            !hasGrades
+                ? "without-grades"
+                : calculation.isComplete
+                    ? "complete"
+                    : "partial",
+        cuts: {
+            first:
+                createCutDetail(
+                    "first",
+                ),
+            second:
+                createCutDetail(
+                    "second",
+                ),
+            third:
+                createCutDetail(
+                    "third",
+                ),
+        },
+        accumulatedGrade:
+            calculation.accumulatedTwoDecimals,
+        approximatedGrade:
+            calculation.officialOneDecimal,
+        officialGrade,
+        approved:
+            officialGrade !== null
+                ? officialGrade >= 3
+                : null,
+    };
+};
+
+const findSubjectMatches = (
+    requestedSubject: string,
+    subjects: EnrolledSubject[],
+): EnrolledSubject[] => {
+    const normalizedRequestedText =
+        normalizeText(
+            requestedSubject,
+        );
+
+    const normalizedRequestedCode =
+        normalizeCode(
+            requestedSubject,
+        );
+
+    const exactMatches =
+        subjects.filter(
+            (subject) =>
+                normalizeCode(
+                    subject.code,
+                ) ===
+                normalizedRequestedCode ||
+                normalizeText(
+                    subject.name,
+                ) ===
+                normalizedRequestedText,
+        );
+
+    if (exactMatches.length > 0) {
+        return exactMatches;
+    }
+
+    return subjects.filter(
+        (subject) => {
+            const normalizedName =
+                normalizeText(
+                    subject.name,
+                );
+
+            const normalizedCode =
+                normalizeCode(
+                    subject.code,
+                );
+
+            return (
+                normalizedName.includes(
+                    normalizedRequestedText,
+                ) ||
+                normalizedRequestedText.includes(
+                    normalizedName,
+                ) ||
+                normalizedCode.includes(
+                    normalizedRequestedCode,
+                )
+            );
+        },
+    );
+};
+
+const parseCutId = (
+    value: unknown,
+): GradeCutId | null => {
+    if (typeof value !== "string") {
+        return null;
+    }
+
+    const normalized =
+        normalizeText(value);
+
+    if (
+        normalized === "first" ||
+        normalized === "1" ||
+        normalized === "uno" ||
+        normalized === "primer" ||
+        normalized === "primero" ||
+        normalized === "primer corte" ||
+        normalized === "corte uno" ||
+        normalized === "corte 1"
+    ) {
+        return "first";
+    }
+
+    if (
+        normalized === "second" ||
+        normalized === "2" ||
+        normalized === "dos" ||
+        normalized === "segundo" ||
+        normalized === "segundo corte" ||
+        normalized === "corte dos" ||
+        normalized === "corte 2"
+    ) {
+        return "second";
+    }
+
+    if (
+        normalized === "third" ||
+        normalized === "3" ||
+        normalized === "tres" ||
+        normalized === "tercer" ||
+        normalized === "tercero" ||
+        normalized === "tercer corte" ||
+        normalized === "corte tres" ||
+        normalized === "corte 3" ||
+        normalized === "final"
+    ) {
+        return "third";
+    }
+
+    return null;
+};
+
+const parseGrade = (
+    value: unknown,
+): number | null => {
+    const parsedValue =
+        typeof value === "number"
+            ? value
+            : typeof value === "string"
+                ? Number(
+                    value.replace(
+                        ",",
+                        ".",
+                    ),
+                )
+                : Number.NaN;
+
+    if (
+        !Number.isFinite(
+            parsedValue,
+        ) ||
+        parsedValue < 0 ||
+        parsedValue > 5
+    ) {
+        return null;
+    }
+
+    return Math.round(
+        (
+            parsedValue +
+            Number.EPSILON
+        ) * 10,
+    ) / 10;
+};
+
+const findActivity = (
+    requestedActivity: string,
+    activities: GradeActivity[],
+): GradeActivity[] => {
+    const normalizedRequested =
+        normalizeText(
+            requestedActivity,
+        );
+
+    const exactMatches =
+        activities.filter(
+            (activity) =>
+                normalizeText(
+                    activity.name,
+                ) ===
+                normalizedRequested,
+        );
+
+    if (exactMatches.length > 0) {
+        return exactMatches;
+    }
+
+    return activities.filter(
+        (activity) => {
+            const normalizedName =
+                normalizeText(
+                    activity.name,
+                );
+
+            return (
+                normalizedName.includes(
+                    normalizedRequested,
+                ) ||
+                normalizedRequested.includes(
+                    normalizedName,
+                )
+            );
+        },
+    );
 };
 
 const getBearerToken = (
@@ -516,9 +795,7 @@ const getBearerToken = (
             "authorization",
         );
 
-    if (
-        !authorizationHeader
-    ) {
+    if (!authorizationHeader) {
         return null;
     }
 
@@ -540,15 +817,11 @@ const getCorsHeaders = (
         new Headers({
             "Access-Control-Allow-Headers":
                 "Authorization, Content-Type",
-
             "Access-Control-Allow-Methods":
-                "GET, OPTIONS",
-
+                "GET, POST, OPTIONS",
             "Cache-Control":
                 "no-store",
-
-            Vary:
-                "Origin",
+            Vary: "Origin",
         });
 
     const origin =
@@ -558,9 +831,7 @@ const getCorsHeaders = (
 
     if (
         origin &&
-        ALLOWED_ORIGINS.has(
-            origin,
-        )
+        ALLOWED_ORIGINS.has(origin)
     ) {
         headers.set(
             "Access-Control-Allow-Origin",
@@ -577,9 +848,7 @@ const createJsonResponse = (
     status: number,
 ): Response => {
     const headers =
-        getCorsHeaders(
-            request,
-        );
+        getCorsHeaders(request);
 
     headers.set(
         "Content-Type",
@@ -587,9 +856,7 @@ const createJsonResponse = (
     );
 
     return new Response(
-        JSON.stringify(
-            body,
-        ),
+        JSON.stringify(body),
         {
             status,
             headers,
@@ -597,80 +864,89 @@ const createJsonResponse = (
     );
 };
 
-const handleGetRequest =
+const createSupabaseClient = (
+    accessToken: string,
+): SupabaseClient | null => {
+    const supabaseUrl =
+        process.env.SUPABASE_URL;
+
+    const supabasePublishableKey =
+        process.env
+            .SUPABASE_PUBLISHABLE_KEY;
+
+    if (
+        !supabaseUrl ||
+        !supabasePublishableKey
+    ) {
+        return null;
+    }
+
+    return createClient(
+        supabaseUrl,
+        supabasePublishableKey,
+        {
+            auth: {
+                persistSession: false,
+                autoRefreshToken: false,
+                detectSessionInUrl: false,
+            },
+            global: {
+                headers: {
+                    Authorization:
+                        `Bearer ${accessToken}`,
+                },
+            },
+        },
+    );
+};
+
+const getAuthenticatedContext =
     async (
         request: Request,
-    ): Promise<Response> => {
-        const supabaseUrl =
-            process.env
-                .SUPABASE_URL;
+    ): Promise<AuthenticationContext> => {
+        const accessToken =
+            getBearerToken(request);
 
-        const supabasePublishableKey =
-            process.env
-                .SUPABASE_PUBLISHABLE_KEY;
+        if (!accessToken) {
+            return {
+                ok: false,
+                errorResponse:
+                    createJsonResponse(
+                        request,
+                        {
+                            ok: false,
+                            error:
+                                "Se requiere autenticación.",
+                        },
+                        401,
+                    ),
+            };
+        }
 
-        if (
-            !supabaseUrl ||
-            !supabasePublishableKey
-        ) {
+        const supabase =
+            createSupabaseClient(
+                accessToken,
+            );
+
+        if (!supabase) {
             console.error(
                 "[Alexa grades API] Faltan las variables de Supabase.",
             );
 
-            return createJsonResponse(
-                request,
-                {
-                    ok: false,
-
-                    error:
-                        "El servicio no está configurado correctamente.",
-                },
-                500,
-            );
-        }
-
-        const accessToken =
-            getBearerToken(
-                request,
-            );
-
-        if (!accessToken) {
-            return createJsonResponse(
-                request,
-                {
-                    ok: false,
-
-                    error:
-                        "Se requiere autenticación.",
-                },
-                401,
-            );
-        }
-
-        const supabase =
-            createClient(
-                supabaseUrl,
-                supabasePublishableKey,
-                {
-                    auth: {
-                        persistSession:
-                            false,
-
-                        autoRefreshToken:
-                            false,
-
-                        detectSessionInUrl:
-                            false,
-                    },
-
-                    global: {
-                        headers: {
-                            Authorization:
-                                `Bearer ${accessToken}`,
+            return {
+                ok: false,
+                errorResponse:
+                    createJsonResponse(
+                        request,
+                        {
+                            ok: false,
+                            error:
+                                "El servicio no está configurado correctamente.",
                         },
-                    },
-                },
-            );
+                        500,
+                    ),
+            };
+        }
 
         const {
             data: userData,
@@ -685,21 +961,40 @@ const handleGetRequest =
             userError ||
             !userData.user
         ) {
-            return createJsonResponse(
-                request,
-                {
-                    ok: false,
-
-                    error:
-                        "La sesión no es válida o ha vencido.",
-                },
-                401,
-            );
+            return {
+                ok: false,
+                errorResponse:
+                    createJsonResponse(
+                        request,
+                        {
+                            ok: false,
+                            error:
+                                "La sesión no es válida o ha vencido.",
+                        },
+                        401,
+                    ),
+            };
         }
 
+        return {
+            ok: true,
+            supabase,
+            userId:
+                userData.user.id,
+        };
+    };
+
+const getSnapshot =
+    async (
+        supabase: SupabaseClient,
+        userId: string,
+    ): Promise<{
+        snapshot: AcademicSnapshotRow | null;
+        error: unknown;
+    }> => {
         const {
-            data: snapshotData,
-            error: snapshotError,
+            data,
+            error,
         } =
             await supabase
                 .from(
@@ -714,23 +1009,192 @@ const handleGetRequest =
                 )
                 .eq(
                     "user_id",
-                    userData.user.id,
+                    userId,
                 )
                 .maybeSingle<
                     AcademicSnapshotRow
                 >();
 
-        if (snapshotError) {
+        return {
+            snapshot: data,
+            error,
+        };
+    };
+
+const buildGradesResponse = (
+    academicData:
+        Record<string, unknown>,
+    requestedSubject:
+        string | null,
+) => {
+    const subjectStatuses =
+        getSubjectStatuses(
+            academicData,
+        );
+
+    const schedule =
+        getStudentSchedule(
+            academicData,
+        );
+
+    const gradeRecords =
+        getGradeRecords(
+            academicData,
+        );
+
+    const enrolledSubjects =
+        getEnrolledSubjects(
+            subjectStatuses,
+            schedule,
+        );
+
+    const subjectDetails =
+        enrolledSubjects.map(
+            (subject) => {
+                const record =
+                    normalizeSubjectGradeRecord(
+                        subject.code,
+                        gradeRecords[
+                        subject.code
+                        ],
+                    );
+
+                return createSubjectDetail(
+                    subject,
+                    record,
+                );
+            },
+        );
+
+    const completedSubjectDetails =
+        subjectDetails.filter(
+            (subject) =>
+                subject.isComplete &&
+                typeof subject
+                    .officialGrade ===
+                "number",
+        );
+
+    const completedCredits =
+        completedSubjectDetails.reduce(
+            (total, subject) =>
+                total +
+                subject.credits,
+            0,
+        );
+
+    const semesterAverage =
+        completedCredits === 0
+            ? null
+            : roundGradeToOfficialTenth(
+                completedSubjectDetails.reduce(
+                    (
+                        total,
+                        subject,
+                    ) =>
+                        total +
+                        (
+                            subject.officialGrade ??
+                            0
+                        ) *
+                        subject.credits,
+                    0,
+                ) /
+                completedCredits,
+            );
+
+    const requestedMatches =
+        requestedSubject
+            ? findSubjectMatches(
+                requestedSubject,
+                enrolledSubjects,
+            )
+            : [];
+
+    return {
+        grades: {
+            enrolledSubjects:
+                enrolledSubjects.length,
+            subjectsWithGrades:
+                subjectDetails.filter(
+                    (subject) =>
+                        subject.hasGrades,
+                ).length,
+            completedSubjects:
+                completedSubjectDetails.length,
+            partialSubjects:
+                subjectDetails.filter(
+                    (subject) =>
+                        subject.status ===
+                        "partial",
+                ).length,
+            completedCredits,
+            subjectsAtOrAboveThree:
+                completedSubjectDetails.filter(
+                    (subject) =>
+                        (
+                            subject.officialGrade ??
+                            0
+                        ) >= 3,
+                ).length,
+            semesterAverage,
+            completedSubjectDetails,
+            subjectDetails,
+        },
+        requestedSubject:
+            requestedSubject
+                ? {
+                    query:
+                        requestedSubject,
+                    matches:
+                        requestedMatches.map(
+                            (subject) =>
+                                subjectDetails.find(
+                                    (detail) =>
+                                        detail.code ===
+                                        subject.code,
+                                ),
+                        ).filter(
+                            Boolean,
+                        ),
+                }
+                : null,
+    };
+};
+
+const handleGetRequest =
+    async (
+        request: Request,
+    ): Promise<Response> => {
+        const authContext =
+            await getAuthenticatedContext(
+                request,
+            );
+
+        if (!authContext.ok) {
+            return authContext
+                .errorResponse;
+        }
+
+        const {
+            snapshot,
+            error,
+        } =
+            await getSnapshot(
+                authContext.supabase,
+                authContext.userId,
+            );
+
+        if (error) {
             console.error(
                 "[Alexa grades API] Error consultando academic_snapshots.",
-                snapshotError,
+                error,
             );
 
             return createJsonResponse(
                 request,
                 {
                     ok: false,
-
                     error:
                         "No fue posible consultar las notas académicas.",
                 },
@@ -738,40 +1202,41 @@ const handleGetRequest =
             );
         }
 
-        if (!snapshotData) {
+        const url =
+            new URL(request.url);
+
+        const requestedSubject =
+            url.searchParams
+                .get("subject")
+                ?.trim() ||
+            null;
+
+        if (!snapshot) {
             return createJsonResponse(
                 request,
                 {
                     ok: true,
-
                     snapshotExists:
                         false,
-
                     grades: {
-                        enrolledSubjects:
-                            0,
-
-                        subjectsWithGrades:
-                            0,
-
-                        completedSubjects:
-                            0,
-
-                        partialSubjects:
-                            0,
-
-                        completedCredits:
-                            0,
-
-                        subjectsAtOrAboveThree:
-                            0,
-
-                        semesterAverage:
-                            null,
-
-                        completedSubjectDetails:
-                            [],
+                        enrolledSubjects: 0,
+                        subjectsWithGrades: 0,
+                        completedSubjects: 0,
+                        partialSubjects: 0,
+                        completedCredits: 0,
+                        subjectsAtOrAboveThree: 0,
+                        semesterAverage: null,
+                        completedSubjectDetails: [],
+                        subjectDetails: [],
                     },
+                    requestedSubject:
+                        requestedSubject
+                            ? {
+                                query:
+                                    requestedSubject,
+                                matches: [],
+                            }
+                            : null,
                 },
                 200,
             );
@@ -779,15 +1244,13 @@ const handleGetRequest =
 
         if (
             !isRecord(
-                snapshotData
-                    .academic_data,
+                snapshot.academic_data,
             )
         ) {
             return createJsonResponse(
                 request,
                 {
                     ok: false,
-
                     error:
                         "La información académica almacenada no tiene una estructura válida.",
                 },
@@ -795,9 +1258,184 @@ const handleGetRequest =
             );
         }
 
+        const responseData =
+            buildGradesResponse(
+                snapshot.academic_data,
+                requestedSubject,
+            );
+
+        return createJsonResponse(
+            request,
+            {
+                ok: true,
+                snapshotExists: true,
+                snapshot: {
+                    schemaVersion:
+                        snapshot.schema_version,
+                    updatedAt:
+                        snapshot.updated_at,
+                },
+                ...responseData,
+            },
+            200,
+        );
+    };
+
+const handlePostRequest =
+    async (
+        request: Request,
+    ): Promise<Response> => {
+        const authContext =
+            await getAuthenticatedContext(
+                request,
+            );
+
+        if (!authContext.ok) {
+            return authContext
+                .errorResponse;
+        }
+
+        let body:
+            GradeUpdateRequestBody;
+
+        try {
+            body =
+                await request.json() as
+                GradeUpdateRequestBody;
+        } catch {
+            return createJsonResponse(
+                request,
+                {
+                    ok: false,
+                    error:
+                        "El cuerpo de la solicitud no contiene un JSON válido.",
+                },
+                400,
+            );
+        }
+
+        if (
+            body.action !==
+            "set-grade"
+        ) {
+            return createJsonResponse(
+                request,
+                {
+                    ok: false,
+                    error:
+                        "La acción solicitada no es válida.",
+                },
+                400,
+            );
+        }
+
+        const requestedSubject =
+            typeof body.subject ===
+                "string"
+                ? body.subject.trim()
+                : "";
+
+        const cutId =
+            parseCutId(body.cut);
+
+        const grade =
+            parseGrade(body.grade);
+
+        const requestedActivity =
+            typeof body.activity ===
+                "string"
+                ? body.activity.trim()
+                : "";
+
+        if (requestedSubject === "") {
+            return createJsonResponse(
+                request,
+                {
+                    ok: false,
+                    code:
+                        "subject_required",
+                    error:
+                        "Debes indicar la materia.",
+                },
+                400,
+            );
+        }
+
+        if (!cutId) {
+            return createJsonResponse(
+                request,
+                {
+                    ok: false,
+                    code:
+                        "cut_required",
+                    error:
+                        "Debes indicar el corte uno, dos o tres.",
+                },
+                400,
+            );
+        }
+
+        if (grade === null) {
+            return createJsonResponse(
+                request,
+                {
+                    ok: false,
+                    code:
+                        "invalid_grade",
+                    error:
+                        "La nota debe estar entre cero punto cero y cinco punto cero.",
+                },
+                400,
+            );
+        }
+
+        const {
+            snapshot,
+            error: snapshotError,
+        } =
+            await getSnapshot(
+                authContext.supabase,
+                authContext.userId,
+            );
+
+        if (snapshotError) {
+            console.error(
+                "[Alexa grades API] Error consultando el snapshot antes de guardar.",
+                snapshotError,
+            );
+
+            return createJsonResponse(
+                request,
+                {
+                    ok: false,
+                    error:
+                        "No fue posible consultar la información académica antes de guardar la nota.",
+                },
+                500,
+            );
+        }
+
+        if (
+            !snapshot ||
+            !isRecord(
+                snapshot.academic_data,
+            )
+        ) {
+            return createJsonResponse(
+                request,
+                {
+                    ok: false,
+                    code:
+                        "snapshot_not_found",
+                    error:
+                        "Todavía no existe información académica sincronizada para esta cuenta.",
+                },
+                404,
+            );
+        }
+
         const academicData =
-            snapshotData
-                .academic_data;
+            snapshot.academic_data;
 
         const subjectStatuses =
             getSubjectStatuses(
@@ -809,196 +1447,331 @@ const handleGetRequest =
                 academicData,
             );
 
-        const gradeRecords =
-            getGradeRecords(
-                academicData,
-            );
-
         const enrolledSubjects =
             getEnrolledSubjects(
                 subjectStatuses,
                 schedule,
             );
 
-        const subjectRows =
-            enrolledSubjects.map(
-                (
-                    subject:
-                        EnrolledSubject,
-                ) => {
-                    const record =
-                        normalizeSubjectGradeRecord(
-                            subject.code,
-                            gradeRecords[
-                            subject.code
-                            ],
-                        );
+        const subjectMatches =
+            findSubjectMatches(
+                requestedSubject,
+                enrolledSubjects,
+            );
 
-                    return {
-                        subject,
-                        record,
-
-                        calculation:
-                            calculateSubjectGrade(
-                                record,
-                            ),
-                    };
+        if (
+            subjectMatches.length ===
+            0
+        ) {
+            return createJsonResponse(
+                request,
+                {
+                    ok: false,
+                    code:
+                        "subject_not_found",
+                    error:
+                        "No encontré esa materia entre las materias matriculadas.",
+                    enrolledSubjects:
+                        enrolledSubjects.map(
+                            (subject) => ({
+                                code:
+                                    subject.code,
+                                name:
+                                    subject.name,
+                            }),
+                        ),
                 },
+                404,
+            );
+        }
+
+        if (
+            subjectMatches.length >
+            1
+        ) {
+            return createJsonResponse(
+                request,
+                {
+                    ok: false,
+                    code:
+                        "ambiguous_subject",
+                    error:
+                        "Encontré más de una materia que coincide con la consulta.",
+                    matches:
+                        subjectMatches.map(
+                            (subject) => ({
+                                code:
+                                    subject.code,
+                                name:
+                                    subject.name,
+                            }),
+                        ),
+                },
+                409,
+            );
+        }
+
+        const subject =
+            subjectMatches[0];
+
+        const gradeRecords =
+            getGradeRecords(
+                academicData,
             );
 
-        const subjectsWithGrades =
-            subjectRows.filter(
-                ({
-                    record,
-                }): boolean =>
-                    hasRegisteredGrades(
-                        record,
-                    ),
-            ).length;
-
-        const completedSubjectRows =
-            subjectRows.filter(
-                ({
-                    calculation,
-                }): boolean =>
-                    calculation
-                        .isComplete &&
-                    typeof calculation
-                        .officialOneDecimal ===
-                    "number" &&
-                    Number.isFinite(
-                        calculation
-                            .officialOneDecimal,
-                    ),
+        const currentRecord =
+            normalizeSubjectGradeRecord(
+                subject.code,
+                gradeRecords[
+                subject.code
+                ],
             );
 
-        const completedCredits =
-            completedSubjectRows.reduce(
-                (
-                    total:
-                        number,
-                    {
-                        subject,
-                    },
-                ): number =>
-                    total +
-                    subject.credits,
-                0,
+        const nextRecord =
+            cloneSubjectGradeRecord(
+                currentRecord,
             );
 
-        const semesterAverage =
-            completedCredits ===
-                0
-                ? null
-                : roundGradeToOfficialTenth(
-                    completedSubjectRows.reduce(
-                        (
-                            total:
-                                number,
-                            {
-                                subject,
-                                calculation,
-                            },
-                        ): number =>
-                            total +
-                            (
-                                calculation
-                                    .officialOneDecimal ??
-                                0
-                            ) *
-                            subject
-                                .credits,
-                        0,
-                    ) /
-                    completedCredits,
+        const cutActivities =
+            nextRecord.cuts[
+                cutId
+            ].activities;
+
+        let selectedActivity:
+            GradeActivity | null =
+            null;
+
+        if (
+            requestedActivity !==
+            ""
+        ) {
+            const activityMatches =
+                findActivity(
+                    requestedActivity,
+                    cutActivities,
                 );
 
-        const subjectsAtOrAboveThree =
-            completedSubjectRows.filter(
-                ({
-                    calculation,
-                }): boolean =>
-                    (
-                        calculation
-                            .officialOneDecimal ??
-                        0
-                    ) >=
-                    3,
-            ).length;
+            if (
+                activityMatches.length ===
+                0
+            ) {
+                return createJsonResponse(
+                    request,
+                    {
+                        ok: false,
+                        code:
+                            "activity_not_found",
+                        error:
+                            "No encontré esa actividad en el corte indicado.",
+                        subject: {
+                            code:
+                                subject.code,
+                            name:
+                                subject.name,
+                        },
+                        cut: {
+                            id: cutId,
+                            label:
+                                CUT_LABELS[
+                                cutId
+                                ],
+                            activities:
+                                cutActivities.map(
+                                    (activity) => ({
+                                        id:
+                                            activity.id,
+                                        name:
+                                            activity.name,
+                                        percentage:
+                                            activity.percentage,
+                                        grade:
+                                            activity.grade,
+                                    }),
+                                ),
+                        },
+                    },
+                    404,
+                );
+            }
 
-        const completedSubjectDetails =
-            completedSubjectRows.map(
-                ({
-                    subject,
-                    calculation,
-                }) => ({
+            if (
+                activityMatches.length >
+                1
+            ) {
+                return createJsonResponse(
+                    request,
+                    {
+                        ok: false,
+                        code:
+                            "ambiguous_activity",
+                        error:
+                            "Encontré más de una actividad que coincide con la consulta.",
+                        activities:
+                            activityMatches.map(
+                                (activity) => ({
+                                    id:
+                                        activity.id,
+                                    name:
+                                        activity.name,
+                                }),
+                            ),
+                    },
+                    409,
+                );
+            }
+
+            selectedActivity =
+                activityMatches[0];
+        } else if (
+            cutActivities.length ===
+            1
+        ) {
+            selectedActivity =
+                cutActivities[0];
+        } else {
+            return createJsonResponse(
+                request,
+                {
+                    ok: false,
                     code:
-                        subject.code,
+                        "activity_required",
+                    error:
+                        "Ese corte tiene varias actividades. Debes indicar en cuál deseas registrar la nota.",
+                    subject: {
+                        code:
+                            subject.code,
+                        name:
+                            subject.name,
+                    },
+                    cut: {
+                        id: cutId,
+                        label:
+                            CUT_LABELS[
+                            cutId
+                            ],
+                        activities:
+                            cutActivities.map(
+                                (activity) => ({
+                                    id:
+                                        activity.id,
+                                    name:
+                                        activity.name,
+                                    percentage:
+                                        activity.percentage,
+                                    grade:
+                                        activity.grade,
+                                }),
+                            ),
+                    },
+                },
+                409,
+            );
+        }
 
-                    name:
-                        subject.name,
+        selectedActivity.grade =
+            grade;
 
-                    credits:
-                        subject.credits,
+        nextRecord.updatedAt =
+            new Date().toISOString();
 
-                    officialGrade:
-                        calculation
-                            .officialOneDecimal,
+        const nextGradeRecords:
+            StudentGradeRecords = {
+            ...gradeRecords,
+            [subject.code]:
+                nextRecord,
+        };
 
-                    approved:
-                        (
-                            calculation
-                                .officialOneDecimal ??
-                            0
-                        ) >=
-                        3,
-                }),
+        const nextAcademicData:
+            Record<string, unknown> = {
+            ...academicData,
+            [SUBJECT_GRADE_RECORDS_KEY]:
+                nextGradeRecords,
+        };
+
+        const updatedAt =
+            new Date().toISOString();
+
+        const {
+            error: saveError,
+        } =
+            await authContext.supabase
+                .from(
+                    "academic_snapshots",
+                )
+                .upsert(
+                    {
+                        user_id:
+                            authContext.userId,
+                        academic_data:
+                            nextAcademicData,
+                        schema_version:
+                            snapshot.schema_version ??
+                            1,
+                        updated_at:
+                            updatedAt,
+                    },
+                    {
+                        onConflict:
+                            "user_id",
+                    },
+                );
+
+        if (saveError) {
+            console.error(
+                "[Alexa grades API] No fue posible guardar la nota.",
+                saveError,
+            );
+
+            return createJsonResponse(
+                request,
+                {
+                    ok: false,
+                    error:
+                        "No fue posible guardar la nota.",
+                },
+                500,
+            );
+        }
+
+        const updatedSubjectDetail =
+            createSubjectDetail(
+                subject,
+                nextRecord,
             );
 
         return createJsonResponse(
             request,
             {
                 ok: true,
-
-                snapshotExists:
-                    true,
-
-                snapshot: {
-                    schemaVersion:
-                        snapshotData
-                            .schema_version,
-
-                    updatedAt:
-                        snapshotData
-                            .updated_at,
-                },
-
-                grades: {
-                    enrolledSubjects:
-                        enrolledSubjects
-                            .length,
-
-                    subjectsWithGrades,
-
-                    completedSubjects:
-                        completedSubjectRows
-                            .length,
-
-                    partialSubjects:
-                        Math.max(
-                            subjectsWithGrades -
-                            completedSubjectRows
-                                .length,
-                            0,
-                        ),
-
-                    completedCredits,
-
-                    subjectsAtOrAboveThree,
-
-                    semesterAverage,
-
-                    completedSubjectDetails,
+                message:
+                    "La nota fue registrada correctamente.",
+                updatedAt,
+                update: {
+                    subject: {
+                        code:
+                            subject.code,
+                        name:
+                            subject.name,
+                    },
+                    cut: {
+                        id: cutId,
+                        label:
+                            CUT_LABELS[
+                            cutId
+                            ],
+                    },
+                    activity: {
+                        id:
+                            selectedActivity.id,
+                        name:
+                            selectedActivity.name,
+                        percentage:
+                            selectedActivity.percentage,
+                        grade:
+                            selectedActivity.grade,
+                    },
+                    subjectDetail:
+                        updatedSubjectDetail,
                 },
             },
             200,
@@ -1017,7 +1790,6 @@ export default {
                 null,
                 {
                     status: 204,
-
                     headers:
                         getCorsHeaders(
                             request,
@@ -1027,23 +1799,31 @@ export default {
         }
 
         if (
-            request.method !==
+            request.method ===
             "GET"
         ) {
-            return createJsonResponse(
+            return handleGetRequest(
                 request,
-                {
-                    ok: false,
-
-                    error:
-                        "Método no permitido.",
-                },
-                405,
             );
         }
 
-        return handleGetRequest(
+        if (
+            request.method ===
+            "POST"
+        ) {
+            return handlePostRequest(
+                request,
+            );
+        }
+
+        return createJsonResponse(
             request,
+            {
+                ok: false,
+                error:
+                    "Método no permitido.",
+            },
+            405,
         );
     },
 };
