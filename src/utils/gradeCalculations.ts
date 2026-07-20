@@ -79,8 +79,9 @@ export const hasRegisteredGrades = (
 export const roundGradeToTwoDecimals = (
   value: number,
 ) => {
-  return Math.round(
-    (value + Number.EPSILON) * 100,
+  return Math.floor(
+    (value + Number.EPSILON) * 100 +
+    0.5,
   ) / 100;
 };
 
@@ -220,18 +221,23 @@ export const calculateSubjectGrade = (
       thirdContributionExactValue
       : null;
 
+  /*
+   * La primera columna calculada debe conservar dos decimales.
+   * La aproximación institucional a una décima se realiza
+   * después, usando exactamente ese valor de dos decimales.
+   *
+   * Ejemplo solicitado:
+   * 4.445 -> 4.45 -> 4.5
+   */
+  const accumulatedTwoDecimals =
+    accumulatedGrade === null
+      ? null
+      : roundGradeToTwoDecimals(
+        accumulatedGrade,
+      );
+
   const officialCalculationBase =
-    previousContributionOfficial !== null ||
-      thirdContributionOfficial !== null
-      ? (
-        previousContributionOfficial ??
-        0
-      ) +
-      (
-        thirdContributionOfficial ??
-        0
-      )
-      : null;
+    accumulatedTwoDecimals;
 
   const isComplete =
     isCutComplete(
@@ -283,12 +289,7 @@ export const calculateSubjectGrade = (
 
     accumulatedGrade,
 
-    accumulatedTwoDecimals:
-      accumulatedGrade === null
-        ? null
-        : roundGradeToTwoDecimals(
-          accumulatedGrade,
-        ),
+    accumulatedTwoDecimals,
 
     officialCalculationBase,
 

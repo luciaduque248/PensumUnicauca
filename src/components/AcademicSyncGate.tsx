@@ -39,7 +39,7 @@ const SAVE_DELAY_MS =
     1200;
 
 const CLOUD_REFRESH_INTERVAL_MS =
-    20000;
+    5000;
 
 const CLOUD_REVISION_PREFIX =
     "pensum-account-cloud-revision:";
@@ -141,6 +141,54 @@ export const AcademicSyncGate = ({
                                     getAccountStorageDirtyMarker(
                                         userId,
                                     );
+
+                                const knownUpdatedAt =
+                                    lastKnownCloudUpdatedAtRef.current ??
+                                    readCloudRevision(
+                                        userId,
+                                    );
+
+                                /*
+                                 * Antes de subir los datos locales, comprobamos
+                                 * que Alexa u otro dispositivo no haya guardado
+                                 * una versión más reciente en la nube.
+                                 *
+                                 * Esto evita que una copia local antigua
+                                 * sobrescriba la nota registrada por voz.
+                                 */
+                                if (knownUpdatedAt) {
+                                    const cloudSnapshot =
+                                        await getAcademicSnapshot(
+                                            userId,
+                                        );
+
+                                    if (
+                                        cloudSnapshot &&
+                                        cloudSnapshot.updatedAt !==
+                                        knownUpdatedAt
+                                    ) {
+                                        replaceAccountAcademicData(
+                                            userId,
+                                            cloudSnapshot.academicData,
+                                        );
+
+                                        clearAccountStorageDirty(
+                                            userId,
+                                            dirtyMarker,
+                                        );
+
+                                        lastKnownCloudUpdatedAtRef.current =
+                                            cloudSnapshot.updatedAt;
+
+                                        saveCloudRevision(
+                                            userId,
+                                            cloudSnapshot.updatedAt,
+                                        );
+
+                                        window.location.reload();
+                                        return;
+                                    }
+                                }
 
                                 const academicData =
                                     readAccountAcademicData(
@@ -418,10 +466,7 @@ export const AcademicSyncGate = ({
             async (): Promise<void> => {
                 if (
                     isChecking ||
-                    isDisposed ||
-                    hasAccountStorageDirtyChanges(
-                        userId,
-                    )
+                    isDisposed
                 ) {
                     return;
                 }
@@ -467,9 +512,25 @@ export const AcademicSyncGate = ({
                         return;
                     }
 
+                    const dirtyMarker =
+                        getAccountStorageDirtyMarker(
+                            userId,
+                        );
+
                     replaceAccountAcademicData(
                         userId,
                         cloudSnapshot.academicData,
+                    );
+
+                    /*
+                     * La versión de la nube ya fue aplicada.
+                     * Quitamos una marca local pendiente para impedir
+                     * que, después de recargar, se vuelva a subir la
+                     * versión anterior y se pierda el cambio de Alexa.
+                     */
+                    clearAccountStorageDirty(
+                        userId,
+                        dirtyMarker,
                     );
 
                     lastKnownCloudUpdatedAtRef.current =
