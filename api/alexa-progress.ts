@@ -529,6 +529,23 @@ const handleGetRequest =
                     inProgressSubjects:
                         inProgressSubjects.length,
 
+                    inProgressSubjectDetails:
+                        inProgressSubjects.map(
+                            (
+                                subject:
+                                    Subject,
+                            ) => ({
+                                code:
+                                    subject.code,
+
+                                name:
+                                    subject.name,
+
+                                credits:
+                                    subject.credits,
+                            }),
+                        ),
+
                     pendingSubjects:
                         pendingSubjects.length,
 
