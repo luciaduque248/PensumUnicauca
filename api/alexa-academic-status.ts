@@ -5,14 +5,14 @@ import {
 
 import {
     curriculum,
-} from "../src/data/curriculum.ts";
+} from "../src/data/curriculum.js";
 
 import type {
     CurriculumSection,
     RepeatLevel,
     Subject,
     SubjectStatus,
-} from "../src/types/curriculum.ts";
+} from "../src/types/curriculum.js";
 
 interface AcademicSnapshotRow {
     academic_data: unknown;
