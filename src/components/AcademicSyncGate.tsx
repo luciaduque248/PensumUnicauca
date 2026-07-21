@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
+
 import {
     useCallback,
     useEffect,
@@ -35,11 +36,22 @@ interface AcademicSyncGateProps {
     children: ReactNode;
 }
 
+/*
+ * Espera después del último cambio antes
+ * de guardar el snapshot en Supabase.
+ */
 const SAVE_DELAY_MS =
-    1200;
+    1500;
 
-const CLOUD_REFRESH_INTERVAL_MS =
-    5000;
+/*
+ * Verificación de seguridad.
+ *
+ * Si por alguna razón un evento de cambio no produjo
+ * el guardado esperado, se vuelve a intentar mientras
+ * exista una marca local pendiente.
+ */
+const SAFETY_SAVE_INTERVAL_MS =
+    10000;
 
 const CLOUD_REVISION_PREFIX =
     "pensum-account-cloud-revision:";
@@ -48,16 +60,6 @@ const getCloudRevisionKey = (
     userId: string,
 ): string => {
     return `${CLOUD_REVISION_PREFIX}${userId}`;
-};
-
-const readCloudRevision = (
-    userId: string,
-): string | null => {
-    return window.sessionStorage.getItem(
-        getCloudRevisionKey(
-            userId,
-        ),
-    );
 };
 
 const saveCloudRevision = (
@@ -101,29 +103,31 @@ export const AcademicSyncGate = ({
                 ),
         );
 
-    const lastKnownCloudUpdatedAtRef =
-        useRef<string | null>(
-            user
-                ? readCloudRevision(
-                    user.id,
-                )
-                : null,
-        );
-
+    /*
+     * Serializa los guardados.
+     *
+     * Si el usuario hace varios cambios seguidos,
+     * cada guardado espera al anterior.
+     */
     const saveQueueRef =
         useRef<Promise<void>>(
             Promise.resolve(),
         );
 
-    useEffect(() => {
-        lastKnownCloudUpdatedAtRef.current =
-            user
-                ? readCloudRevision(
-                    user.id,
-                )
-                : null;
-    }, [user]);
+    /*
+     * Evita interpretar la hidratación inicial
+     * desde Supabase como una edición del usuario.
+     */
+    const isHydratingFromCloudRef =
+        useRef(false);
 
+    /*
+     * Guarda el snapshot local actual en Supabase.
+     *
+     * Esta función nunca consulta primero la nube,
+     * nunca reemplaza localStorage y nunca recarga
+     * la página.
+     */
     const queueLocalSave =
         useCallback(
             (
@@ -137,59 +141,28 @@ export const AcademicSyncGate = ({
                         )
                         .then(
                             async () => {
+                                /*
+                                 * Puede haberse limpiado la marca
+                                 * mientras la tarea esperaba en cola.
+                                 */
+                                if (
+                                    !hasAccountStorageDirtyChanges(
+                                        userId,
+                                    )
+                                ) {
+                                    return;
+                                }
+
                                 const dirtyMarker =
                                     getAccountStorageDirtyMarker(
                                         userId,
                                     );
 
-                                const knownUpdatedAt =
-                                    lastKnownCloudUpdatedAtRef.current ??
-                                    readCloudRevision(
-                                        userId,
-                                    );
-
                                 /*
-                                 * Antes de subir los datos locales, comprobamos
-                                 * que Alexa u otro dispositivo no haya guardado
-                                 * una versión más reciente en la nube.
-                                 *
-                                 * Esto evita que una copia local antigua
-                                 * sobrescriba la nota registrada por voz.
+                                 * Se lee localStorage justo antes
+                                 * de guardar para obtener el último
+                                 * estado realizado por el estudiante.
                                  */
-                                if (knownUpdatedAt) {
-                                    const cloudSnapshot =
-                                        await getAcademicSnapshot(
-                                            userId,
-                                        );
-
-                                    if (
-                                        cloudSnapshot &&
-                                        cloudSnapshot.updatedAt !==
-                                        knownUpdatedAt
-                                    ) {
-                                        replaceAccountAcademicData(
-                                            userId,
-                                            cloudSnapshot.academicData,
-                                        );
-
-                                        clearAccountStorageDirty(
-                                            userId,
-                                            dirtyMarker,
-                                        );
-
-                                        lastKnownCloudUpdatedAtRef.current =
-                                            cloudSnapshot.updatedAt;
-
-                                        saveCloudRevision(
-                                            userId,
-                                            cloudSnapshot.updatedAt,
-                                        );
-
-                                        window.location.reload();
-                                        return;
-                                    }
-                                }
-
                                 const academicData =
                                     readAccountAcademicData(
                                         userId,
@@ -201,14 +174,20 @@ export const AcademicSyncGate = ({
                                         academicData,
                                     );
 
-                                lastKnownCloudUpdatedAtRef.current =
-                                    updatedAt;
-
                                 saveCloudRevision(
                                     userId,
                                     updatedAt,
                                 );
 
+                                /*
+                                 * clearAccountStorageDirty debe limpiar
+                                 * solamente la marca que corresponde al
+                                 * snapshot recién guardado.
+                                 *
+                                 * Si el usuario realizó otro cambio mientras
+                                 * Supabase respondía, la nueva marca permanece
+                                 * y se ejecutará otro guardado.
+                                 */
                                 clearAccountStorageDirty(
                                     userId,
                                     dirtyMarker,
@@ -224,21 +203,38 @@ export const AcademicSyncGate = ({
             [],
         );
 
+    /*
+     * Carga inicial de la cuenta.
+     *
+     * Supabase solo puede reemplazar localStorage antes de
+     * mostrar la aplicación y únicamente cuando no hay una
+     * edición local pendiente.
+     */
     useEffect(() => {
         if (!user) {
-            setIsReady(true);
+            setIsReady(
+                true,
+            );
+
             return;
         }
 
         const userId =
             user.id;
 
+        /*
+         * Durante esta sesión ya se realizó la carga inicial.
+         *
+         * A partir de aquí localStorage es la fuente principal.
+         */
         if (
             hasAccountInitialSyncLoaded(
                 userId,
             )
         ) {
-            setIsReady(true);
+            setIsReady(
+                true,
+            );
 
             if (
                 hasAccountStorageDirtyChanges(
@@ -248,7 +244,9 @@ export const AcademicSyncGate = ({
                 void queueLocalSave(
                     userId,
                 ).catch(
-                    (error) => {
+                    (
+                        error,
+                    ) => {
                         logSyncError(
                             "No fue posible guardar los cambios pendientes.",
                             error,
@@ -263,11 +261,17 @@ export const AcademicSyncGate = ({
         let isActive =
             true;
 
-        setIsReady(false);
+        setIsReady(
+            false,
+        );
 
         const initializeAccount =
             async (): Promise<void> => {
                 try {
+                    /*
+                     * Si ya hay una modificación local pendiente,
+                     * esa información tiene prioridad sobre Supabase.
+                     */
                     if (
                         hasAccountStorageDirtyChanges(
                             userId,
@@ -285,23 +289,53 @@ export const AcademicSyncGate = ({
                             userId,
                         );
 
-                    if (cloudSnapshot) {
-                        lastKnownCloudUpdatedAtRef.current =
-                            cloudSnapshot.updatedAt;
+                    if (
+                        cloudSnapshot
+                    ) {
+                        /*
+                         * La hidratación ocurre mientras children todavía
+                         * no se renderiza. Por eso no se ve un parpadeo.
+                         */
+                        isHydratingFromCloudRef.current =
+                            true;
 
-                        saveCloudRevision(
-                            userId,
-                            cloudSnapshot.updatedAt,
-                        );
+                        try {
+                            replaceAccountAcademicData(
+                                userId,
+                                cloudSnapshot.academicData,
+                            );
 
-                        replaceAccountAcademicData(
-                            userId,
-                            cloudSnapshot.academicData,
-                        );
+                            /*
+                             * La escritura de datos provenientes de Supabase
+                             * no debe quedar marcada como edición local.
+                             */
+                            const cloudDirtyMarker =
+                                getAccountStorageDirtyMarker(
+                                    userId,
+                                );
+
+                            clearAccountStorageDirty(
+                                userId,
+                                cloudDirtyMarker,
+                            );
+
+                            saveCloudRevision(
+                                userId,
+                                cloudSnapshot.updatedAt,
+                            );
+                        } finally {
+                            isHydratingFromCloudRef.current =
+                                false;
+                        }
 
                         return;
                     }
 
+                    /*
+                     * Si Supabase todavía no tiene snapshot, pero el
+                     * navegador sí tiene información, se crea la copia
+                     * inicial sin modificar la interfaz.
+                     */
                     const localAcademicData =
                         readAccountAcademicData(
                             userId,
@@ -310,13 +344,23 @@ export const AcademicSyncGate = ({
                     if (
                         Object.keys(
                             localAcademicData,
-                        ).length > 0
+                        ).length >
+                        0
                     ) {
-                        await queueLocalSave(
+                        const updatedAt =
+                            await saveAcademicSnapshot(
+                                userId,
+                                localAcademicData,
+                            );
+
+                        saveCloudRevision(
                             userId,
+                            updatedAt,
                         );
                     }
-                } catch (error) {
+                } catch (
+                error
+                ) {
                     logSyncError(
                         "No fue posible realizar la carga inicial.",
                         error,
@@ -326,8 +370,12 @@ export const AcademicSyncGate = ({
                         userId,
                     );
 
-                    if (isActive) {
-                        setIsReady(true);
+                    if (
+                        isActive
+                    ) {
+                        setIsReady(
+                            true,
+                        );
                     }
                 }
             };
@@ -343,6 +391,12 @@ export const AcademicSyncGate = ({
         queueLocalSave,
     ]);
 
+    /*
+     * Sincronización localStorage → Supabase.
+     *
+     * Mientras la aplicación está abierta no existe
+     * sincronización automática Supabase → localStorage.
+     */
     useEffect(() => {
         if (
             !user ||
@@ -358,6 +412,22 @@ export const AcademicSyncGate = ({
             number | null =
             null;
 
+        const runSave =
+            (): void => {
+                void queueLocalSave(
+                    userId,
+                ).catch(
+                    (
+                        error,
+                    ) => {
+                        logSyncError(
+                            "No fue posible guardar los cambios automáticos.",
+                            error,
+                        );
+                    },
+                );
+            };
+
         const scheduleSave =
             (): void => {
                 if (
@@ -369,19 +439,23 @@ export const AcademicSyncGate = ({
                     );
                 }
 
+                /*
+                 * Cada nuevo cambio reinicia el contador.
+                 *
+                 * Por ejemplo, al hacer:
+                 *
+                 * R1 → R2 → R3
+                 *
+                 * se guarda finalmente R3, sin interrumpir
+                 * los clics intermedios.
+                 */
                 saveTimer =
                     window.setTimeout(
                         () => {
-                            void queueLocalSave(
-                                userId,
-                            ).catch(
-                                (error) => {
-                                    logSyncError(
-                                        "No fue posible guardar los cambios automáticos.",
-                                        error,
-                                    );
-                                },
-                            );
+                            saveTimer =
+                                null;
+
+                            runSave();
                         },
                         SAVE_DELAY_MS,
                     );
@@ -403,13 +477,90 @@ export const AcademicSyncGate = ({
                 return;
             }
 
+            /*
+             * Ignora eventos generados durante
+             * la hidratación inicial.
+             */
+            if (
+                isHydratingFromCloudRef.current
+            ) {
+                return;
+            }
+
             scheduleSave();
         };
+
+        /*
+         * Al ocultar la pestaña se intenta guardar inmediatamente,
+         * pero nunca se trae una copia remota ni se recarga.
+         */
+        const handleVisibilityChange =
+            (): void => {
+                if (
+                    document.visibilityState !==
+                    "hidden"
+                ) {
+                    return;
+                }
+
+                if (
+                    hasAccountStorageDirtyChanges(
+                        userId,
+                    )
+                ) {
+                    runSave();
+                }
+            };
+
+        /*
+         * pagehide también cubre algunos cierres,
+         * navegaciones y cambios de página.
+         */
+        const handlePageHide =
+            (): void => {
+                if (
+                    hasAccountStorageDirtyChanges(
+                        userId,
+                    )
+                ) {
+                    runSave();
+                }
+            };
 
         window.addEventListener(
             ACADEMIC_STORAGE_CHANGED_EVENT,
             handleStorageChanged,
         );
+
+        document.addEventListener(
+            "visibilitychange",
+            handleVisibilityChange,
+        );
+
+        window.addEventListener(
+            "pagehide",
+            handlePageHide,
+        );
+
+        /*
+         * No consulta Supabase.
+         *
+         * Solo reintenta guardar si todavía existe
+         * una modificación local pendiente.
+         */
+        const safetyIntervalId =
+            window.setInterval(
+                () => {
+                    if (
+                        hasAccountStorageDirtyChanges(
+                            userId,
+                        )
+                    ) {
+                        runSave();
+                    }
+                },
+                SAFETY_SAVE_INTERVAL_MS,
+            );
 
         if (
             hasAccountStorageDirtyChanges(
@@ -423,6 +574,20 @@ export const AcademicSyncGate = ({
             window.removeEventListener(
                 ACADEMIC_STORAGE_CHANGED_EVENT,
                 handleStorageChanged,
+            );
+
+            document.removeEventListener(
+                "visibilitychange",
+                handleVisibilityChange,
+            );
+
+            window.removeEventListener(
+                "pagehide",
+                handlePageHide,
+            );
+
+            window.clearInterval(
+                safetyIntervalId,
             );
 
             if (
@@ -440,178 +605,9 @@ export const AcademicSyncGate = ({
         queueLocalSave,
     ]);
 
-    /*
-     * Alexa modifica el snapshot directamente en Supabase.
-     * Esta verificación trae esos cambios al navegador sin
-     * obligar al usuario a cerrar sesión o limpiar datos.
-     */
-    useEffect(() => {
-        if (
-            !user ||
-            !isReady
-        ) {
-            return;
-        }
-
-        const userId =
-            user.id;
-
-        let isChecking =
-            false;
-
-        let isDisposed =
-            false;
-
-        const refreshFromCloud =
-            async (): Promise<void> => {
-                if (
-                    isChecking ||
-                    isDisposed
-                ) {
-                    return;
-                }
-
-                isChecking =
-                    true;
-
-                try {
-                    const cloudSnapshot =
-                        await getAcademicSnapshot(
-                            userId,
-                        );
-
-                    if (
-                        !cloudSnapshot ||
-                        isDisposed
-                    ) {
-                        return;
-                    }
-
-                    const knownUpdatedAt =
-                        lastKnownCloudUpdatedAtRef.current ??
-                        readCloudRevision(
-                            userId,
-                        );
-
-                    if (!knownUpdatedAt) {
-                        lastKnownCloudUpdatedAtRef.current =
-                            cloudSnapshot.updatedAt;
-
-                        saveCloudRevision(
-                            userId,
-                            cloudSnapshot.updatedAt,
-                        );
-
-                        return;
-                    }
-
-                    if (
-                        cloudSnapshot.updatedAt ===
-                        knownUpdatedAt
-                    ) {
-                        return;
-                    }
-
-                    const dirtyMarker =
-                        getAccountStorageDirtyMarker(
-                            userId,
-                        );
-
-                    replaceAccountAcademicData(
-                        userId,
-                        cloudSnapshot.academicData,
-                    );
-
-                    /*
-                     * La versión de la nube ya fue aplicada.
-                     * Quitamos una marca local pendiente para impedir
-                     * que, después de recargar, se vuelva a subir la
-                     * versión anterior y se pierda el cambio de Alexa.
-                     */
-                    clearAccountStorageDirty(
-                        userId,
-                        dirtyMarker,
-                    );
-
-                    lastKnownCloudUpdatedAtRef.current =
-                        cloudSnapshot.updatedAt;
-
-                    saveCloudRevision(
-                        userId,
-                        cloudSnapshot.updatedAt,
-                    );
-
-                    window.location.reload();
-                } catch (error) {
-                    logSyncError(
-                        "No fue posible revisar cambios realizados desde Alexa.",
-                        error,
-                    );
-                } finally {
-                    isChecking =
-                        false;
-                }
-            };
-
-        const handleWindowFocus =
-            (): void => {
-                void refreshFromCloud();
-            };
-
-        const handleVisibilityChange =
-            (): void => {
-                if (
-                    document.visibilityState ===
-                    "visible"
-                ) {
-                    void refreshFromCloud();
-                }
-            };
-
-        const intervalId =
-            window.setInterval(
-                () => {
-                    void refreshFromCloud();
-                },
-                CLOUD_REFRESH_INTERVAL_MS,
-            );
-
-        window.addEventListener(
-            "focus",
-            handleWindowFocus,
-        );
-
-        document.addEventListener(
-            "visibilitychange",
-            handleVisibilityChange,
-        );
-
-        void refreshFromCloud();
-
-        return () => {
-            isDisposed =
-                true;
-
-            window.clearInterval(
-                intervalId,
-            );
-
-            window.removeEventListener(
-                "focus",
-                handleWindowFocus,
-            );
-
-            document.removeEventListener(
-                "visibilitychange",
-                handleVisibilityChange,
-            );
-        };
-    }, [
-        user,
-        isReady,
-    ]);
-
-    if (!isReady) {
+    if (
+        !isReady
+    ) {
         return (
             <div
                 className="academic-sync-loading"
