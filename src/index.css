@@ -36,3 +36,36 @@ select,
 textarea {
   font: inherit;
 }
+
+/*
+ * Evita que el resumen de ponderación de cada corte invada
+ * las columnas vecinas. grades.css usa flex + nowrap; aquí
+ * se fuerza una composición vertical contenida por celda.
+ */
+.grades-page .grades-cut-editor__summary {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  justify-content: stretch;
+  gap: 3px;
+  padding: 1px 2px;
+  text-align: left;
+}
+
+.grades-page .grades-cut-editor__summary span,
+.grades-page .grades-cut-editor__summary strong {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.grades-page .grades-cut-editor__summary strong {
+  text-align: left;
+}
