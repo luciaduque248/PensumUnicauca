@@ -1,0 +1,222 @@
+/*
+ * =========================================================
+ * AYUDA DE ALEXA POR APARTADO
+ * =========================================================
+ */
+
+.app-navigation__alexa {
+    width: 100%;
+    min-width: 0;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 9px;
+}
+
+.app-navigation__alexa-summary {
+    display: flex;
+    width: 100%;
+    min-height: 38px;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid #e0e7ff;
+    border-radius: 12px;
+    color: #3730a3;
+    background-color: #f8faff;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.app-navigation__alexa-summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-navigation__alexa-summary::after {
+    content: "▾";
+    margin-left: auto;
+    color: #6366f1;
+    font-size: 0.72rem;
+    transition: transform 160ms ease;
+}
+
+.app-navigation__alexa[open] .app-navigation__alexa-summary::after {
+    transform: rotate(180deg);
+}
+
+.app-navigation__alexa-label {
+    flex-shrink: 0;
+    color: #4f46e5;
+    font-size: 0.61rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.app-navigation__alexa-launch {
+    min-width: 0;
+    color: #475569;
+    font-size: 0.62rem;
+    font-weight: 650;
+}
+
+.app-navigation__alexa-launch strong {
+    color: #312e81;
+    font-weight: 850;
+}
+
+.app-navigation__alexa-section {
+    flex-shrink: 0;
+    color: #64748b;
+    font-size: 0.58rem;
+    font-weight: 750;
+}
+
+.app-navigation__alexa-panel {
+    margin-top: 8px;
+    padding: 12px;
+    border: 1px solid #e0e7ff;
+    border-radius: 13px;
+    background:
+        linear-gradient(135deg,
+            rgba(238, 242, 255, 0.92),
+            rgba(255, 255, 255, 0.98));
+    box-shadow: 0 8px 22px rgba(79, 70, 229, 0.08);
+}
+
+.app-navigation__alexa-panel>p {
+    margin: 0 0 9px;
+    color: #475569;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.app-navigation__alexa-commands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.app-navigation__alexa-command {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    padding: 6px 9px;
+    border: 1px solid #c7d2fe;
+    border-radius: 999px;
+    color: #3730a3;
+    background-color: #ffffff;
+    font-size: 0.59rem;
+    font-weight: 750;
+    line-height: 1.35;
+    white-space: normal;
+}
+
+.app-navigation__alexa-note {
+    margin: 10px 0 0 !important;
+    padding-top: 9px;
+    border-top: 1px dashed #c7d2fe;
+    color: #64748b !important;
+    font-size: 0.57rem !important;
+}
+
+.app-navigation__alexa-note strong {
+    color: #4338ca;
+}
+
+/*
+ * Modo oscuro
+ */
+
+html[data-theme="dark"] .app-navigation__alexa {
+    border-top-color: #334155;
+}
+
+html[data-theme="dark"] .app-navigation__alexa-summary {
+    color: #e0e7ff;
+    border-color: #4338ca;
+    background-color: rgba(49, 46, 129, 0.28);
+}
+
+html[data-theme="dark"] .app-navigation__alexa-label,
+html[data-theme="dark"] .app-navigation__alexa-summary::after {
+    color: #a5b4fc;
+}
+
+html[data-theme="dark"] .app-navigation__alexa-launch,
+html[data-theme="dark"] .app-navigation__alexa-section {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .app-navigation__alexa-launch strong {
+    color: #e0e7ff;
+}
+
+html[data-theme="dark"] .app-navigation__alexa-panel {
+    border-color: #4338ca;
+    background:
+        linear-gradient(135deg,
+            rgba(49, 46, 129, 0.32),
+            rgba(15, 23, 42, 0.98));
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="dark"] .app-navigation__alexa-panel>p,
+html[data-theme="dark"] .app-navigation__alexa-note {
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .app-navigation__alexa-command {
+    color: #e0e7ff;
+    border-color: #4f46e5;
+    background-color: #1e1b4b;
+}
+
+html[data-theme="dark"] .app-navigation__alexa-note {
+    border-top-color: #4338ca;
+}
+
+html[data-theme="dark"] .app-navigation__alexa-note strong {
+    color: #c7d2fe;
+}
+
+/*
+ * Responsive
+ */
+
+@media (max-width: 700px) {
+    .app-navigation__alexa-summary {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 4px 7px;
+        padding: 8px 9px;
+    }
+
+    .app-navigation__alexa-summary::after {
+        align-self: center;
+    }
+
+    .app-navigation__alexa-launch {
+        flex: 1 1 220px;
+        line-height: 1.45;
+    }
+
+    .app-navigation__alexa-section {
+        width: 100%;
+        padding-left: 0;
+    }
+
+    .app-navigation__alexa-panel {
+        padding: 10px;
+    }
+
+    .app-navigation__alexa-commands {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .app-navigation__alexa-command {
+        width: 100%;
+        border-radius: 10px;
+    }
+}
