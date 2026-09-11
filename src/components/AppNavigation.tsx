@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
     LuBookOpen,
     LuCalculator,
@@ -37,39 +39,32 @@ const navigationItems: Array<{
     label: string;
     icon: typeof LuHouse;
 }> = [
-        {
-            view: "home",
-            label: "Inicio",
-            icon: LuHouse,
-        },
-        {
-            view:
-                "academic-life",
-            label:
-                "Vida académica",
-            icon: LuBookOpen,
-        },
-        {
-            view:
-                "student-record",
-            label:
-                "Hoja de vida académica",
-            icon:
-                LuGraduationCap,
-        },
-        {
-            view: "schedule",
-            label: "Horario",
-            icon:
-                LuCalendarDays,
-        },
-        {
-            view: "grades",
-            label: "Notas",
-            icon:
-                LuCalculator,
-        },
-    ];
+    {
+        view: "home",
+        label: "Inicio",
+        icon: LuHouse,
+    },
+    {
+        view: "academic-life",
+        label: "Vida académica",
+        icon: LuBookOpen,
+    },
+    {
+        view: "student-record",
+        label: "Hoja de vida académica",
+        icon: LuGraduationCap,
+    },
+    {
+        view: "schedule",
+        label: "Horario",
+        icon: LuCalendarDays,
+    },
+    {
+        view: "grades",
+        label: "Notas",
+        icon: LuCalculator,
+    },
+];
 
 const alexaCommandsByView: Record<AppView, AlexaCommandSection> = {
     home: {
@@ -144,9 +139,15 @@ const alexaCommandsByView: Record<AppView, AlexaCommandSection> = {
     },
 };
 
-function AppNavigation({
-    currentView,
-}: AppNavigationProps) {
+const heroSelectorByView: Record<AppView, string> = {
+    home: ".home-header",
+    "academic-life": ".header",
+    "student-record": ".student-record-header",
+    schedule: ".schedule-header",
+    grades: ".grades-header",
+};
+
+function AppNavigation({ currentView }: AppNavigationProps) {
     const {
         accessMode,
         accountEmail,
@@ -154,257 +155,233 @@ function AppNavigation({
         showGuestInformation,
     } = useAppAccess();
 
-    const isGuest =
-        accessMode ===
-        "guest";
+    const [alexaPortalTarget, setAlexaPortalTarget] =
+        useState<HTMLElement | null>(null);
 
-    const alexaSection =
-        alexaCommandsByView[
-            currentView
-        ];
+    const isGuest = accessMode === "guest";
+    const alexaSection = alexaCommandsByView[currentView];
 
-    const handleNavigate = (
-        destination: AppView,
-    ): void => {
-        if (
-            destination ===
-            currentView
-        ) {
+    useEffect(() => {
+        let animationFrame = 0;
+        let portalElement: HTMLDivElement | null = null;
+
+        const placeAlexaPanel = () => {
+            const hero = document.querySelector<HTMLElement>(
+                heroSelectorByView[currentView],
+            );
+
+            if (!hero) {
+                animationFrame = window.requestAnimationFrame(placeAlexaPanel);
+                return;
+            }
+
+            document
+                .querySelectorAll(".alexa-commands-portal")
+                .forEach((element) => element.remove());
+
+            portalElement = document.createElement("div");
+            portalElement.className = "alexa-commands-portal";
+            portalElement.dataset.view = currentView;
+
+            hero.insertAdjacentElement("afterend", portalElement);
+            setAlexaPortalTarget(portalElement);
+        };
+
+        animationFrame = window.requestAnimationFrame(placeAlexaPanel);
+
+        return () => {
+            window.cancelAnimationFrame(animationFrame);
+            portalElement?.remove();
+        };
+    }, [currentView]);
+
+    const handleNavigate = (destination: AppView): void => {
+        if (destination === currentView) {
             return;
         }
 
-        const url =
-            new URL(
-                window.location.href,
-            );
+        const url = new URL(window.location.href);
 
-        if (
-            destination ===
-            "home"
-        ) {
-            url.searchParams.delete(
-                "view",
-            );
+        if (destination === "home") {
+            url.searchParams.delete("view");
         } else {
-            url.searchParams.set(
-                "view",
-                destination,
-            );
+            url.searchParams.set("view", destination);
         }
 
-        window.location.href =
-            url.toString();
+        window.location.href = url.toString();
     };
 
-    return (
-        <nav
-            className="app-navigation"
-            aria-label="Navegación principal"
+    const alexaPanel = (
+        <section
+            className="alexa-commands-section"
+            aria-label={`Comandos de Alexa para ${alexaSection.label}`}
         >
-            <div className="app-navigation__content">
-                <div className="app-navigation__top">
-                    <button
-                        className="app-navigation__brand"
-                        type="button"
-                        onClick={() =>
-                            handleNavigate(
-                                "home",
-                            )
-                        }
-                        aria-label="Ir al inicio"
-                    >
-                        <span
-                            className="app-navigation__brand-icon"
-                            aria-hidden="true"
-                        >
-                            <LuGraduationCap />
-                        </span>
+            <div className="alexa-commands-card">
+                <div className="alexa-commands-card__intro">
+                    <span className="alexa-commands-card__logo">
+                        <img
+                            src="/logo_alexa.png"
+                            alt="Logo de Alexa"
+                        />
+                    </span>
 
-                        <span className="app-navigation__brand-copy">
-                            <strong>
-                                Mi pensum
-                            </strong>
-
-                            <small>
-                                Universidad del Cauca
-                            </small>
-                        </span>
-                    </button>
-
-                    <div className="app-navigation__account">
-                        {isGuest ? (
-                            <button
-                                className="app-navigation__identity app-navigation__identity--button"
-                                type="button"
-                                onClick={() =>
-                                    void showGuestInformation()
-                                }
-                                title="Ver condiciones del modo invitado"
-                            >
-                                <span className="app-navigation__identity-icon">
-                                    <LuUser
-                                        aria-hidden="true"
-                                    />
-                                </span>
-
-                                <span className="app-navigation__identity-copy">
-                                    <strong>
-                                        Modo invitado
-                                    </strong>
-
-                                    <small>
-                                        Solo en este navegador
-                                    </small>
-                                </span>
-                            </button>
-                        ) : (
-                            <div className="app-navigation__identity">
-                                <span className="app-navigation__identity-icon">
-                                    <LuUser
-                                        aria-hidden="true"
-                                    />
-                                </span>
-
-                                <span className="app-navigation__identity-copy">
-                                    <strong>
-                                        Cuenta iniciada
-                                    </strong>
-
-                                    <small
-                                        title={
-                                            accountEmail ??
-                                            undefined
-                                        }
-                                    >
-                                        {accountEmail ??
-                                            "Usuario autenticado"}
-                                    </small>
-                                </span>
-                            </div>
-                        )}
-
-                        <button
-                            className="app-navigation__logout"
-                            type="button"
-                            onClick={() =>
-                                void leaveCurrentAccess()
-                            }
-                        >
-                            <LuLogOut
-                                aria-hidden="true"
-                            />
-
-                            <span>
-                                {isGuest
-                                    ? "Cambiar acceso"
-                                    : "Cerrar sesión"}
-                            </span>
-                        </button>
-                    </div>
-                </div>
-
-                <div className="app-navigation__links">
-                    {navigationItems.map(
-                        (
-                            item,
-                        ) => {
-                            const Icon =
-                                item.icon;
-
-                            const isActive =
-                                currentView ===
-                                item.view;
-
-                            return (
-                                <button
-                                    className={`app-navigation__link ${isActive
-                                            ? "app-navigation__link--active"
-                                            : ""
-                                        }`}
-                                    type="button"
-                                    key={
-                                        item.view
-                                    }
-                                    onClick={() =>
-                                        handleNavigate(
-                                            item.view,
-                                        )
-                                    }
-                                    aria-current={
-                                        isActive
-                                            ? "page"
-                                            : undefined
-                                    }
-                                >
-                                    <Icon
-                                        aria-hidden="true"
-                                    />
-
-                                    <span>
-                                        {
-                                            item.label
-                                        }
-                                    </span>
-                                </button>
-                            );
-                        },
-                    )}
-                </div>
-
-                <details className="app-navigation__alexa">
-                    <summary className="app-navigation__alexa-summary">
-                        <span className="app-navigation__alexa-label">
-                            Alexa
-                        </span>
-
-                        <span className="app-navigation__alexa-launch">
-                            Para entrar a Mi pensum di:{" "}
+                    <div className="alexa-commands-card__copy">
+                        <p>Alexa + Mi pensum</p>
+                        <h2>Usa {alexaSection.label} por voz</h2>
+                        <span>
+                            Para entrar a la skill di:
+                            {" "}
                             <strong>
                                 “Alexa, abre progreso académico”
                             </strong>
                         </span>
+                    </div>
+                </div>
 
-                        <span className="app-navigation__alexa-section">
-                            Comandos de {alexaSection.label}
-                        </span>
+                <details className="alexa-commands-card__details">
+                    <summary>
+                        Ver comandos de {alexaSection.label}
                     </summary>
 
-                    <div className="app-navigation__alexa-panel">
+                    <div className="alexa-commands-card__panel">
                         <p>
                             {alexaSection.description}
                             {" "}
-                            Cuando Alexa responda después de abrir la skill, puedes decir cualquiera de estas frases:
+                            Cuando Alexa responda, puedes decir cualquiera de estas frases:
                         </p>
 
-                        <div className="app-navigation__alexa-commands">
-                            {alexaSection.commands.map(
-                                (command) => (
-                                    <span
-                                        className="app-navigation__alexa-command"
-                                        key={command}
-                                    >
-                                        “{command}”
-                                    </span>
-                                ),
-                            )}
+                        <div className="alexa-commands-card__commands">
+                            {alexaSection.commands.map((command) => (
+                                <span
+                                    className="alexa-commands-card__command"
+                                    key={command}
+                                >
+                                    “{command}”
+                                </span>
+                            ))}
                         </div>
 
                         {alexaSection.note && (
-                            <p className="app-navigation__alexa-note">
+                            <p className="alexa-commands-card__note">
                                 {alexaSection.note}
                             </p>
                         )}
 
-                        <p className="app-navigation__alexa-note">
-                            Para terminar la conversación también puedes decir:{" "}
-                            <strong>
-                                “salir de mi pensum”
-                            </strong>.
+                        <p className="alexa-commands-card__note">
+                            Para terminar también puedes decir:
+                            {" "}
+                            <strong>“salir de mi pensum”</strong>.
                         </p>
                     </div>
                 </details>
             </div>
-        </nav>
+        </section>
+    );
+
+    return (
+        <>
+            <nav
+                className="app-navigation"
+                aria-label="Navegación principal"
+            >
+                <div className="app-navigation__content">
+                    <div className="app-navigation__top">
+                        <button
+                            className="app-navigation__brand"
+                            type="button"
+                            onClick={() => handleNavigate("home")}
+                            aria-label="Ir al inicio"
+                        >
+                            <span
+                                className="app-navigation__brand-icon"
+                                aria-hidden="true"
+                            >
+                                <LuGraduationCap />
+                            </span>
+
+                            <span className="app-navigation__brand-copy">
+                                <strong>Mi pensum</strong>
+                                <small>Universidad del Cauca</small>
+                            </span>
+                        </button>
+
+                        <div className="app-navigation__account">
+                            {isGuest ? (
+                                <button
+                                    className="app-navigation__identity app-navigation__identity--button"
+                                    type="button"
+                                    onClick={() => void showGuestInformation()}
+                                    title="Ver condiciones del modo invitado"
+                                >
+                                    <span className="app-navigation__identity-icon">
+                                        <LuUser aria-hidden="true" />
+                                    </span>
+
+                                    <span className="app-navigation__identity-copy">
+                                        <strong>Modo invitado</strong>
+                                        <small>Solo en este navegador</small>
+                                    </span>
+                                </button>
+                            ) : (
+                                <div className="app-navigation__identity">
+                                    <span className="app-navigation__identity-icon">
+                                        <LuUser aria-hidden="true" />
+                                    </span>
+
+                                    <span className="app-navigation__identity-copy">
+                                        <strong>Cuenta iniciada</strong>
+                                        <small title={accountEmail ?? undefined}>
+                                            {accountEmail ?? "Usuario autenticado"}
+                                        </small>
+                                    </span>
+                                </div>
+                            )}
+
+                            <button
+                                className="app-navigation__logout"
+                                type="button"
+                                onClick={() => void leaveCurrentAccess()}
+                            >
+                                <LuLogOut aria-hidden="true" />
+                                <span>
+                                    {isGuest
+                                        ? "Cambiar acceso"
+                                        : "Cerrar sesión"}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="app-navigation__links">
+                        {navigationItems.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = currentView === item.view;
+
+                            return (
+                                <button
+                                    className={`app-navigation__link ${
+                                        isActive
+                                            ? "app-navigation__link--active"
+                                            : ""
+                                    }`}
+                                    type="button"
+                                    key={item.view}
+                                    onClick={() => handleNavigate(item.view)}
+                                    aria-current={isActive ? "page" : undefined}
+                                >
+                                    <Icon aria-hidden="true" />
+                                    <span>{item.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </nav>
+
+            {alexaPortalTarget
+                ? createPortal(alexaPanel, alexaPortalTarget)
+                : null}
+        </>
     );
 }
 
