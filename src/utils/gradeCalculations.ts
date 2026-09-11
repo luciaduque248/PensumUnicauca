@@ -16,16 +16,44 @@ const getPercentageTotal = (
   );
 };
 
+const hasAnyGrade = (
+  cut: GradeCutRecord,
+) => {
+  return cut.activities.some(
+    (activity) =>
+      activity.grade !== null,
+  );
+};
+
+const hasAllGrades = (
+  cut: GradeCutRecord,
+) => {
+  return (
+    cut.activities.length > 0 &&
+    cut.activities.every(
+      (activity) =>
+        activity.grade !== null,
+    )
+  );
+};
+
+/*
+ * Devuelve el aporte ponderado de las actividades del bloque.
+ *
+ * En el esquema SIMCA usado por la materia:
+ * - Corte 1 y Corte 2 comparten entre ambos el 100 % del
+ *   componente que vale 70 % de la definitiva.
+ * - Corte 3 distribuye el 100 % del componente que vale 30 %.
+ *
+ * Por ejemplo:
+ * Corte 1: nota 1.8 con 50 % -> 1.8 * 0.50 = 0.90
+ * Corte 2: nota 0.0 con 50 % -> 0.00
+ * Componente 70 %: (0.90 + 0.00) * 0.70 = 0.63
+ */
 export const calculateCutGrade = (
   cut: GradeCutRecord,
 ): number | null => {
-  const hasAtLeastOneGrade =
-    cut.activities.some(
-      (activity) =>
-        activity.grade !== null,
-    );
-
-  if (!hasAtLeastOneGrade) {
+  if (!hasAnyGrade(cut)) {
     return null;
   }
 
@@ -55,10 +83,30 @@ export const isCutComplete = (
     Math.abs(
       percentageTotal - 100,
     ) < 0.0001 &&
-    cut.activities.length > 0 &&
-    cut.activities.every(
-      (activity) =>
-        activity.grade !== null,
+    hasAllGrades(cut)
+  );
+};
+
+const isPreviousComponentComplete = (
+  record: SubjectGradeRecord,
+) => {
+  const percentageTotal =
+    getPercentageTotal(
+      record.cuts.first,
+    ) +
+    getPercentageTotal(
+      record.cuts.second,
+    );
+
+  return (
+    Math.abs(
+      percentageTotal - 100,
+    ) < 0.0001 &&
+    hasAllGrades(
+      record.cuts.first,
+    ) &&
+    hasAllGrades(
+      record.cuts.second,
     )
   );
 };
@@ -69,10 +117,7 @@ export const hasRegisteredGrades = (
   return Object.values(
     record.cuts,
   ).some((cut) =>
-    cut.activities.some(
-      (activity) =>
-        activity.grade !== null,
-    ),
+    hasAnyGrade(cut),
   );
 };
 
@@ -87,13 +132,8 @@ export const roundGradeToTwoDecimals = (
 
 /*
  * Aproximación institucional a una décima:
- *
  * - Si la centésima es 5 o mayor, sube la décima.
  * - Si es menor que 5, se conserva la décima.
- *
- * Las notas manejadas por la aplicación son positivas,
- * por lo que esta operación implementa el redondeo
- * aritmético hacia arriba en los casos terminados en 5.
  */
 export const roundGradeToOfficialTenth = (
   value: number,
@@ -152,13 +192,20 @@ export const calculateSubjectGrade = (
     firstCutGrade !== null ||
     secondCutGrade !== null;
 
+  /*
+   * firstCutGrade y secondCutGrade ya traen aplicada la
+   * ponderación de cada actividad (50 %, 50 %, etc.).
+   * Por eso NO se vuelve a multiplicar por firstCutShare /
+   * secondCutShare. Hacerlo produciría el error 0.32 observado.
+   */
   const previousNote =
-    firstCutGrade !== null &&
-      secondCutGrade !== null
-      ? firstCutGrade *
-      (record.firstCutShare / 100) +
-      secondCutGrade *
-      (record.secondCutShare / 100)
+    hasPreviousGrade
+      ? (
+        firstCutGrade ?? 0
+      ) +
+      (
+        secondCutGrade ?? 0
+      )
       : null;
 
   const previousNoteOfficial =
@@ -168,23 +215,11 @@ export const calculateSubjectGrade = (
         previousNote,
       );
 
-  const firstCutContribution =
-    firstCutGrade === null
-      ? 0
-      : firstCutGrade *
-      (record.firstCutShare / 100) *
-      PREVIOUS_NOTE_WEIGHT;
-
-  const secondCutContribution =
-    secondCutGrade === null
-      ? 0
-      : secondCutGrade *
-      (record.secondCutShare / 100) *
-      PREVIOUS_NOTE_WEIGHT;
-
   const previousContributionExactValue =
-    firstCutContribution +
-    secondCutContribution;
+    previousNote === null
+      ? 0
+      : previousNote *
+      PREVIOUS_NOTE_WEIGHT;
 
   const previousContributionOfficial =
     previousNoteOfficial === null
@@ -211,24 +246,16 @@ export const calculateSubjectGrade = (
       : thirdCutOfficial *
       FINAL_NOTE_WEIGHT;
 
-  const hasAnyGrade =
+  const hasAnySubjectGrade =
     hasPreviousGrade ||
     thirdCutGrade !== null;
 
   const accumulatedGrade =
-    hasAnyGrade
+    hasAnySubjectGrade
       ? previousContributionExactValue +
       thirdContributionExactValue
       : null;
 
-  /*
-   * La primera columna calculada debe conservar dos decimales.
-   * La aproximación institucional a una décima se realiza
-   * después, usando exactamente ese valor de dos decimales.
-   *
-   * Ejemplo solicitado:
-   * 4.445 -> 4.45 -> 4.5
-   */
   const accumulatedTwoDecimals =
     accumulatedGrade === null
       ? null
@@ -240,20 +267,12 @@ export const calculateSubjectGrade = (
     accumulatedTwoDecimals;
 
   const isComplete =
-    isCutComplete(
-      record.cuts.first,
-    ) &&
-    isCutComplete(
-      record.cuts.second,
+    isPreviousComponentComplete(
+      record,
     ) &&
     isCutComplete(
       record.cuts.third,
-    ) &&
-    Math.abs(
-      record.firstCutShare +
-      record.secondCutShare -
-      100,
-    ) < 0.0001;
+    );
 
   return {
     firstCutGrade,
@@ -288,7 +307,6 @@ export const calculateSubjectGrade = (
     thirdContributionOfficial,
 
     accumulatedGrade,
-
     accumulatedTwoDecimals,
 
     officialCalculationBase,
