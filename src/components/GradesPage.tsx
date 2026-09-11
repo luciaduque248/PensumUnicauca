@@ -105,13 +105,24 @@ const getCutPercentageTotal = (activities: GradeActivity[]) =>
     activities.reduce((total, activity) => total + activity.percentage, 0),
   );
 
-const getAvailablePercentageToAdd = (activities: GradeActivity[]) => {
-  const primaryPercentage = activities[0]?.percentage ?? 0;
-  const total = getCutPercentageTotal(activities);
+const getPreviousComponentTotal = (record: SubjectGradeRecord) =>
+  roundPercentage(
+    getCutPercentageTotal(record.cuts.first.activities) +
+      getCutPercentageTotal(record.cuts.second.activities),
+  );
 
-  if (total > 100) {
-    return 0;
+const getAvailablePercentageToAdd = (
+  activities: GradeActivity[],
+  cutId: GradeCutId,
+) => {
+  const primaryPercentage = activities[0]?.percentage ?? 0;
+
+  if (cutId !== "third") {
+    return primaryPercentage;
   }
+
+  const total = getCutPercentageTotal(activities);
+  if (total > 100) return 0;
 
   const unassignedPercentage = Math.max(0, roundPercentage(100 - total));
   return roundPercentage(unassignedPercentage + primaryPercentage);
@@ -209,6 +220,7 @@ function GradesPage({
       subject.code,
       gradeRecords[subject.code],
     );
+
     return {
       subject,
       record,
@@ -249,6 +261,7 @@ function GradesPage({
   const saveRecord = (subjectCode: string, record: SubjectGradeRecord) => {
     onSubjectGradeRecordChange(subjectCode, {
       ...record,
+      weightingVersion: 2,
       updatedAt: new Date().toISOString(),
     });
   };
@@ -297,7 +310,13 @@ function GradesPage({
     if (rawValue === "") return;
 
     const parsedPercentage = Number(rawValue);
-    if (!Number.isFinite(parsedPercentage) || parsedPercentage > 100) return;
+    if (
+      !Number.isFinite(parsedPercentage) ||
+      parsedPercentage < 0 ||
+      parsedPercentage > 100
+    ) {
+      return;
+    }
 
     const currentRecord = normalizeSubjectGradeRecord(
       subjectCode,
@@ -314,8 +333,6 @@ function GradesPage({
     const targetActivity = currentActivities[targetIndex];
 
     if (targetIndex === 0) {
-      if (parsedPercentage < 0) return;
-
       currentActivities[0] = {
         ...primaryActivity,
         percentage: roundPercentage(parsedPercentage),
@@ -372,23 +389,24 @@ function GradesPage({
     const currentActivities = currentRecord.cuts[cutId].activities;
     const primaryActivity = currentActivities[0];
     const currentTotal = getCutPercentageTotal(currentActivities);
-    const unassignedPercentage = Math.max(
-      0,
-      roundPercentage(100 - currentTotal),
+    const previousComponentTotal = getPreviousComponentTotal(currentRecord);
+    const unassignedPercentage =
+      cutId === "third"
+        ? Math.max(0, roundPercentage(100 - currentTotal))
+        : 0;
+    const availablePercentage = getAvailablePercentageToAdd(
+      currentActivities,
+      cutId,
     );
-    const availablePercentage = getAvailablePercentageToAdd(currentActivities);
 
     if (!primaryActivity || availablePercentage <= 0) {
       await Swal.fire({
         icon: "info",
-        title:
-          currentTotal > 100
-            ? "El corte supera el 100 %"
-            : "El corte ya distribuyó el 100 %",
+        title: "No hay porcentaje disponible",
         text:
-          currentTotal > 100
-            ? "Reduce el porcentaje del Parcial o de otro ítem hasta que el total vuelva a 100 % o menos."
-            : "Reduce el porcentaje de uno de los ítems o elimina uno antes de añadir otra actividad.",
+          cutId === "third"
+            ? "Reduce el porcentaje del Parcial o de otro ítem antes de añadir una nueva actividad."
+            : "Reduce el porcentaje del Parcial de este corte antes de añadir otra actividad. Corte 1 y Corte 2 comparten el componente del 70 %.",
         confirmButtonText: "Entendido",
         confirmButtonColor: "#4f46e5",
       });
@@ -417,7 +435,11 @@ function GradesPage({
           </label>
 
           <label class="grades-activity-modal__field" for="grades-activity-percentage">
-            <span>Porcentaje dentro del corte</span>
+            <span>${
+              cutId === "third"
+                ? "Porcentaje dentro del componente del 30 %"
+                : "Porcentaje dentro del componente del 70 %"
+            }</span>
             <div class="grades-activity-modal__percentage-row">
               <input
                 id="grades-activity-percentage"
@@ -435,9 +457,11 @@ function GradesPage({
           <p class="grades-activity-modal__help">
             Disponible para asignar: <strong>${formatPercentage(availablePercentage)} %</strong>.
             ${
-              unassignedPercentage > 0
-                ? `Primero se usarán los ${formatPercentage(unassignedPercentage)} % que faltan por asignar; si eliges más, el resto se descontará del Parcial.`
-                : "El porcentaje se descontará automáticamente del Parcial."
+              cutId === "third"
+                ? unassignedPercentage > 0
+                  ? `Primero se usarán los ${formatPercentage(unassignedPercentage)} % que faltan por asignar; si eliges más, el resto se descontará del Parcial.`
+                  : "El porcentaje se descontará automáticamente del Parcial."
+                : `Se descontará del Parcial de este corte para conservar su peso actual. Corte 1 + Corte 2 deben sumar 100 % del componente del 70 %. Actualmente suman ${formatPercentage(previousComponentTotal)} %.`
             }
           </p>
         </div>
@@ -491,10 +515,13 @@ function GradesPage({
 
     if (!result.isConfirmed || !result.value) return;
 
-    const amountTakenFromPrimary = Math.max(
-      0,
-      roundPercentage(result.value.percentage - unassignedPercentage),
-    );
+    const amountTakenFromPrimary =
+      cutId === "third"
+        ? Math.max(
+            0,
+            roundPercentage(result.value.percentage - unassignedPercentage),
+          )
+        : result.value.percentage;
 
     const updatedActivities = currentActivities.map((activity, index) =>
       index === 0
@@ -620,7 +647,7 @@ function GradesPage({
               <h1>Notas del semestre</h1>
             </div>
             <p className="grades-header__description">
-              Registra parciales, quices, talleres, trabajos y otras actividades dentro del corte correspondiente. Cada actividad se muestra debajo de la anterior para mantener la tabla organizada verticalmente.
+              Registra parciales, quices, talleres, trabajos y otras actividades respetando la misma ponderación que usa SIMCA.
             </p>
           </div>
 
@@ -648,10 +675,10 @@ function GradesPage({
             <LuCircleAlert />
           </span>
           <div>
-            <p>Distribución por corte</p>
-            <h2>Actividades configurables</h2>
+            <p>Distribución como SIMCA</p>
+            <h2>70 % + 30 % sin doble ponderación</h2>
             <span>
-              El porcentaje del Parcial también es editable. Al agregar un quiz, taller, trabajo u otro ítem, la aplicación usa primero cualquier porcentaje sin asignar y, si hace falta, descuenta el resto del Parcial. El total del corte debe quedar en 100 % para considerarse completo.
+              Corte 1 y Corte 2 reparten entre ambos el 100 % del componente que vale 70 % de la definitiva. Por ejemplo, 50 % + 50 % equivale a 35 % + 35 % de la nota final. Corte 3 reparte el 100 % del componente restante del 30 %.
             </span>
           </div>
         </section>
@@ -695,7 +722,7 @@ function GradesPage({
                 <h2>Registro y acumulado por materia</h2>
               </div>
               <span>
-                Las notas y porcentajes, incluido el Parcial, son editables.
+                Las notas y porcentajes se calculan con la misma estructura 70/30 de SIMCA.
               </span>
             </div>
 
@@ -707,13 +734,13 @@ function GradesPage({
                     <th className="grades-table__code-column">Código</th>
                     <th className="grades-table__subject-column">Materia</th>
                     <th className="grades-table__cut-column">
-                      Corte 1<small>35 % final</small>
+                      Corte 1<small>parte del componente 70 %</small>
                     </th>
                     <th className="grades-table__cut-column">
-                      Corte 2<small>35 % final</small>
+                      Corte 2<small>parte del componente 70 %</small>
                     </th>
                     <th className="grades-table__cut-column">
-                      Corte 3<small>30 % final</small>
+                      Corte 3<small>componente 30 %</small>
                     </th>
                     <th className="grades-table__result-column">
                       Acumulado<small>2 decimales</small>
@@ -728,6 +755,16 @@ function GradesPage({
                 <tbody>
                   {subjectRows.map(({ subject, record, calculation }) => {
                     const hasGrades = hasRegisteredGrades(record);
+                    const firstTotal = getCutPercentageTotal(
+                      record.cuts.first.activities,
+                    );
+                    const secondTotal = getCutPercentageTotal(
+                      record.cuts.second.activities,
+                    );
+                    const previousComponentTotal = roundPercentage(
+                      firstTotal + secondTotal,
+                    );
+
                     const resultStatus = !hasGrades
                       ? "Sin notas"
                       : !calculation.isComplete
@@ -752,8 +789,19 @@ function GradesPage({
                           const percentageTotal = getCutPercentageTotal(activities);
                           const cutGrade = getCutCalculatedGrade(calculation, cutId);
                           const primaryPercentage = activities[0]?.percentage ?? 0;
-                          const availablePercentage =
-                            getAvailablePercentageToAdd(activities);
+                          const availablePercentage = getAvailablePercentageToAdd(
+                            activities,
+                            cutId,
+                          );
+                          const distributionTotal =
+                            cutId === "third"
+                              ? percentageTotal
+                              : previousComponentTotal;
+                          const distributionComplete =
+                            Math.abs(distributionTotal - 100) < 0.0001;
+                          const finalWeight = roundPercentage(
+                            percentageTotal * (cutId === "third" ? 0.3 : 0.7),
+                          );
 
                           return (
                             <td className="grades-table__cut-cell" key={cutId}>
@@ -840,14 +888,18 @@ function GradesPage({
                                 <div className="grades-cut-editor__summary">
                                   <span
                                     className={
-                                      Math.abs(percentageTotal - 100) < 0.0001
+                                      distributionComplete
                                         ? ""
                                         : "grades-cut-editor__percentage-warning"
                                     }
                                   >
-                                    Total: {formatPercentage(percentageTotal)} %
+                                    {cutId === "third"
+                                      ? `Componente: ${formatPercentage(percentageTotal)} %`
+                                      : `Peso: ${formatPercentage(percentageTotal)} % · 70 % total: ${formatPercentage(previousComponentTotal)} %`}
                                   </span>
-                                  <strong>Corte: {formatGrade(cutGrade, 2)}</strong>
+                                  <strong>
+                                    {formatPercentage(finalWeight)} % final · aporte: {formatGrade(cutGrade, 2)}
+                                  </strong>
                                 </div>
 
                                 <button
@@ -863,9 +915,7 @@ function GradesPage({
                                   }
                                   title={
                                     availablePercentage <= 0
-                                      ? percentageTotal > 100
-                                        ? "Reduce los porcentajes hasta volver a 100 % o menos"
-                                        : "El 100 % del corte ya está distribuido"
+                                      ? "Reduce el porcentaje del Parcial para liberar espacio"
                                       : `Agregar actividad al ${CUT_LABELS[cutId]}`
                                   }
                                 >
@@ -906,7 +956,7 @@ function GradesPage({
             </div>
 
             <p className="grades-sheet-note">
-              Los ítems de cada corte se organizan verticalmente. Todos los porcentajes, incluido el del Parcial, pueden modificarse. El total debe quedar en 100 % para completar el corte. El acumulado conserva dos decimales y la nota aproximada aplica la regla institucional a una décima.
+              Corte 1 y Corte 2 comparten el componente del 70 %: sus porcentajes deben sumar 100 %. Corte 3 distribuye por separado el 100 % del componente del 30 %. Así, una nota de 1.8 con peso 50 % en el componente del 70 % aporta 1.8 × 0.50 × 0.70 = 0.63 a la definitiva.
             </p>
           </section>
         )}
