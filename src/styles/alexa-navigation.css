@@ -4,13 +4,30 @@
  * =========================================================
  */
 
+/*
+ * Varias vistas usan un margen superior negativo en su contenido
+ * principal para superponer la primera tarjeta sobre el hero.
+ * Al insertar Alexa entre ambos, ese margen negativo hacía que el
+ * contenido siguiente invadiera la tarjeta de Alexa.
+ *
+ * El portal ahora reserva su propio espacio y el primer bloque que
+ * viene después vuelve al flujo normal de la página.
+ */
 .alexa-commands-portal {
+    display: flow-root;
     width: 100%;
+    padding: 22px 0 24px;
+    position: relative;
+    z-index: 1;
+}
+
+.alexa-commands-portal + * {
+    margin-top: 0 !important;
 }
 
 .alexa-commands-section {
     width: min(1280px, calc(100% - 32px));
-    margin: 22px auto 0;
+    margin: 0 auto;
 }
 
 .alexa-commands-card {
@@ -280,9 +297,12 @@ html[data-theme="dark"] .alexa-commands-card__note strong {
 }
 
 @media (max-width: 700px) {
+    .alexa-commands-portal {
+        padding: 16px 0 20px;
+    }
+
     .alexa-commands-section {
         width: min(100% - 22px, 1280px);
-        margin-top: 16px;
     }
 
     .alexa-commands-card {
