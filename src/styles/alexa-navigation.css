@@ -1,221 +1,330 @@
 /*
  * =========================================================
- * AYUDA DE ALEXA POR APARTADO
+ * AYUDA DE ALEXA DESPUÉS DEL HERO
  * =========================================================
  */
 
-.app-navigation__alexa {
+.alexa-commands-portal {
     width: 100%;
-    min-width: 0;
-    border-top: 1px solid #e2e8f0;
-    padding-top: 9px;
 }
 
-.app-navigation__alexa-summary {
-    display: flex;
-    width: 100%;
-    min-height: 38px;
+.alexa-commands-section {
+    width: min(1280px, calc(100% - 32px));
+    margin: 22px auto 0;
+}
+
+.alexa-commands-card {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(380px, 1.1fr);
     align-items: center;
-    gap: 8px;
-    padding: 7px 10px;
-    border: 1px solid #e0e7ff;
-    border-radius: 12px;
-    color: #3730a3;
-    background-color: #f8faff;
-    cursor: pointer;
-    list-style: none;
-    user-select: none;
+    gap: 24px;
+    padding: 20px 22px;
+    border: 1px solid #dbeafe;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at top left,
+            rgba(186, 230, 253, 0.32),
+            transparent 38%),
+        linear-gradient(135deg,
+            #ffffff,
+            #f8fbff);
+    box-shadow: 0 14px 34px rgba(14, 116, 144, 0.08);
 }
 
-.app-navigation__alexa-summary::-webkit-details-marker {
-    display: none;
+.alexa-commands-card__intro {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 16px;
 }
 
-.app-navigation__alexa-summary::after {
-    content: "▾";
-    margin-left: auto;
-    color: #6366f1;
-    font-size: 0.72rem;
-    transition: transform 160ms ease;
-}
-
-.app-navigation__alexa[open] .app-navigation__alexa-summary::after {
-    transform: rotate(180deg);
-}
-
-.app-navigation__alexa-label {
+.alexa-commands-card__logo {
+    display: grid;
+    width: 72px;
+    height: 72px;
     flex-shrink: 0;
-    color: #4f46e5;
-    font-size: 0.61rem;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid #bae6fd;
+    border-radius: 20px;
+    background-color: #ffffff;
+    box-shadow: 0 10px 26px rgba(14, 165, 233, 0.14);
+}
+
+.alexa-commands-card__logo img {
+    display: block;
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
+}
+
+.alexa-commands-card__copy {
+    min-width: 0;
+}
+
+.alexa-commands-card__copy p {
+    margin: 0 0 5px;
+    color: #0284c7;
+    font-size: 0.65rem;
     font-weight: 900;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 
-.app-navigation__alexa-launch {
-    min-width: 0;
-    color: #475569;
-    font-size: 0.62rem;
-    font-weight: 650;
+.alexa-commands-card__copy h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1rem;
+    font-weight: 850;
+    line-height: 1.25;
 }
 
-.app-navigation__alexa-launch strong {
-    color: #312e81;
+.alexa-commands-card__copy>span {
+    display: block;
+    margin-top: 7px;
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 650;
+    line-height: 1.55;
+}
+
+.alexa-commands-card__copy strong {
+    color: #0c4a6e;
     font-weight: 850;
 }
 
-.app-navigation__alexa-section {
-    flex-shrink: 0;
-    color: #64748b;
-    font-size: 0.58rem;
-    font-weight: 750;
+.alexa-commands-card__details {
+    width: 100%;
+    min-width: 0;
 }
 
-.app-navigation__alexa-panel {
-    margin-top: 8px;
-    padding: 12px;
-    border: 1px solid #e0e7ff;
+.alexa-commands-card__details>summary {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 14px;
+    border: 1px solid #bae6fd;
     border-radius: 13px;
-    background:
-        linear-gradient(135deg,
-            rgba(238, 242, 255, 0.92),
-            rgba(255, 255, 255, 0.98));
-    box-shadow: 0 8px 22px rgba(79, 70, 229, 0.08);
+    color: #075985;
+    background-color: rgba(240, 249, 255, 0.92);
+    font-size: 0.68rem;
+    font-weight: 850;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    transition:
+        border-color 160ms ease,
+        background-color 160ms ease,
+        transform 160ms ease;
 }
 
-.app-navigation__alexa-panel>p {
-    margin: 0 0 9px;
+.alexa-commands-card__details>summary::-webkit-details-marker {
+    display: none;
+}
+
+.alexa-commands-card__details>summary::after {
+    content: "▾";
+    color: #0284c7;
+    font-size: 0.8rem;
+    transition: transform 160ms ease;
+}
+
+.alexa-commands-card__details[open]>summary::after {
+    transform: rotate(180deg);
+}
+
+.alexa-commands-card__details>summary:hover {
+    transform: translateY(-1px);
+    border-color: #7dd3fc;
+    background-color: #f0f9ff;
+}
+
+.alexa-commands-card__panel {
+    margin-top: 10px;
+    padding: 13px;
+    border: 1px solid #e0f2fe;
+    border-radius: 14px;
+    background-color: rgba(255, 255, 255, 0.78);
+}
+
+.alexa-commands-card__panel>p:first-child {
+    margin: 0 0 10px;
     color: #475569;
     font-size: 0.62rem;
     font-weight: 700;
-    line-height: 1.5;
+    line-height: 1.55;
 }
 
-.app-navigation__alexa-commands {
+.alexa-commands-card__commands {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
 
-.app-navigation__alexa-command {
+.alexa-commands-card__command {
     display: inline-flex;
     max-width: 100%;
     align-items: center;
     padding: 6px 9px;
-    border: 1px solid #c7d2fe;
+    border: 1px solid #bae6fd;
     border-radius: 999px;
-    color: #3730a3;
-    background-color: #ffffff;
+    color: #0c4a6e;
+    background-color: #f8fdff;
     font-size: 0.59rem;
     font-weight: 750;
-    line-height: 1.35;
+    line-height: 1.4;
     white-space: normal;
 }
 
-.app-navigation__alexa-note {
+.alexa-commands-card__note {
     margin: 10px 0 0 !important;
     padding-top: 9px;
-    border-top: 1px dashed #c7d2fe;
+    border-top: 1px dashed #bae6fd;
     color: #64748b !important;
     font-size: 0.57rem !important;
+    font-weight: 650;
+    line-height: 1.55;
 }
 
-.app-navigation__alexa-note strong {
-    color: #4338ca;
+.alexa-commands-card__note strong {
+    color: #0369a1;
 }
 
 /*
  * Modo oscuro
  */
 
-html[data-theme="dark"] .app-navigation__alexa {
-    border-top-color: #334155;
+html[data-theme="dark"] .alexa-commands-card {
+    border-color: #164e63;
+    background:
+        radial-gradient(circle at top left,
+            rgba(14, 116, 144, 0.2),
+            transparent 40%),
+        linear-gradient(135deg,
+            #0f172a,
+            #111827);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
 }
 
-html[data-theme="dark"] .app-navigation__alexa-summary {
-    color: #e0e7ff;
-    border-color: #4338ca;
-    background-color: rgba(49, 46, 129, 0.28);
+html[data-theme="dark"] .alexa-commands-card__logo {
+    border-color: #155e75;
+    background-color: #f8fafc;
 }
 
-html[data-theme="dark"] .app-navigation__alexa-label,
-html[data-theme="dark"] .app-navigation__alexa-summary::after {
-    color: #a5b4fc;
+html[data-theme="dark"] .alexa-commands-card__copy p {
+    color: #38bdf8;
 }
 
-html[data-theme="dark"] .app-navigation__alexa-launch,
-html[data-theme="dark"] .app-navigation__alexa-section {
+html[data-theme="dark"] .alexa-commands-card__copy h2 {
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .alexa-commands-card__copy>span {
     color: #cbd5e1;
 }
 
-html[data-theme="dark"] .app-navigation__alexa-launch strong {
-    color: #e0e7ff;
+html[data-theme="dark"] .alexa-commands-card__copy strong {
+    color: #bae6fd;
 }
 
-html[data-theme="dark"] .app-navigation__alexa-panel {
-    border-color: #4338ca;
-    background:
-        linear-gradient(135deg,
-            rgba(49, 46, 129, 0.32),
-            rgba(15, 23, 42, 0.98));
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+html[data-theme="dark"] .alexa-commands-card__details>summary {
+    color: #e0f2fe;
+    border-color: #155e75;
+    background-color: rgba(8, 47, 73, 0.6);
 }
 
-html[data-theme="dark"] .app-navigation__alexa-panel>p,
-html[data-theme="dark"] .app-navigation__alexa-note {
+html[data-theme="dark"] .alexa-commands-card__details>summary::after {
+    color: #38bdf8;
+}
+
+html[data-theme="dark"] .alexa-commands-card__details>summary:hover {
+    border-color: #0e7490;
+    background-color: rgba(14, 116, 144, 0.26);
+}
+
+html[data-theme="dark"] .alexa-commands-card__panel {
+    border-color: #164e63;
+    background-color: rgba(15, 23, 42, 0.76);
+}
+
+html[data-theme="dark"] .alexa-commands-card__panel>p:first-child,
+html[data-theme="dark"] .alexa-commands-card__note {
     color: #cbd5e1 !important;
 }
 
-html[data-theme="dark"] .app-navigation__alexa-command {
-    color: #e0e7ff;
-    border-color: #4f46e5;
-    background-color: #1e1b4b;
+html[data-theme="dark"] .alexa-commands-card__command {
+    color: #e0f2fe;
+    border-color: #155e75;
+    background-color: #082f49;
 }
 
-html[data-theme="dark"] .app-navigation__alexa-note {
-    border-top-color: #4338ca;
+html[data-theme="dark"] .alexa-commands-card__note {
+    border-top-color: #155e75;
 }
 
-html[data-theme="dark"] .app-navigation__alexa-note strong {
-    color: #c7d2fe;
+html[data-theme="dark"] .alexa-commands-card__note strong {
+    color: #7dd3fc;
 }
 
 /*
  * Responsive
  */
 
+@media (max-width: 900px) {
+    .alexa-commands-card {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
 @media (max-width: 700px) {
-    .app-navigation__alexa-summary {
+    .alexa-commands-section {
+        width: min(100% - 22px, 1280px);
+        margin-top: 16px;
+    }
+
+    .alexa-commands-card {
+        padding: 15px;
+        border-radius: 17px;
+    }
+
+    .alexa-commands-card__intro {
         align-items: flex-start;
-        flex-wrap: wrap;
-        gap: 4px 7px;
-        padding: 8px 9px;
+        gap: 12px;
     }
 
-    .app-navigation__alexa-summary::after {
-        align-self: center;
+    .alexa-commands-card__logo {
+        width: 58px;
+        height: 58px;
+        border-radius: 16px;
     }
 
-    .app-navigation__alexa-launch {
-        flex: 1 1 220px;
-        line-height: 1.45;
+    .alexa-commands-card__logo img {
+        width: 44px;
+        height: 44px;
     }
 
-    .app-navigation__alexa-section {
-        width: 100%;
-        padding-left: 0;
+    .alexa-commands-card__copy h2 {
+        font-size: 0.9rem;
     }
 
-    .app-navigation__alexa-panel {
-        padding: 10px;
+    .alexa-commands-card__copy>span {
+        font-size: 0.63rem;
     }
 
-    .app-navigation__alexa-commands {
+    .alexa-commands-card__details>summary {
+        min-height: 42px;
+        padding: 0 12px;
+    }
+
+    .alexa-commands-card__commands {
         display: grid;
         grid-template-columns: 1fr;
     }
 
-    .app-navigation__alexa-command {
+    .alexa-commands-card__command {
         width: 100%;
         border-radius: 10px;
     }
