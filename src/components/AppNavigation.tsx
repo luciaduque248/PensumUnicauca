@@ -8,6 +8,8 @@ import {
     LuUser,
 } from "react-icons/lu";
 
+import "../styles/alexa-navigation.css";
+
 import {
     useAppAccess,
 } from "../hooks/useAppAccess";
@@ -21,6 +23,13 @@ export type AppView =
 
 interface AppNavigationProps {
     currentView: AppView;
+}
+
+interface AlexaCommandSection {
+    label: string;
+    description: string;
+    commands: string[];
+    note?: string;
 }
 
 const navigationItems: Array<{
@@ -62,6 +71,79 @@ const navigationItems: Array<{
         },
     ];
 
+const alexaCommandsByView: Record<AppView, AlexaCommandSection> = {
+    home: {
+        label: "Inicio",
+        description:
+            "Consultas generales que puedes hacer después de abrir la skill.",
+        commands: [
+            "cuál es mi progreso",
+            "cuántos créditos he aprobado",
+            "qué materias tengo en curso",
+            "qué materias tengo matriculadas",
+            "cuál es mi promedio",
+            "cuál es mi situación académica",
+        ],
+    },
+    "academic-life": {
+        label: "Vida académica",
+        description:
+            "Consulta tu avance, créditos y materias actuales.",
+        commands: [
+            "cuál es mi progreso",
+            "cuánto llevo de la carrera",
+            "qué porcentaje llevo",
+            "cuántos créditos he aprobado",
+            "cuántos créditos me faltan",
+            "qué materias tengo en curso",
+            "qué materias tengo matriculadas",
+        ],
+    },
+    "student-record": {
+        label: "Hoja de vida académica",
+        description:
+            "Consulta tu situación reglamentaria y las restricciones registradas.",
+        commands: [
+            "cuál es mi situación académica",
+            "dime mi situación académica",
+            "tengo alguna restricción académica",
+            "estoy en bajo rendimiento",
+            "tengo matrícula condicional",
+            "puedo continuar estudiando",
+        ],
+    },
+    schedule: {
+        label: "Horario",
+        description:
+            "Pregunta por tu horario sincronizado y por la siguiente clase.",
+        commands: [
+            "cuál es mi horario",
+            "qué clases tengo hoy",
+            "qué materias tengo hoy",
+            "cuál es mi próxima clase",
+            "qué clase tengo después",
+            "a qué hora es mi próxima clase",
+            "cuándo es mi siguiente clase",
+        ],
+    },
+    grades: {
+        label: "Notas",
+        description:
+            "Consulta notas, cortes, acumulados y promedio, o registra una calificación.",
+        commands: [
+            "cuál es mi promedio del semestre",
+            "qué materias voy ganando",
+            "cuáles son mis notas de Comunicaciones Digitales",
+            "qué nota tengo en el primer corte de Comunicaciones Digitales",
+            "cuál es el acumulado de Comunicaciones Digitales",
+            "registra 4.2 en el primer corte de Comunicaciones Digitales",
+            "registra 4.5 en Quiz del primer corte de Comunicaciones Digitales",
+        ],
+        note:
+            "En los ejemplos de notas puedes reemplazar Comunicaciones Digitales, el corte, la actividad y la calificación por los datos que necesites.",
+    },
+};
+
 function AppNavigation({
     currentView,
 }: AppNavigationProps) {
@@ -75,6 +157,11 @@ function AppNavigation({
     const isGuest =
         accessMode ===
         "guest";
+
+    const alexaSection =
+        alexaCommandsByView[
+            currentView
+        ];
 
     const handleNavigate = (
         destination: AppView,
@@ -263,6 +350,59 @@ function AppNavigation({
                         },
                     )}
                 </div>
+
+                <details className="app-navigation__alexa">
+                    <summary className="app-navigation__alexa-summary">
+                        <span className="app-navigation__alexa-label">
+                            Alexa
+                        </span>
+
+                        <span className="app-navigation__alexa-launch">
+                            Para entrar a Mi pensum di:{" "}
+                            <strong>
+                                “Alexa, abre progreso académico”
+                            </strong>
+                        </span>
+
+                        <span className="app-navigation__alexa-section">
+                            Comandos de {alexaSection.label}
+                        </span>
+                    </summary>
+
+                    <div className="app-navigation__alexa-panel">
+                        <p>
+                            {alexaSection.description}
+                            {" "}
+                            Cuando Alexa responda después de abrir la skill, puedes decir cualquiera de estas frases:
+                        </p>
+
+                        <div className="app-navigation__alexa-commands">
+                            {alexaSection.commands.map(
+                                (command) => (
+                                    <span
+                                        className="app-navigation__alexa-command"
+                                        key={command}
+                                    >
+                                        “{command}”
+                                    </span>
+                                ),
+                            )}
+                        </div>
+
+                        {alexaSection.note && (
+                            <p className="app-navigation__alexa-note">
+                                {alexaSection.note}
+                            </p>
+                        )}
+
+                        <p className="app-navigation__alexa-note">
+                            Para terminar la conversación también puedes decir:{" "}
+                            <strong>
+                                “salir de mi pensum”
+                            </strong>.
+                        </p>
+                    </div>
+                </details>
             </div>
         </nav>
     );
