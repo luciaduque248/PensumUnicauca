@@ -18,6 +18,13 @@ export interface SubjectGradeRecord {
   firstCutShare: number;
   secondCutShare: number;
 
+  /*
+   * v2: los porcentajes de Corte 1 y Corte 2 se interpretan
+   * conjuntamente dentro del componente del 70 %, como en SIMCA.
+   * Se conserva opcional para migrar registros antiguos.
+   */
+  weightingVersion?: 2;
+
   cuts: Record<
     GradeCutId,
     GradeCutRecord
