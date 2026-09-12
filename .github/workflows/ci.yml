@@ -26,5 +26,8 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Validate Alexa Lambda syntax
+        run: node --check alexa/lambda/index.js
+
       - name: Validate project
         run: npm run check
