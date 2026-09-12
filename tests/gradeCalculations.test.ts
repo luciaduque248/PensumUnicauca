@@ -42,7 +42,10 @@ const record = (
 const roundRequiredContribution = (
   value: number | null,
 ): number => {
-  assert.notEqual(value, null);
+  if (value === null) {
+    throw new Error("Se esperaba una contribución calculada.");
+  }
+
   return roundGradeToTwoDecimals(value);
 };
 
