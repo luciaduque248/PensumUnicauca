@@ -1,302 +1,289 @@
-# Mi Pensum Interactivo
+# Mi Pensum Unicauca
 
-Aplicación web para organizar, consultar y hacer seguimiento al progreso académico del programa de **Ingeniería Electrónica y Telecomunicaciones de la Universidad del Cauca**.
-
-El proyecto permite visualizar el plan de estudios, controlar el estado de cada asignatura, consultar prerrequisitos, organizar el horario, registrar calificaciones y llevar una hoja de vida académica con historial de repitencias.
+Aplicación web para organizar, consultar y hacer seguimiento al progreso académico del programa de **Ingeniería Electrónica y Telecomunicaciones de la Universidad del Cauca**, con autenticación, sincronización en la nube e integración con **Amazon Alexa**.
 
 ## Demo
 
-La aplicación se encuentra desplegada en:
+**Producción:** https://pensum-unicauca.vercel.app
 
-[https://pensum-unicauca.vercel.app](https://pensum-unicauca.vercel.app)
+## Qué resuelve
 
-## Información del programa
-
-- **Programa:** Ingeniería Electrónica y Telecomunicaciones.
-- **Universidad:** Universidad del Cauca.
-- **Duración:** 10 semestres.
-- **Asignaturas:** 58.
-- **Créditos académicos:** 169.
-- **Requisitos adicionales de grado:** ECAES, suficiencia en idioma extranjero y actividad física formativa.
+Mi Pensum centraliza en una sola aplicación información que normalmente queda distribuida entre el plan de estudios, el horario, apuntes personales y cálculos manuales de notas. El estudiante puede seguir su avance, gestionar materias y prerrequisitos, organizar el semestre, registrar calificaciones, revisar su situación académica y consultar parte de esta información por voz mediante Alexa.
 
 ## Funcionalidades
 
 ### Pensum académico
 
-- Visualización de materias organizadas por semestre.
-- Estados para cada materia:
-  - Pendiente.
-  - En curso.
-  - Aprobada.
+- Visualización del plan por semestre.
+- Estados: pendiente, en curso y aprobada.
 - Validación de prerrequisitos.
-- Identificación de materias bloqueadas y desbloqueadas.
-- Consulta de materias que dependen de una asignatura.
-- Aprobación individual o grupal de materias.
+- Materias bloqueadas/desbloqueadas.
+- Dependencias entre asignaturas.
 - Filtros por semestre y estado.
 - Búsqueda por nombre o código.
-- Ocultamiento automático de semestres completados.
-- Seguimiento de créditos, materias aprobadas y porcentaje de avance.
+- Seguimiento de materias, créditos y porcentaje de avance.
+- Requisitos adicionales de grado.
 
-### Repitencias y seguimiento académico
+### Repitencias y seguimiento reglamentario
 
-- Registro independiente del estado actual y del intento académico.
-- Manejo de los niveles:
-  - R1: primera repitencia.
-  - R2: segunda repitencia.
-  - R3: tercera repitencia.
-- Acción explícita para registrar la pérdida de una materia.
+- Historial independiente de intentos académicos.
+- Niveles R1, R2 y R3.
+- Registro explícito de una materia perdida.
 - Conservación del nivel de repitencia después de aprobar.
-- Historial de intentos perdidos y aprobados.
-- Identificación de materias aprobadas como:
-  - Aprobada R1.
-  - Aprobada R2.
-  - Aprobada R3.
-- Seguimiento de:
-  - Bajo rendimiento académico.
-  - Matrícula condicional.
-  - Matrículas condicionales utilizadas.
-  - Sanción disciplinaria.
-  - Derecho a continuar estudios.
-  - Restricciones académicas activas.
+- Seguimiento de bajo rendimiento.
+- Matrícula condicional y matrículas condicionales utilizadas.
+- Sanción disciplinaria.
+- Derecho a continuar estudios.
+- Restricciones académicas activas.
 
 ### Hoja de vida académica
 
-Vista independiente con información consolidada sobre:
-
-- Situación académica actual.
-- Antecedentes académicos.
-- Materias aprobadas y pendientes.
+- Situación académica consolidada.
+- Materias aprobadas, en curso y pendientes.
 - Repitencias activas e históricas.
-- Intentos realizados por materia.
-- Estado de matrícula condicional.
-- Derecho a continuar estudios.
-- Tabla académica ordenada por semestre.
-
-La vista puede abrirse mediante:
-
-```text
-?view=student-record
-```
+- Intentos por materia.
+- Estado reglamentario.
+- Tabla académica organizada por semestre.
 
 ### Horario académico
 
 - Creación manual de clases.
-- Selección de materia, día, hora de inicio y hora de finalización.
-- Cuadrícula semanal de lunes a viernes.
-- Visualización desde las 7:00 a. m. hasta las 11:00 p. m.
-- Importación de oferta académica.
-- Compatibilidad con archivos:
-  - `.xlsx`
-  - `.xls`
-- Lectura de enlaces públicos de Google Drive y Google Sheets.
-- Persistencia del horario en el navegador.
+- Una o dos franjas semanales por materia.
+- Edición y eliminación.
+- Detección de conflictos de horario.
+- Cuadrícula semanal.
+- Importación de oferta académica `.xls` y `.xlsx`.
+- Lectura de enlaces públicos compatibles de Google Drive/Sheets.
+- Confirmación del horario.
+- Comparación de una nueva oferta con el horario existente.
 
-La vista puede abrirse mediante:
+### Registro de notas — estructura SIMCA 70/30
+
+El cálculo reproduce la estructura utilizada en SIMCA para el esquema configurado:
+
+- Corte 1 + Corte 2 comparten el `100 %` del componente que vale `70 %` de la definitiva.
+- Corte 3 distribuye el `100 %` del componente que vale `30 %`.
+- Los porcentajes del Parcial y de las actividades son editables.
+- Se pueden agregar quices, talleres, trabajos, laboratorios, exposiciones, proyectos y otros ítems.
+- El acumulado se conserva a dos decimales.
+- La nota aproximada aplica redondeo institucional a una décima.
+- Se calcula el promedio del semestre para registros completos.
+
+Caso de referencia automatizado:
 
 ```text
-?view=schedule
+Corte 1: 1.8 × 50 % = 0.90
+Corte 2: 0.0 × 50 % = 0.00
+Componente 70 %: 0.90 × 0.70 = 0.63
+Corte 3: 0.0 × 100 % × 0.30 = 0.00
+Acumulado: 0.63
+Aproximado: 0.6
 ```
 
-### Registro de notas
+## Cuenta, modo invitado y persistencia
 
-- Registro de calificaciones para las materias matriculadas.
-- Organización de evaluaciones por cortes.
-- Creación de elementos personalizados como:
-  - Parciales.
-  - Quices.
-  - Talleres.
-  - Trabajos.
-  - Laboratorios.
-  - Exposiciones.
-- Asignación de porcentajes a cada actividad.
-- Cálculo automático de aportes y resultados.
-- Promedio académico del semestre.
-- Indicador de aprobación con nota igual o superior a `3.0`.
+### Cuenta autenticada
 
-### Experiencia de usuario
+La aplicación utiliza **Supabase Auth**. La información académica del usuario se consolida en `academic_snapshots` y se sincroniza con Supabase, lo que permite recuperar el progreso desde otra sesión o dispositivo.
 
-- Diseño responsive para computador, tableta y celular.
-- Modo oscuro persistente.
-- Alertas y confirmaciones con SweetAlert2.
-- Fuente Montserrat.
-- Navegación entre las vistas principales de la aplicación.
-- Almacenamiento automático del progreso.
+Las políticas Row Level Security restringen el acceso para que cada usuario solo pueda consultar y modificar su propio snapshot.
 
-## Tecnologías utilizadas
+### Modo invitado
 
-- [React](https://react.dev/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vite.dev/)
+El modo invitado no requiere cuenta. Sus datos permanecen únicamente en el navegador mediante almacenamiento local y no se sincronizan entre dispositivos.
+
+## Amazon Alexa
+
+Mi Pensum incluye una skill de Alexa conectada a los mismos datos académicos de la cuenta web.
+
+- **Skill:** Mi pensum
+- **Invocación:** `Alexa, abre progreso académico`
+- **Account Linking:** OAuth 2.1 mediante Supabase Auth.
+- **Consentimiento web:** `/oauth/consent`.
+
+La skill permite consultar progreso, créditos, materias actuales, horario, próxima clase, promedio, notas, cortes, acumulados y situación académica. También puede registrar notas por voz.
+
+La configuración versionada se encuentra en:
+
+```text
+alexa/
+├── interaction-model.json
+└── README.md
+```
+
+Consulta [`alexa/README.md`](./alexa/README.md) para la configuración de Account Linking, endpoints, pruebas y proceso de publicación.
+
+## Backend para Alexa
+
+Las funciones serverless viven en `api/`:
+
+```text
+api/
+├── alexa-account.ts
+├── alexa-progress.ts
+├── alexa-schedule.ts
+├── alexa-grades.ts
+├── alexa-academic-status.ts
+└── drive-file.ts
+```
+
+Los endpoints de Alexa validan el access token antes de consultar el snapshot del usuario.
+
+## OAuth y vinculación de Alexa
+
+Supabase funciona como servidor OAuth 2.1 con authorization code y refresh token. Mi Pensum implementa la pantalla de consentimiento y Alexa recibe un token que posteriormente utiliza para llamar los endpoints autenticados.
+
+El **Client Secret no forma parte del repositorio**.
+
+## Experiencia de usuario
+
+- Responsive para escritorio, tableta y celular.
+- Light mode y dark mode.
+- Navegación entre Inicio, Vida académica, Hoja de vida académica, Horario y Notas.
+- Tabla de notas desplazable horizontalmente en móvil.
+- Bloques contextuales con comandos disponibles de Alexa.
+- SweetAlert2 para confirmaciones y feedback.
+- Montserrat.
+- React Icons.
+
+## Tecnologías
+
+- React 19
+- TypeScript
+- Vite
+- Supabase Auth + PostgreSQL
+- Vercel + Vercel Functions
 - CSS
-- [SweetAlert2](https://sweetalert2.github.io/)
-- [React Icons](https://react-icons.github.io/react-icons/)
+- React Icons
+- SweetAlert2
 - SheetJS / XLSX
-- Vercel Functions
-- Local Storage
+- Amazon Alexa Skills Kit
+- OAuth 2.1
 
 ## Instalación local
 
-### 1. Clonar el repositorio
-
 ```bash
-git clone URL_DEL_REPOSITORIO
-```
-
-### 2. Entrar a la carpeta del proyecto
-
-```bash
-cd Pensum
-```
-
-### 3. Instalar las dependencias
-
-```bash
+git clone https://github.com/luciaduque248/PensumUnicauca.git
+cd PensumUnicauca
 npm install
-```
-
-### 4. Iniciar el servidor de desarrollo
-
-```bash
 npm run dev
 ```
 
-Vite mostrará una dirección local similar a:
+La aplicación utiliza variables de entorno para conectarse a Supabase. No se deben guardar secretos directamente en el repositorio.
 
-```text
-http://localhost:5173
-```
+## Validación y pruebas
 
-Abre esa dirección en el navegador.
-
-## Comandos disponibles
-
-### Ejecutar el proyecto en desarrollo
+### Lint
 
 ```bash
-npm run dev
+npm run lint
 ```
 
-### Comprobar la compilación de producción
+### Pruebas automáticas
+
+```bash
+npm test
+```
+
+Las pruebas cubren la lógica crítica de notas 70/30, doble ponderación, porcentajes incompletos y redondeo institucional.
+
+### Build
 
 ```bash
 npm run build
 ```
 
-### Previsualizar la compilación
+### Validación completa
 
 ```bash
-npm run preview
+npm run check
 ```
+
+`npm run check` ejecuta lint, pruebas y build. GitHub Actions ejecuta la misma validación automáticamente en `main` y en pull requests.
+
+## QA
+
+El checklist de cierre para web, sincronización y Alexa se encuentra en:
+
+[`docs/QA_CHECKLIST.md`](./docs/QA_CHECKLIST.md)
+
+Incluye pruebas de autenticación, pensum, repitencias, horario, notas, sincronización web ↔ Alexa, Account Linking y certificación.
 
 ## Estructura principal
 
 ```text
-Pensum/
+PensumUnicauca/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── alexa/
+│   ├── interaction-model.json
+│   └── README.md
 ├── api/
-│   └── drive-file.ts
+│   ├── alexa-account.ts
+│   ├── alexa-progress.ts
+│   ├── alexa-schedule.ts
+│   ├── alexa-grades.ts
+│   ├── alexa-academic-status.ts
+│   ├── drive-file.ts
+│   └── tsconfig.json
+├── docs/
+│   └── QA_CHECKLIST.md
 ├── public/
 ├── src/
 │   ├── components/
+│   ├── context/
 │   ├── data/
-│   │   ├── curriculum.ts
-│   │   ├── degreeRequirements.ts
-│   │   ├── prerequisites.ts
-│   │   └── defaultSchedule.ts
 │   ├── hooks/
-│   │   └── useLocalStorage.ts
+│   ├── lib/
+│   ├── services/
+│   ├── styles/
 │   ├── types/
-│   ├── utils/
-│   ├── App.tsx
-│   ├── App.css
-│   ├── index.css
-│   └── main.tsx
+│   └── utils/
+├── supabase/
+├── tests/
+│   └── gradeCalculations.test.ts
 ├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── README.md
+├── tsconfig.app.json
+├── tsconfig.node.json
+├── tsconfig.tests.json
+└── vercel.json
 ```
 
-## Persistencia de la información
+## Seguridad
 
-El progreso académico, el horario, las notas y demás configuraciones se almacenan mediante `localStorage`.
-
-Esto significa que:
-
-- La información permanece después de recargar la página.
-- Los datos se guardan en el navegador y dispositivo utilizados.
-- Los datos no se sincronizan automáticamente entre dispositivos.
-- Borrar los datos del navegador puede eliminar el progreso almacenado.
-- El modo incógnito puede eliminar la información al cerrar la sesión.
-
-## Importación de archivos académicos
-
-La aplicación permite cargar archivos `.xls` y `.xlsx`.
-
-Para importar desde Google Drive o Google Sheets:
-
-1. El archivo debe tener acceso público mediante enlace.
-2. Se debe copiar el enlace para compartir.
-3. El enlace se pega dentro del módulo de importación.
-4. La aplicación procesa el archivo mediante una función alojada en Vercel.
-
-Los documentos privados o restringidos no pueden ser consultados por la aplicación.
+- Los usuarios autenticados acceden a su propia información mediante Supabase Auth.
+- `academic_snapshots` está protegido mediante RLS.
+- Los endpoints de Alexa requieren Bearer token.
+- Los secretos OAuth no deben versionarse.
+- Los clientes OAuth y redirect URIs deben mantenerse sincronizados con Alexa Developer Console.
 
 ## Despliegue
 
-El proyecto puede desplegarse en Vercel.
+El repositorio está conectado con Vercel. Los commits a `main` generan despliegues de producción.
 
-Antes de publicar una nueva versión, se recomienda ejecutar:
-
-```bash
-npm run build
-```
-
-Después:
+Antes de publicar cambios importantes:
 
 ```bash
-git add .
-git commit -m "Descripción de los cambios"
-git push origin main
+npm run check
 ```
 
-Si el repositorio está conectado con Vercel, se iniciará automáticamente un nuevo despliegue.
-
-## Consideraciones académicas
-
-Esta aplicación es una herramienta de apoyo y organización personal.
-
-No reemplaza:
-
-- El sistema oficial de matrícula.
-- La información de la División de Admisiones, Registro y Control Académico.
-- Las decisiones de la Facultad.
-- Las decisiones del Consejo de Facultad.
-- El reglamento institucional vigente.
-
-Los datos sobre prerrequisitos, repitencias, matrícula condicional y situación académica deben verificarse con las dependencias oficiales de la Universidad del Cauca.
+Además debe comprobarse que el despliegue de Vercel compile las funciones `api/` sin errores TypeScript.
 
 ## Estado del proyecto
 
-El proyecto se encuentra en desarrollo activo.
+**Web:** funcional y desplegada en producción.
 
-Entre los módulos implementados se encuentran:
+**Backend/Supabase:** autenticación, sincronización y APIs de Alexa implementadas.
 
-- Pensum interactivo.
-- Prerrequisitos.
-- Seguimiento del progreso.
-- Repitencias.
-- Hoja de vida académica.
-- Seguimiento reglamentario.
-- Horario académico.
-- Importación de oferta académica.
-- Registro y cálculo de notas.
-- Modo oscuro.
-- Diseño responsive.
+**Alexa:** integración funcional y modelo versionado. La publicación pública depende de completar/validar la versión correspondiente en Alexa Developer Console y, cuando aplique, enviarla al proceso de certificación de Amazon.
 
-## Objetivo del proyecto
+## Consideraciones académicas
 
-El objetivo es centralizar en una sola aplicación las herramientas que un estudiante necesita para planificar su carrera, consultar el avance del pensum, organizar su horario, registrar sus notas y comprender su situación académica.
+Mi Pensum es una herramienta de apoyo y organización. No sustituye SIMCA, las decisiones de la Facultad, Registro y Control Académico ni el reglamento institucional vigente.
+
+Los prerrequisitos, las condiciones reglamentarias y cualquier información institucional deben contrastarse con las fuentes oficiales de la Universidad del Cauca cuando se utilicen para tomar decisiones académicas.
 
 ## Autora
 
-Desarrollado por **Sara** como proyecto académico y tecnológico para estudiantes de Ingeniería Electrónica y Telecomunicaciones de la Universidad del Cauca.
+Desarrollado por **Sara Duque**.
