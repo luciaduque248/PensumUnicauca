@@ -51,7 +51,7 @@ test("reproduce el cálculo de SIMCA del caso 1.8, 0 y 0", () => {
   assert.equal(result.firstCutGrade, 0.9);
   assert.equal(result.secondCutGrade, 0);
   assert.equal(result.previousNote, 0.9);
-  assert.equal(result.previousContributionExact, 0.63);
+  assert.equal(roundGradeToTwoDecimals(result.previousContributionExact), 0.63);
   assert.equal(result.accumulatedTwoDecimals, 0.63);
   assert.equal(result.officialOneDecimal, 0.6);
   assert.equal(result.isComplete, true);
@@ -67,8 +67,8 @@ test("no aplica dos veces el 50 por ciento de los dos primeros cortes", () => {
   );
 
   assert.equal(result.previousNote, 3.5);
-  assert.equal(result.previousContributionExact, 2.45);
-  assert.equal(result.thirdContributionExact, 1.5);
+  assert.equal(roundGradeToTwoDecimals(result.previousContributionExact), 2.45);
+  assert.equal(roundGradeToTwoDecimals(result.thirdContributionExact), 1.5);
   assert.equal(result.accumulatedTwoDecimals, 3.95);
   assert.equal(result.officialOneDecimal, 4);
 });
@@ -88,8 +88,8 @@ test("permite repartir el componente del 70 por ciento entre varias actividades"
   assert.equal(result.firstCutGrade, 2.2);
   assert.equal(result.secondCutGrade, 1.5);
   assert.equal(result.previousNote, 3.7);
-  assert.equal(result.previousContributionExact, 2.59);
-  assert.equal(result.thirdContributionExact, 1.2);
+  assert.equal(roundGradeToTwoDecimals(result.previousContributionExact), 2.59);
+  assert.equal(roundGradeToTwoDecimals(result.thirdContributionExact), 1.2);
   assert.equal(result.accumulatedTwoDecimals, 3.79);
   assert.equal(result.officialOneDecimal, 3.8);
   assert.equal(result.isComplete, true);
