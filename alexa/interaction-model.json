@@ -1,0 +1,360 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "progreso académico",
+      "intents": [
+        {
+          "name": "GetProgressIntent",
+          "slots": [],
+          "samples": [
+            "cuál es mi progreso",
+            "dime mi progreso",
+            "cuánto llevo de la carrera",
+            "qué porcentaje llevo",
+            "cuánto he avanzado",
+            "cómo va mi progreso académico",
+            "cuánto me falta de la carrera"
+          ]
+        },
+        {
+          "name": "GetApprovedCreditsIntent",
+          "slots": [],
+          "samples": [
+            "cuántos créditos he aprobado",
+            "dime mis créditos aprobados",
+            "cuántos créditos llevo",
+            "cuál es mi total de créditos",
+            "cuántos créditos me faltan",
+            "consulta mis créditos"
+          ]
+        },
+        {
+          "name": "GetCurrentSubjectsIntent",
+          "slots": [],
+          "samples": [
+            "qué materias tengo en curso",
+            "cuáles son mis materias en curso",
+            "dime las materias que estoy cursando",
+            "qué asignaturas estoy cursando",
+            "consulta mis materias actuales",
+            "qué materias tengo matriculadas"
+          ]
+        },
+        {
+          "name": "GetScheduleIntent",
+          "slots": [],
+          "samples": [
+            "cuál es mi horario",
+            "dime mi horario",
+            "consulta mi horario",
+            "qué clases tengo hoy",
+            "qué materias tengo hoy",
+            "muéstrame mi horario",
+            "cuáles son mis clases"
+          ]
+        },
+        {
+          "name": "GetNextClassIntent",
+          "slots": [],
+          "samples": [
+            "cuál es mi próxima clase",
+            "qué clase tengo después",
+            "dime mi próxima clase",
+            "a qué hora es mi próxima clase",
+            "qué materia tengo ahora",
+            "cuándo es mi siguiente clase"
+          ]
+        },
+        {
+          "name": "GetSemesterAverageIntent",
+          "slots": [],
+          "samples": [
+            "cuál es mi promedio",
+            "dime mi promedio",
+            "cuál es mi promedio del semestre",
+            "consulta mi promedio académico",
+            "cómo va mi promedio",
+            "qué promedio tengo",
+            "promedio del semestre",
+            "mi promedio del semestre",
+            "dime el promedio del semestre",
+            "cuánto tengo de promedio",
+            "cuánto llevo de promedio",
+            "promedio académico del semestre"
+          ]
+        },
+        {
+          "name": "GetSubjectsByGradeIntent",
+          "slots": [
+            {
+              "name": "NotaMinima",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "qué materias tienen una nota de {NotaMinima} o más",
+            "qué materia tiene una nota de {NotaMinima} o más",
+            "cuáles materias están por encima de {NotaMinima}",
+            "dime las materias con nota mayor o igual a {NotaMinima}",
+            "qué materias voy ganando",
+            "qué materias tengo en tres o más",
+            "materias con nota de {NotaMinima} o más",
+            "materias con {NotaMinima} o más",
+            "qué asignaturas tienen {NotaMinima} o más",
+            "cuáles asignaturas voy aprobando",
+            "qué materias estoy aprobando",
+            "dime qué materias voy aprobando",
+            "qué materias tienen tres o más"
+          ]
+        },
+        {
+          "name": "GetSubjectGradesIntent",
+          "slots": [
+            {
+              "name": "Materia",
+              "type": "MATERIA_TYPE"
+            }
+          ],
+          "samples": [
+            "cuáles son mis notas de {Materia}",
+            "qué notas tengo en {Materia}",
+            "dime las notas de {Materia}",
+            "cómo voy en {Materia}",
+            "qué nota llevo en {Materia}",
+            "consulta las notas de {Materia}",
+            "consultar notas",
+            "quiero consultar mis notas",
+            "dime mis notas",
+            "notas por materia",
+            "notas de {Materia}",
+            "mis notas de {Materia}",
+            "cuál es la nota de {Materia}",
+            "cómo me va en {Materia}",
+            "cómo estoy en {Materia}"
+          ]
+        },
+        {
+          "name": "GetSubjectCutGradeIntent",
+          "slots": [
+            {
+              "name": "Materia",
+              "type": "MATERIA_TYPE"
+            },
+            {
+              "name": "Corte",
+              "type": "CORTE_TYPE"
+            }
+          ],
+          "samples": [
+            "qué nota tengo en el {Corte} de {Materia}",
+            "cuánto llevo en el {Corte} de {Materia}",
+            "dime las notas del {Corte} de {Materia}",
+            "cómo voy en el {Corte} de {Materia}",
+            "consulta el {Corte} de {Materia}",
+            "nota del {Corte} de {Materia}",
+            "notas del {Corte} de {Materia}",
+            "cuál es mi nota del {Corte} de {Materia}",
+            "qué tengo en el {Corte} de {Materia}",
+            "cuánto tengo en el {Corte} de {Materia}"
+          ]
+        },
+        {
+          "name": "GetSubjectAccumulatedIntent",
+          "slots": [
+            {
+              "name": "Materia",
+              "type": "MATERIA_TYPE"
+            }
+          ],
+          "samples": [
+            "cuál es el acumulado de {Materia}",
+            "cuánto llevo acumulado en {Materia}",
+            "dime el acumulado de {Materia}",
+            "qué acumulado tengo en {Materia}",
+            "cuál es mi nota acumulada en {Materia}",
+            "consultar acumulado",
+            "dime mi acumulado",
+            "acumulado de {Materia}",
+            "cuánto voy acumulando en {Materia}",
+            "cuánto tengo acumulado en {Materia}",
+            "cuál es la nota acumulada de {Materia}",
+            "cómo va el acumulado de {Materia}"
+          ]
+        },
+        {
+          "name": "RegisterSubjectGradeIntent",
+          "slots": [
+            {
+              "name": "Materia",
+              "type": "MATERIA_TYPE"
+            },
+            {
+              "name": "Corte",
+              "type": "CORTE_TYPE"
+            },
+            {
+              "name": "Nota",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "Actividad",
+              "type": "ACTIVIDAD_TYPE"
+            }
+          ],
+          "samples": [
+            "registra {Nota} en el {Corte} de {Materia}",
+            "agrega una nota de {Nota} en el {Corte} de {Materia}",
+            "guarda {Nota} en el {Corte} de {Materia}",
+            "pon {Nota} en el {Corte} de {Materia}",
+            "registra {Nota} en {Actividad} del {Corte} de {Materia}",
+            "agrega {Nota} en {Actividad} del {Corte} de {Materia}",
+            "guarda una nota de {Nota} en {Actividad} del {Corte} de {Materia}",
+            "registrar una nota",
+            "agregar una nota",
+            "guardar una nota",
+            "poner una nota",
+            "quiero registrar una nota",
+            "registra una calificación",
+            "registra la nota {Nota} en el {Corte} de {Materia}",
+            "registra {Nota} para {Materia} en el {Corte}",
+            "guarda {Nota} en la actividad {Actividad} del {Corte} de {Materia}"
+          ]
+        },
+        {
+          "name": "GetAcademicStatusIntent",
+          "slots": [],
+          "samples": [
+            "cuál es mi situación académica",
+            "dime mi situación académica",
+            "consulta mi estado académico",
+            "tengo alguna restricción académica",
+            "estoy en bajo rendimiento",
+            "tengo matrícula condicional",
+            "puedo continuar estudiando"
+          ]
+        },
+        {
+          "name": "ExitPensumIntent",
+          "slots": [],
+          "samples": [
+            "salir de mi pensum",
+            "cerrar mi pensum",
+            "terminar la consulta",
+            "terminar en mi pensum",
+            "despedirme de mi pensum"
+          ]
+        },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        { "name": "AMAZON.NavigateHomeIntent", "samples": [] }
+      ],
+      "types": [
+        {
+          "name": "CORTE_TYPE",
+          "values": [
+            {
+              "id": "first",
+              "name": {
+                "value": "primer corte",
+                "synonyms": ["corte uno", "corte 1", "primero", "uno"]
+              }
+            },
+            {
+              "id": "second",
+              "name": {
+                "value": "segundo corte",
+                "synonyms": ["corte dos", "corte 2", "segundo", "dos"]
+              }
+            },
+            {
+              "id": "third",
+              "name": {
+                "value": "tercer corte",
+                "synonyms": ["corte tres", "corte 3", "tercero", "tres", "final"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ACTIVIDAD_TYPE",
+          "values": [
+            { "name": { "value": "Parcial", "synonyms": ["examen", "prueba"] } },
+            { "name": { "value": "Quiz", "synonyms": ["cuestionario"] } },
+            { "name": { "value": "Taller", "synonyms": ["ejercicio"] } },
+            { "name": { "value": "Trabajo", "synonyms": ["tarea"] } },
+            { "name": { "value": "Laboratorio", "synonyms": ["práctica de laboratorio"] } },
+            { "name": { "value": "Proyecto" } },
+            { "name": { "value": "Exposición", "synonyms": ["presentación"] } },
+            { "name": { "value": "Parcial adicional", "synonyms": ["segundo parcial"] } },
+            { "name": { "value": "Otro", "synonyms": ["otra actividad"] } }
+          ]
+        },
+        {
+          "name": "MATERIA_TYPE",
+          "values": [
+            { "id": "ANTEPR", "name": { "value": "Anteproyecto", "synonyms": ["ANTEPR"] } },
+            { "id": "21590", "name": { "value": "Electiva FISH I", "synonyms": ["21590"] } },
+            { "id": "EFISH2", "name": { "value": "Electiva FISH II", "synonyms": ["EFISH2"] } },
+            { "id": "MAT102.1", "name": { "value": "Álgebra Lineal", "synonyms": ["Algebra Lineal", "MAT102.1"] } },
+            { "id": "MAT101.1", "name": { "value": "Cálculo Diferencial", "synonyms": ["Calculo Diferencial", "MAT101.1"] } },
+            { "id": "IAT101", "name": { "value": "Introducción a la Ingeniería", "synonyms": ["Introduccion a la Ingenieria", "IAT101", "intro a la ingeniería"] } },
+            { "id": "BAI101", "name": { "value": "Introducción a los Circuitos Eléctricos", "synonyms": ["Introduccion a los Circuitos Electricos", "BAI101"] } },
+            { "id": "21505", "name": { "value": "Lectura y Escritura", "synonyms": ["21505"] } },
+            { "id": "M33530", "name": { "value": "Cálculo Integral", "synonyms": ["Calculo Integral", "M33530"] } },
+            { "id": "M33532", "name": { "value": "Circuitos de Corriente Directa", "synonyms": ["M33532"] } },
+            { "id": "M34240", "name": { "value": "Ética", "synonyms": ["Etica", "M34240"] } },
+            { "id": "M33531", "name": { "value": "Mecánica", "synonyms": ["Mecanica", "M33531"] } },
+            { "id": "M33533", "name": { "value": "Programación Orientada a Objetos", "synonyms": ["Programacion Orientada a Objetos", "M33533", "POO"] } },
+            { "id": "M33539", "name": { "value": "Cálculo Vectorial", "synonyms": ["Calculo Vectorial", "M33539"] } },
+            { "id": "M33541", "name": { "value": "Circuitos de Corriente Alterna", "synonyms": ["M33541"] } },
+            { "id": "M33544", "name": { "value": "Circuitos Digitales", "synonyms": ["M33544"] } },
+            { "id": "M33542", "name": { "value": "Circuitos Electrónicos", "synonyms": ["Circuitos Electronicos", "M33542"] } },
+            { "id": "M34951", "name": { "value": "Ecuaciones Diferenciales Ordinarias - N", "synonyms": ["Ecuaciones Diferenciales Ordinarias", "M34951"] } },
+            { "id": "M33540", "name": { "value": "Electromagnetismo", "synonyms": ["M33540"] } },
+            { "id": "M33535", "name": { "value": "Algoritmos Computacionales", "synonyms": ["M33535"] } },
+            { "id": "11079", "name": { "value": "Campos", "synonyms": ["11079"] } },
+            { "id": "M33536", "name": { "value": "Circuitos Analógicos", "synonyms": ["Circuitos Analogicos", "M33536"] } },
+            { "id": "M33537", "name": { "value": "Diseño de Circuitos con VHDL", "synonyms": ["Diseno de Circuitos con VHDL", "M33537", "VHDL"] } },
+            { "id": "M33534", "name": { "value": "Señales y Sistemas", "synonyms": ["Senales y Sistemas", "M33534"] } },
+            { "id": "M33538", "name": { "value": "Vibraciones y Ondas", "synonyms": ["M33538"] } },
+            { "id": "M33580", "name": { "value": "Fundamentos de Redes de Telecomunicaciones", "synonyms": ["Fundamentos de Redes", "M33580"] } },
+            { "id": "M33579", "name": { "value": "Medios de Transmisión", "synonyms": ["Medios de Transmision", "M33579"] } },
+            { "id": "M33578", "name": { "value": "Microcontroladores", "synonyms": ["M33578"] } },
+            { "id": "M33581", "name": { "value": "Modelado y Bases de Datos", "synonyms": ["Bases de Datos", "M33581"] } },
+            { "id": "M33577", "name": { "value": "Probabilidad y Estadística", "synonyms": ["Probabilidad y Estadistica", "M33577"] } },
+            { "id": "M33576", "name": { "value": "Procesamiento Digital de Señales PDS", "synonyms": ["Procesamiento Digital de Señales", "PDS", "M33576"] } },
+            { "id": "M33582", "name": { "value": "Circuitos de RF", "synonyms": ["Circuitos RF", "M33582"] } },
+            { "id": "M33583", "name": { "value": "Comunicaciones Analógicas", "synonyms": ["Comunicaciones Analogicas", "M33583"] } },
+            { "id": "M33585", "name": { "value": "Comunicaciones Digitales", "synonyms": ["M33585", "Digitales"] } },
+            { "id": "M33586", "name": { "value": "Informática para Telecomunicaciones", "synonyms": ["Informatica para Telecomunicaciones", "M33586"] } },
+            { "id": "M33584", "name": { "value": "Metodología de la Investigación", "synonyms": ["Metodologia de la Investigacion", "M33584"] } },
+            { "id": "SCONMU", "name": { "value": "Sistemas de Conmutación", "synonyms": ["Sistemas de Conmutacion", "SCONMU"] } },
+            { "id": "M34636", "name": { "value": "Comunicaciones Móviles e Inalámbricas", "synonyms": ["Comunicaciones Moviles e Inalambricas", "M34636"] } },
+            { "id": "M34639", "name": { "value": "Emprendimiento e Innovación en Ingeniería", "synonyms": ["Emprendimiento e Innovacion", "M34639"] } },
+            { "id": "RADIOC", "name": { "value": "Radiocomunicaciones", "synonyms": ["RADIOC"] } },
+            { "id": "M34638", "name": { "value": "Servicios Convergentes", "synonyms": ["M34638"] } },
+            { "id": "M34637", "name": { "value": "Sistemas de Comunicaciones Ópticas", "synonyms": ["Sistemas de Comunicaciones Opticas", "M34637"] } },
+            { "id": "M33587", "name": { "value": "Sistemas Embebidos y Tiempo Real", "synonyms": ["Sistemas Embebidos", "M33587"] } },
+            { "id": "M34641", "name": { "value": "Competencias Ciudadanas", "synonyms": ["M34641"] } },
+            { "id": "ELE1", "name": { "value": "Electiva 1", "synonyms": ["Electiva uno", "ELE1"] } },
+            { "id": "ELE2", "name": { "value": "Electiva 2", "synonyms": ["Electiva dos", "ELE2"] } },
+            { "id": "21454", "name": { "value": "Énfasis 1", "synonyms": ["Enfasis uno", "21454"] } },
+            { "id": "LABSIST1", "name": { "value": "Laboratorio I de Sistemas de Telecomunicaciones", "synonyms": ["Laboratorio uno de Sistemas de Telecomunicaciones", "LABSIST1"] } },
+            { "id": "M34640", "name": { "value": "Proyecto Integrador", "synonyms": ["M34640"] } },
+            { "id": "ELE3", "name": { "value": "Electiva 3", "synonyms": ["Electiva tres", "ELE3"] } },
+            { "id": "21455", "name": { "value": "Énfasis 2", "synonyms": ["Enfasis dos", "21455"] } },
+            { "id": "21456", "name": { "value": "Énfasis 3", "synonyms": ["Enfasis tres", "21456"] } },
+            { "id": "M34642", "name": { "value": "Formulación y Gestión de Proyectos en TIC", "synonyms": ["Formulacion y Gestion de Proyectos en TIC", "M34642"] } },
+            { "id": "M34644", "name": { "value": "Laboratorio II de Sistemas de Telecomunicaciones IAT901", "synonyms": ["Laboratorio dos de Sistemas de Telecomunicaciones", "M34644", "IAT901"] } },
+            { "id": "M34645", "name": { "value": "Laboratorio de Servicios Telemáticos", "synonyms": ["Laboratorio de Servicios Telematicos", "M34645"] } },
+            { "id": "M34646", "name": { "value": "Análisis Económico de Inversiones en TIC", "synonyms": ["Analisis Economico de Inversiones en TIC", "M34646"] } },
+            { "id": "21457", "name": { "value": "Énfasis 4", "synonyms": ["Enfasis cuatro", "21457"] } },
+            { "id": "M34952", "name": { "value": "Trabajo de Grado - N", "synonyms": ["Trabajo de Grado", "M34952"] } }
+          ]
+        }
+      ]
+    }
+  }
+}
