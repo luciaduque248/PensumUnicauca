@@ -9,8 +9,22 @@ Esta carpeta conserva la configuración reproducible de la skill de Alexa conect
 - **Ejemplo de apertura:** `Alexa, abre progreso académico`
 - **Idioma principal:** Español
 - **Modelo de interacción versionado:** [`interaction-model.json`](./interaction-model.json)
+- **Handler de Lambda versionado:** [`lambda/index.js`](./lambda/index.js)
 
-> El archivo `interaction-model.json` es la fuente de verdad del modelo de voz en GitHub. Cuando se cambien intents, slots, materias o utterances, el mismo cambio debe importarse o replicarse en Alexa Developer Console y luego volver a compilar el modelo.
+> `interaction-model.json` y `lambda/index.js` son las fuentes de verdad versionadas en GitHub. Un commit en este repositorio **no actualiza automáticamente** Alexa Developer Console ni la Lambda de Amazon; las versiones publicadas allí deben sincronizarse explícitamente y probarse antes de certificarlas.
+
+## Estructura
+
+```text
+alexa/
+├── interaction-model.json
+├── README.md
+└── lambda/
+    ├── index.js
+    └── package.json
+```
+
+El handler usa `ask-sdk-core`, toma el `accessToken` entregado por Account Linking y consulta los endpoints autenticados de Mi Pensum. No contiene credenciales ni secretos.
 
 ## Capacidades
 
@@ -86,6 +100,18 @@ El **Client Secret nunca debe guardarse en GitHub**. Debe permanecer únicamente
 9. La skill envía el access token a los endpoints `/api/alexa-*`.
 10. Las funciones validan al usuario y consultan únicamente su snapshot académico.
 
+## Validación del código versionado
+
+El CI del repositorio verifica:
+
+```bash
+node --check alexa/lambda/index.js
+npm audit --omit=dev --audit-level=high
+npm run check
+```
+
+Esto cubre sintaxis del handler, auditoría de dependencias de producción, lint, pruebas automáticas y build de la aplicación web. La validación funcional de voz sigue requiriendo Alexa Development/Test porque Amazon aporta el modelo NLU, el `accessToken` y el runtime de la skill.
+
 ## Pruebas mínimas antes de publicar una versión
 
 Ejecutar en un dispositivo o simulador Alexa vinculado a una cuenta real:
@@ -112,15 +138,15 @@ La información autenticada se guarda en `academic_snapshots` de Supabase. Los c
 
 ## Publicación en Alexa Developer Console
 
-GitHub conserva el modelo y la documentación, pero la publicación final continúa realizándose en Amazon:
+GitHub conserva el modelo, el handler y la documentación, pero la publicación final continúa realizándose en Amazon:
 
-1. Importar o sincronizar `interaction-model.json`.
-2. Build Model.
-3. Verificar Endpoint/Lambda.
+1. Sincronizar `interaction-model.json` con el modelo de interacción de la skill.
+2. Ejecutar **Build Model**.
+3. Empaquetar/deplegar `lambda/` o sincronizar `lambda/index.js` con la Lambda configurada en el endpoint.
 4. Verificar Account Linking usando los valores de este documento.
 5. Ejecutar las pruebas de Development/Test.
 6. Completar Distribution, Privacy & Compliance y Testing Instructions.
 7. Ejecutar Validation.
 8. Enviar a Certification cuando todas las validaciones estén en verde.
 
-No publicar una versión si el modelo de Amazon difiere del archivo versionado en este repositorio.
+No publicar una versión si el modelo o el handler de Amazon difieren de los archivos versionados en este repositorio.
