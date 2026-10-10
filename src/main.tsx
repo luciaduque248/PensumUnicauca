@@ -30,7 +30,8 @@ createRoot(
   <StrictMode>
     {usesFirebase ? (
       <aside className="firebase-preview-notice" aria-label="Versión de prueba">
-        <strong>Versión de prueba.</strong> Usa una cuenta de prueba; las cuentas anteriores aún no se han transferido.
+        <strong>Versión de prueba.</strong> Las cuentas anteriores y sus datos ya están disponibles.
+        Los cambios aquí no se sincronizan con la aplicación principal.
         Alexa sigue disponible en la <a href="https://pensum-unicauca.vercel.app">aplicación principal</a>.
       </aside>
     ) : null}

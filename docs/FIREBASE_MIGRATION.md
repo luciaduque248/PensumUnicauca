@@ -3,12 +3,14 @@
 ## Estado
 El proyecto `mi-pensum-unicauca` fue creado por la propietaria en Spark. Correo/contraseña está habilitado y Firestore `(default)` fue creado en `nam5` con las reglas del repositorio publicadas manualmente. La integración utiliza las operaciones Core del SDK modular de Firestore para el objetivo Standard.
 
-El PR #2 conecta acceso, registro, restauración de sesión y cierre con Firebase, junto con sincronización de snapshots por UID. La aplicación publicada continúa usando Supabase. No se han importado estudiantes, contraseñas, notas ni horarios. No se debe desactivar Supabase.
+El PR #2 conecta acceso, registro, restauración de sesión y cierre con Firebase, junto con sincronización de snapshots por UID. El 10 de octubre de 2026 se importaron las dos cuentas existentes y sus dos snapshots desde Supabase; se verificaron UIDs, correos, estado de verificación y contenido académico completo. La aplicación publicada continúa usando Supabase. No se debe desactivar Supabase.
 
 ## Activación de la prueba
 `VITE_BACKEND_PROVIDER=firebase` activa ambos adaptadores a la vez. Si no se define, se usa Supabase. En Vercel se configuró únicamente para Preview y la rama `migration/firebase-preparation`; no para producción ni otras ramas. No activar en producción antes de completar la migración.
 
-La pantalla muestra un aviso para usar cuentas de prueba. El registro Firebase inicia sesión directamente; esta prueba todavía no exige verificación del correo. Las cuentas anteriores no aparecerán hasta importarlas de forma verificada.
+La pantalla indica que las cuentas anteriores ya están disponibles y que los cambios del preview no se sincronizan con la aplicación principal. El registro Firebase inicia sesión directamente; esta prueba todavía no exige verificación del correo. Se puede entrar con el correo y contraseña existentes. Los hashes bcrypt se importaron conservando los UIDs y los correos confirmados.
+
+La copia corresponde al origen exportado el 10 de octubre de 2026 a las 18:48:47 de Bogotá (23:48:47 UTC). No existe replicación continua entre Supabase y Firebase. Antes del cambio de producción, reconciliar cualquier cambio posterior en cuentas o snapshots, revisando también las ediciones hechas en el preview para evitar sobrescribirlas.
 
 La ruta `/oauth/consent` continúa usando Supabase, porque Alexa conserva su servidor OAuth y sus funciones Vercel. La prueba oculta las invitaciones y comandos de Alexa para evitar prometer acceso a datos de Firebase. Alexa todavía no consulta estos nuevos respaldos.
 
@@ -45,18 +47,20 @@ El 10 de octubre de 2026 se revisó el origen `pensum-unicauca` (`kdyjjbzahmyhbm
 
 `Firebase Authentication` admite importación BCRYPT. `scripts/firebaseMigrationPlan.ts` valida el origen, conserva UIDs y verificación de correo, codifica los bytes del hash bcrypt en base64 para el formato JSON de `auth:import`, conserva fechas y bloqueos y prepara snapshots versión 2. Rechaza cuentas repetidas, coincidencias de UID/correo en el destino, hashes no compatibles, MFA/proveedores no soportados, respaldos huérfanos y datos fuera de los límites. Su ejecución es únicamente local: no importa ni escribe datos.
 
-`scripts/exportFirebaseMigration.sql` contiene la consulta de exportación de solo lectura. No se ha ejecutado una exportación completa ni escrito hashes de estudiantes en archivos. Antes de importar, obtener un inventario fresco de Firebase (`auth:export`) para comprobar colisiones, exportar el origen a almacenamiento privado y cifrado fuera del checkout, validar el plan y comparar su contenido con los respaldos. El archivo de importación es sensible: nunca colocarlo en GitHub o en un artefacto público.
+`scripts/exportFirebaseMigration.sql` contiene la consulta de exportación de solo lectura. Se ejecutó y se conservó un respaldo cifrado AES-256-GCM, temporal y con acceso restringido, fuera del checkout. El inventario administrativo de Firebase estaba vacío y no había documentos de destino con los UIDs del origen. Se comprobó que el origen no había cambiado entre la exportación y la importación. Los archivos sensibles no se incluyeron en GitHub ni en artefactos públicos; Supabase conserva la información original. Antes del cambio de producción, guardar también un respaldo privado duradero con una clave recuperable.
 
 Importar usuarios con la CLI autenticada y `--project mi-pensum-unicauca --hash-algo BCRYPT`; convertir la fecha ISO preparada para Firestore a Timestamp en el escritor administrativo. No escribir snapshots existentes sin compararlos primero. Si una importación queda parcial, revisar sus resultados antes de reintentar; la comprobación de colisiones impide sobrescribir usuarios automáticamente.
 
-El acceso administrativo todavía está bloqueado: `login:list` no encontró cuentas autorizadas. Se inició `login --no-localhost` para que la propietaria complete OAuth. Se debe recibir el código temporal de autorización, no el identificador corto de sesión. No solicitar contraseñas de Google ni claves de servicio. La autorización web del cliente no sustituye este paso.
+La propietaria completó la autorización OAuth de la CLI. Se confirmó acceso al proyecto indicado y Firestore Standard `(default)` en `nam5`, con `freeTier: true`. No se crearon claves de cuentas de servicio ni se activó facturación.
+
+La importación real utilizó Firebase Admin SDK con la autorización OAuth de la CLI. Antes se importó una cuenta sintética con bcrypt `$2a$10$`, se comprobó su inicio de sesión con el SDK cliente y se eliminó. La importación de estudiantes devolvió dos éxitos y cero errores. Los snapshots se crearon en un batch con precondición de inexistencia; se conservaron las fechas `updated_at` como Timestamp. La verificación administrativa posterior comparó los dos UIDs, correos, verificación, bloqueos, fechas de cuenta a la precisión de segundos expuesta por UserMetadata, y cada JSON académico completo. Finalizó a las 18:52:06 de Bogotá. No se probaron las contraseñas personales de estudiantes; la compatibilidad de importación e inicio de sesión se verificó con la cuenta sintética.
 
 ## Pendiente antes del cambio de producción
 1. Configurar/revisar los dominios autorizados, incluida la aplicación principal y el preview usado.
-2. Conectar acceso administrativo a Firebase. La configuración web no autentica la CLI ni permite importar cuentas.
-3. Auditar y respaldar usuarios y `academic_snapshots` de Supabase con cifrado y acceso restringido; nunca subir datos personales ni credenciales a GitHub.
-4. Verificar compatibilidad de hashes de contraseña. Preservar UIDs y asociar todos los respaldos a la cuenta correcta. Si los hashes no son compatibles, preparar restablecimiento de contraseña; no unir cuentas solo por un correo sin verificar.
-5. Ensayar restauración y comparar usuarios, cantidad de snapshots y contenido antes/después.
+2. Conservar el acceso administrativo seguro. La configuración web no sustituye la autorización administrativa.
+3. Guardar un respaldo privado duradero de usuarios y `academic_snapshots` con cifrado y acceso restringido; nunca subir datos personales ni credenciales a GitHub.
+4. Reconciliar los cambios posteriores a la copia inicial, sin sobrescribir automáticamente las ediciones del preview.
+5. Completar la comprobación de acceso de la propietaria en el navegador y ensayar recuperación desde el respaldo duradero. La comparación inicial de las dos cuentas y dos snapshots ya pasó.
 6. Resolver el reemplazo del OAuth de Alexa y adaptar sus funciones para Firebase, con pruebas de vinculación y consultas.
 7. Probar en navegador sesión persistente, invitado, dos dispositivos, fallos de red, reintentos y cambios simultáneos. Auditar y probar las reglas con emulador.
 8. Mantener este PR como borrador hasta completar lo anterior. Mantener Supabase durante el período de verificación.
