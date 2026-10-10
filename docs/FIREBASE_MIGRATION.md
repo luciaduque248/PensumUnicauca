@@ -30,7 +30,7 @@ La primera lectura se solicita al servidor; un fallo de conexión no se interpre
 ## Validación realizada
 El 10 de octubre de 2026 se ejecutó una prueba real con datos sintéticos en el proyecto indicado: registro y normalización de correo, inicio/cierre de sesión, observación de sesión, escritura con fecha de servidor, lectura posterior y recuperación después de volver a entrar. Se rechazaron la lectura sin sesión, lectura/escritura/borrado de otro usuario, listado de la colección, campos adicionales y un tipo inválido para `academic_data`. Las dos cuentas y el snapshot de prueba se eliminaron al terminar.
 
-`npm run check` verifica lint, diez pruebas de cálculo/serialización y el build. También se compiló con `VITE_BACKEND_PROVIDER=firebase`. `npm audit --omit=dev --audit-level=high` no encontró vulnerabilidades. Persisten el aviso existente del parser y el aviso de tamaño del bundle.
+`npm run check` verifica lint, catorce pruebas de cálculo/serialización/preparación de importación y el build. También se compiló con `VITE_BACKEND_PROVIDER=firebase`. `npm audit --omit=dev --audit-level=high` no encontró vulnerabilidades. Persisten el aviso existente del parser y el aviso de tamaño del bundle.
 
 La prueba real es optativa y crea cuentas sintéticas temporales; no se ejecuta en el check habitual:
 
@@ -39,6 +39,17 @@ FIREBASE_LIVE_CHECK=mi-pensum-unicauca npm run test:firebase
 ```
 
 Estas comprobaciones verifican el acceso publicado actual; no sustituyen la auditoría de reglas, pruebas de navegador ni pruebas de desconexión y conflictos. Antes del lanzamiento deben completarse esas pruebas y revisar límites y validadores de reglas. No se modificaron las reglas en este paso.
+
+## Auditoría de cuentas y preparación de importación
+El 10 de octubre de 2026 se revisó el origen `pensum-unicauca` (`kdyjjbzahmyhbmuwrwzr`) con consultas de solo lectura: dos cuentas activas, ambos correos confirmados, dos snapshots versión 1 de tipo object, sin respaldos huérfanos ni correos duplicados. Ambas contraseñas usan bcrypt `$2a$10$`; no se encontraron identidades de otros proveedores, factores MFA ni cuentas bloqueadas. El snapshot mayor ocupa 61.242 bytes en el JSON de origen.
+
+`Firebase Authentication` admite importación BCRYPT. `scripts/firebaseMigrationPlan.ts` valida el origen, conserva UIDs y verificación de correo, codifica los bytes del hash bcrypt en base64 para el formato JSON de `auth:import`, conserva fechas y bloqueos y prepara snapshots versión 2. Rechaza cuentas repetidas, coincidencias de UID/correo en el destino, hashes no compatibles, MFA/proveedores no soportados, respaldos huérfanos y datos fuera de los límites. Su ejecución es únicamente local: no importa ni escribe datos.
+
+`scripts/exportFirebaseMigration.sql` contiene la consulta de exportación de solo lectura. No se ha ejecutado una exportación completa ni escrito hashes de estudiantes en archivos. Antes de importar, obtener un inventario fresco de Firebase (`auth:export`) para comprobar colisiones, exportar el origen a almacenamiento privado y cifrado fuera del checkout, validar el plan y comparar su contenido con los respaldos. El archivo de importación es sensible: nunca colocarlo en GitHub o en un artefacto público.
+
+Importar usuarios con la CLI autenticada y `--project mi-pensum-unicauca --hash-algo BCRYPT`; convertir la fecha ISO preparada para Firestore a Timestamp en el escritor administrativo. No escribir snapshots existentes sin compararlos primero. Si una importación queda parcial, revisar sus resultados antes de reintentar; la comprobación de colisiones impide sobrescribir usuarios automáticamente.
+
+El acceso administrativo todavía está bloqueado: `login:list` no encontró cuentas autorizadas. Se inició `login --no-localhost` para que la propietaria complete OAuth. Se debe recibir el código temporal de autorización, no el identificador corto de sesión. No solicitar contraseñas de Google ni claves de servicio. La autorización web del cliente no sustituye este paso.
 
 ## Pendiente antes del cambio de producción
 1. Configurar/revisar los dominios autorizados, incluida la aplicación principal y el preview usado.
