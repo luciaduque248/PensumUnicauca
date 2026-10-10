@@ -1,7 +1,22 @@
-# Migración Supabase → Firebase (preparación, NO desplegada)
+# Migración Supabase → Firebase (integración preparada, NO activada)
 
 ## Estado
-Solo preparación. La aplicación publicada sigue usando Supabase. No se han migrado usuarios, contraseñas ni datos. No se debe desactivar Supabase todavía.
+La aplicación publicada sigue usando Supabase. No se han migrado usuarios, contraseñas ni datos. No se debe desactivar Supabase todavía.
+
+El proyecto `mi-pensum-unicauca` fue creado por la propietaria en plan Spark y su aplicación web ya fue registrada. La rama incluye el SDK modular de Firebase, la configuración web en `src/lib/firebase.ts` y un adaptador de autenticación en `src/services/firebaseAuthService.ts` (registro, acceso, restauración de sesión, cierre y recuperación de contraseña). La inicialización es diferida y el adaptador todavía no se usa en las pantallas: conectar el login sin cambiar simultáneamente la sincronización mezclaría identidades de dos proveedores.
+
+La configuración del cliente web identifica el proyecto y no concede privilegios administrativos. Nunca añadir credenciales de Admin al cliente. Analytics no se inicializa, porque no es necesario para esta migración.
+
+El SDK incluye una dependencia Node de Firestore en gRPC. Se fuerza `@grpc/grpc-js >= 1.14.5` dentro de la versión mayor 1 para evitar las vulnerabilidades GHSA-m9gg-hp2v-232j y GHSA-f596-whhp-79r4 detectadas por la auditoría de dependencias. Esta dependencia Node no se usa en el cliente del navegador.
+
+## Próximo paso en Firebase
+1. En Authentication, habilitar el proveedor Correo electrónico/Contraseña.
+2. Agregar `pensum-unicauca.vercel.app` a los dominios autorizados. Agregar `localhost` y el dominio de preview usado para las pruebas cuando corresponda (sin protocolo ni puerto).
+3. Crear Cloud Firestore, confirmar edición Standard compatible con el objetivo Spark, elegir ubicación y usar modo producción. No usar modo de prueba con acceso público.
+4. Obtener acceso administrativo para exportar/importar cuentas y datos y desplegar las reglas. El registro de la app web no autentica la CLI ni proporciona ese acceso.
+5. Implementar la sincronización para la edición confirmada y conectar el adaptador de autenticación a las pantallas. Probar con cuentas de prueba antes de migrar estudiantes.
+
+Mantener este PR como borrador hasta completar lo anterior, resolver Alexa y verificar la migración. No fusionar esta preparación como si ya resolviera el acceso de las cuentas existentes.
 
 ## Arquitectura objetivo
 - Vercel + React/Vite para el frontend existente.
