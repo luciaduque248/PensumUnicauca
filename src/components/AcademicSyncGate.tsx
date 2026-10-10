@@ -527,6 +527,16 @@ export const AcademicSyncGate = ({
                 }
             };
 
+        // Reintenta sincronizar cuando regresa la conexión.
+        // Los cambios locales permanecen pendientes si el servidor falla.
+        const handleOnline = (): void => {
+            if (hasAccountStorageDirtyChanges(userId)) {
+                runSave();
+            }
+        };
+
+        window.addEventListener("online", handleOnline);
+
         window.addEventListener(
             ACADEMIC_STORAGE_CHANGED_EVENT,
             handleStorageChanged,
@@ -552,9 +562,8 @@ export const AcademicSyncGate = ({
             window.setInterval(
                 () => {
                     if (
-                        hasAccountStorageDirtyChanges(
-                            userId,
-                        )
+                        navigator.onLine &&
+                        hasAccountStorageDirtyChanges(userId)
                     ) {
                         runSave();
                     }
@@ -571,6 +580,7 @@ export const AcademicSyncGate = ({
         }
 
         return () => {
+            window.removeEventListener("online", handleOnline);
             window.removeEventListener(
                 ACADEMIC_STORAGE_CHANGED_EVENT,
                 handleStorageChanged,
