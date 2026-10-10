@@ -48,6 +48,8 @@ import type {
     AppAccessContextValue,
 } from "../types/appAccess";
 
+import { usesFirebase } from "../lib/backendProvider";
+
 interface ApplicationAccessGateProps {
     children: ReactNode;
 }
@@ -103,6 +105,7 @@ const isInvalidCredentialsError = (
     return (
         errorCode ===
         "invalid_credentials" ||
+        ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found"].includes(errorCode) ||
         errorMessage.includes(
             "invalid login credentials",
         )
@@ -136,6 +139,17 @@ const getAuthenticationErrorMessage = (
     ) {
         return "No pudimos verificar una combinación válida de correo y contraseña. Revisa los datos o crea una cuenta si todavía no estás registrado.";
     }
+
+    const firebaseMessages: Record<string, string> = {
+        "auth/email-already-in-use": "Ya existe una cuenta registrada con este correo electrónico.",
+        "auth/weak-password": "La contraseña debe tener al menos seis caracteres.",
+        "auth/invalid-email": "El correo electrónico ingresado no es válido.",
+        "auth/too-many-requests": "Espera unos minutos antes de intentarlo nuevamente.",
+        "auth/network-request-failed": "No se pudo conectar. Revisa tu conexión e inténtalo nuevamente.",
+        "auth/user-disabled": "Esta cuenta está deshabilitada. Contacta a la administradora.",
+    };
+    const firebaseMessage = firebaseMessages[getAuthenticationErrorCode(error)];
+    if (firebaseMessage) return firebaseMessage;
 
     if (
         normalizedMessage.includes(
@@ -727,7 +741,7 @@ const AccessPortal = ({
                 </section>
 
                 <section className="access-card">
-                    <AlexaCompatibilityBadge />
+                    {usesFirebase ? null : <AlexaCompatibilityBadge />}
 
                     {authInitializationError && (
                         <div
@@ -805,7 +819,7 @@ const AccessPortal = ({
                                             </strong>
 
                                             <small>
-                                                Prepara la sincronización y Alexa.
+                                                {usesFirebase ? "Sincroniza tus notas y horarios." : "Prepara la sincronización y Alexa."}
                                             </small>
                                         </span>
                                     </button>
@@ -1042,7 +1056,7 @@ const AccessPortal = ({
                                     </h2>
 
                                     <p>
-                                        La cuenta será necesaria para sincronizar tus datos y vincular Alexa.
+                                        {usesFirebase ? "Crea una cuenta de prueba para sincronizar tus datos." : "La cuenta será necesaria para sincronizar tus datos y vincular Alexa."}
                                     </p>
                                 </div>
 

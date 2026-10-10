@@ -7,10 +7,9 @@ import {
     type User,
 } from "firebase/auth";
 
-import { getFirebaseAuth } from "../lib/firebase";
+import { getFirebaseAuth } from "../lib/firebase.js";
 
-// Staged adapter: wire this into AuthProvider only together with Firestore sync
-// and the existing-account migration. Firebase UIDs must match migrated data.
+// Firebase login and Firestore synchronization are enabled together in preview.
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
 export const signUpWithFirebaseEmail = async (

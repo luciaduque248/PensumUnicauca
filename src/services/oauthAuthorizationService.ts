@@ -1,5 +1,5 @@
 import {
-    supabase,
+    getSupabaseClient,
 } from "../lib/supabase";
 
 import type {
@@ -85,7 +85,7 @@ export const getOAuthAuthorizationRequest =
             data,
             error,
         } =
-            await supabase.auth.oauth
+            await getSupabaseClient().auth.oauth
                 .getAuthorizationDetails(
                     authorizationId,
                 );
@@ -155,7 +155,7 @@ export const approveOAuthAuthorization =
             data,
             error,
         } =
-            await supabase.auth.oauth
+            await getSupabaseClient().auth.oauth
                 .approveAuthorization(
                     authorizationId,
                 );
@@ -177,7 +177,7 @@ export const denyOAuthAuthorization =
             data,
             error,
         } =
-            await supabase.auth.oauth
+            await getSupabaseClient().auth.oauth
                 .denyAuthorization(
                     authorizationId,
                 );

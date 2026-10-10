@@ -1,23 +1,23 @@
-import type {
-    AuthChangeEvent,
-    Session,
-    User,
-} from "@supabase/supabase-js";
+export interface AuthUser {
+    id: string;
+    email?: string | null;
+}
+
+export interface AuthSession {
+    user: AuthUser;
+}
 
 export interface SignUpResult {
-    user: User | null;
-    session: Session | null;
+    user: AuthUser | null;
+    session: AuthSession | null;
     requiresEmailConfirmation: boolean;
 }
 
-export type AuthStateChangeListener = (
-    event: AuthChangeEvent,
-    session: Session | null,
-) => void;
+export type AuthStateChangeListener = (session: AuthSession | null) => void;
 
 export interface AuthContextValue {
-    session: Session | null;
-    user: User | null;
+    session: AuthSession | null;
+    user: AuthUser | null;
     isAuthLoading: boolean;
     authInitializationError: string | null;
 }

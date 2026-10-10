@@ -1,116 +1,45 @@
-import type { Session } from "@supabase/supabase-js";
+import type { User } from "firebase/auth";
+import { usesFirebase } from "../lib/backendProvider";
+import * as legacy from "./supabaseAuthService";
+import {
+    getCurrentFirebaseUser, signInWithFirebaseEmail, signOutFromFirebase,
+    signUpWithFirebaseEmail, subscribeToFirebaseAuthChanges,
+} from "./firebaseAuthService";
+import type { AuthSession, AuthStateChangeListener, SignUpResult } from "../types/auth";
 
-import { supabase } from "../lib/supabase";
-import type {
-    AuthStateChangeListener,
-    SignUpResult,
-} from "../types/auth";
+const toSession = (user: User | null): AuthSession | null =>
+    user ? { user: { id: user.uid, email: user.email } } : null;
 
-const normalizeEmail = (
-    email: string,
-): string => {
-    return email.trim().toLowerCase();
+export const signUpWithEmail = async (email: string, password: string): Promise<SignUpResult> => {
+    if (!usesFirebase) return legacy.signUpWithEmail(email, password);
+    const session = toSession(await signUpWithFirebaseEmail(email, password));
+    return { user: session?.user ?? null, session, requiresEmailConfirmation: false };
 };
 
-const getEmailRedirectUrl = (): string => {
-    return `${window.location.origin}/`;
-};
-
-export const signUpWithEmail = async (
-    email: string,
-    password: string,
-): Promise<SignUpResult> => {
-    const normalizedEmail =
-        normalizeEmail(email);
-
-    const {
-        data,
-        error,
-    } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: {
-            emailRedirectTo:
-                getEmailRedirectUrl(),
-        },
-    });
-
-    if (error) {
-        throw error;
-    }
-
-    return {
-        user: data.user,
-        session: data.session,
-        requiresEmailConfirmation:
-            data.session === null,
-    };
-};
-
-export const signInWithEmail = async (
-    email: string,
-    password: string,
-): Promise<Session> => {
-    const normalizedEmail =
-        normalizeEmail(email);
-
-    const {
-        data,
-        error,
-    } =
-        await supabase.auth
-            .signInWithPassword({
-                email: normalizedEmail,
-                password,
-            });
-
-    if (error) {
-        throw error;
-    }
-
-    return data.session;
+export const signInWithEmail = async (email: string, password: string): Promise<AuthSession> => {
+    if (!usesFirebase) return legacy.signInWithEmail(email, password);
+    const user = await signInWithFirebaseEmail(email, password);
+    return { user: { id: user.uid, email: user.email } };
 };
 
 export const signOut = async (): Promise<void> => {
-    const {
-        error,
-    } = await supabase.auth.signOut();
-
-    if (error) {
-        throw error;
-    }
+    if (usesFirebase) await signOutFromFirebase();
+    else await legacy.signOut();
 };
 
-export const getCurrentSession =
-    async (): Promise<Session | null> => {
-        const {
-            data,
-            error,
-        } =
-            await supabase.auth.getSession();
-
-        if (error) {
-            throw error;
-        }
-
-        return data.session;
-    };
+export const getCurrentSession = async (): Promise<AuthSession | null> =>
+    usesFirebase ? toSession(await getCurrentFirebaseUser()) : legacy.getCurrentSession();
 
 export const subscribeToAuthChanges = (
     listener: AuthStateChangeListener,
+    onError: (error: Error) => void,
 ): (() => void) => {
-    const {
-        data: {
-            subscription,
-        },
-    } =
-        supabase.auth.onAuthStateChange(
-            (event, session) => {
-                listener(event, session);
-            },
-        );
-
-    return () => {
-        subscription.unsubscribe();
-    };
+    try {
+        return usesFirebase
+            ? subscribeToFirebaseAuthChanges(user => listener(toSession(user)), onError)
+            : legacy.subscribeToAuthChanges(listener);
+    } catch (error) {
+        queueMicrotask(() => onError(error instanceof Error ? error : new Error(String(error))));
+        return () => {};
+    }
 };
