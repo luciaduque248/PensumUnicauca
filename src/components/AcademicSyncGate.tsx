@@ -527,6 +527,16 @@ export const AcademicSyncGate = ({
                 }
             };
 
+        // Reintenta sincronizar cuando regresa la conexión.
+        // Los cambios locales permanecen pendientes si el servidor falla.
+        const handleOnline = (): void => {
+            if (hasAccountStorageDirtyChanges(userId)) {
+                runSave();
+            }
+        };
+
+        window.addEventListener("online", handleOnline);
+
         window.addEventListener(
             ACADEMIC_STORAGE_CHANGED_EVENT,
             handleStorageChanged,
@@ -552,9 +562,8 @@ export const AcademicSyncGate = ({
             window.setInterval(
                 () => {
                     if (
-                        hasAccountStorageDirtyChanges(
-                            userId,
-                        )
+                        navigator.onLine &&
+                        hasAccountStorageDirtyChanges(userId)
                     ) {
                         runSave();
                     }
@@ -571,6 +580,7 @@ export const AcademicSyncGate = ({
         }
 
         return () => {
+            window.removeEventListener("online", handleOnline);
             window.removeEventListener(
                 ACADEMIC_STORAGE_CHANGED_EVENT,
                 handleStorageChanged,
@@ -630,5 +640,44 @@ export const AcademicSyncGate = ({
         );
     }
 
-    return children;
+    return (
+        <>
+            {children}
+            {user && (
+                <button
+                    type="button"
+                    onClick={() => {
+                        const data = readAccountAcademicData(user.id);
+                        const backup = {
+                            format: "mi-pensum-academic-backup",
+                            version: 1,
+                            exportedAt: new Date().toISOString(),
+                            academicData: data,
+                        };
+                        const blob = new Blob(
+                            [JSON.stringify(backup, null, 2)],
+                            { type: "application/json" },
+                        );
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.download = `mi-pensum-respaldo-${new Date().toISOString().slice(0, 10)}.json`;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    }}
+                    title="Descarga una copia local de tus materias, notas y horario. Guarda el archivo en un lugar privado."
+                    style={{
+                        position: "fixed", bottom: 16, right: 16,
+                        zIndex: 1000, borderRadius: 12, padding: "10px 14px",
+                        background: "#312e81", color: "#fff", border: "1px solid #818cf8",
+                        cursor: "pointer", boxShadow: "0 4px 16px #0004",
+                    }}
+                >
+                    Descargar respaldo
+                </button>
+            )}
+        </>
+    );
 };
