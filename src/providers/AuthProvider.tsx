@@ -5,9 +5,7 @@ import {
     type ReactNode,
 } from "react";
 
-import type {
-    Session,
-} from "@supabase/supabase-js";
+import type { AuthSession } from "../types/auth";
 
 import {
     getCurrentSession,
@@ -42,7 +40,7 @@ export const AuthProvider = ({
     const [
         session,
         setSession,
-    ] = useState<Session | null>(null);
+    ] = useState<AuthSession | null>(null);
 
     const [
         isAuthLoading,
@@ -60,7 +58,7 @@ export const AuthProvider = ({
 
         const unsubscribe =
             subscribeToAuthChanges(
-                (_event, nextSession) => {
+                (nextSession) => {
                     authEventReceived = true;
 
                     if (!isActive) {
@@ -73,6 +71,12 @@ export const AuthProvider = ({
                         null,
                     );
 
+                    setIsAuthLoading(false);
+                },
+                (error) => {
+                    if (!isActive) return;
+                    authEventReceived = true;
+                    setAuthInitializationError(getErrorMessage(error));
                     setIsAuthLoading(false);
                 },
             );

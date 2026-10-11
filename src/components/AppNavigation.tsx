@@ -11,6 +11,7 @@ import {
 } from "react-icons/lu";
 
 import "../styles/alexa-navigation.css";
+import { usesFirebase } from "../lib/backendProvider";
 
 import {
     useAppAccess,
@@ -378,7 +379,7 @@ function AppNavigation({ currentView }: AppNavigationProps) {
                 </div>
             </nav>
 
-            {alexaPortalTarget
+            {alexaPortalTarget && !usesFirebase
                 ? createPortal(alexaPanel, alexaPortalTarget)
                 : null}
         </>

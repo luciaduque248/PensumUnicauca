@@ -38,7 +38,7 @@ interface AcademicSyncGateProps {
 
 /*
  * Espera después del último cambio antes
- * de guardar el snapshot en Supabase.
+ * de guardar el snapshot en la nube.
  */
 const SAVE_DELAY_MS =
     1500;
@@ -103,6 +103,9 @@ export const AcademicSyncGate = ({
                 ),
         );
 
+    const [initialSyncError, setInitialSyncError] = useState(false);
+    const [retryAttempt, setRetryAttempt] = useState(0);
+
     /*
      * Serializa los guardados.
      *
@@ -116,13 +119,13 @@ export const AcademicSyncGate = ({
 
     /*
      * Evita interpretar la hidratación inicial
-     * desde Supabase como una edición del usuario.
+     * desde la nube como una edición del usuario.
      */
     const isHydratingFromCloudRef =
         useRef(false);
 
     /*
-     * Guarda el snapshot local actual en Supabase.
+     * Guarda el snapshot local actual en la nube.
      *
      * Esta función nunca consulta primero la nube,
      * nunca reemplaza localStorage y nunca recarga
@@ -185,7 +188,7 @@ export const AcademicSyncGate = ({
                                  * snapshot recién guardado.
                                  *
                                  * Si el usuario realizó otro cambio mientras
-                                 * Supabase respondía, la nueva marca permanece
+                                 * la nube respondía, la nueva marca permanece
                                  * y se ejecutará otro guardado.
                                  */
                                 clearAccountStorageDirty(
@@ -206,7 +209,7 @@ export const AcademicSyncGate = ({
     /*
      * Carga inicial de la cuenta.
      *
-     * Supabase solo puede reemplazar localStorage antes de
+     * La nube solo puede reemplazar localStorage antes de
      * mostrar la aplicación y únicamente cuando no hay una
      * edición local pendiente.
      */
@@ -261,26 +264,24 @@ export const AcademicSyncGate = ({
         let isActive =
             true;
 
-        setIsReady(
-            false,
-        );
+        setIsReady(false);
+        setInitialSyncError(false);
 
         const initializeAccount =
             async (): Promise<void> => {
+                let succeeded = false;
                 try {
                     /*
                      * Si ya hay una modificación local pendiente,
-                     * esa información tiene prioridad sobre Supabase.
+                     * esa información tiene prioridad sobre la nube.
                      */
                     if (
                         hasAccountStorageDirtyChanges(
                             userId,
                         )
                     ) {
-                        await queueLocalSave(
-                            userId,
-                        );
-
+                        await queueLocalSave(userId);
+                        succeeded = true;
                         return;
                     }
 
@@ -289,9 +290,8 @@ export const AcademicSyncGate = ({
                             userId,
                         );
 
-                    if (
-                        cloudSnapshot
-                    ) {
+                    if (!isActive) return;
+                    if (cloudSnapshot) {
                         /*
                          * La hidratación ocurre mientras children todavía
                          * no se renderiza. Por eso no se ve un parpadeo.
@@ -306,7 +306,7 @@ export const AcademicSyncGate = ({
                             );
 
                             /*
-                             * La escritura de datos provenientes de Supabase
+                             * La escritura de datos provenientes de la nube
                              * no debe quedar marcada como edición local.
                              */
                             const cloudDirtyMarker =
@@ -328,11 +328,12 @@ export const AcademicSyncGate = ({
                                 false;
                         }
 
+                        succeeded = true;
                         return;
                     }
 
                     /*
-                     * Si Supabase todavía no tiene snapshot, pero el
+                     * Si la nube todavía no tiene snapshot, pero el
                      * navegador sí tiene información, se crea la copia
                      * inicial sin modificar la interfaz.
                      */
@@ -358,6 +359,7 @@ export const AcademicSyncGate = ({
                             updatedAt,
                         );
                     }
+                    succeeded = true;
                 } catch (
                 error
                 ) {
@@ -366,16 +368,10 @@ export const AcademicSyncGate = ({
                         error,
                     );
                 } finally {
-                    markAccountInitialSyncLoaded(
-                        userId,
-                    );
-
-                    if (
-                        isActive
-                    ) {
-                        setIsReady(
-                            true,
-                        );
+                    if (isActive) {
+                        if (succeeded) markAccountInitialSyncLoaded(userId);
+                        setInitialSyncError(!succeeded);
+                        setIsReady(succeeded);
                     }
                 }
             };
@@ -389,18 +385,20 @@ export const AcademicSyncGate = ({
     }, [
         user,
         queueLocalSave,
+        retryAttempt,
     ]);
 
     /*
-     * Sincronización localStorage → Supabase.
+     * Sincronización localStorage → la nube.
      *
      * Mientras la aplicación está abierta no existe
-     * sincronización automática Supabase → localStorage.
+     * sincronización automática la nube → localStorage.
      */
     useEffect(() => {
         if (
             !user ||
-            !isReady
+            !isReady ||
+            !hasAccountInitialSyncLoaded(user.id)
         ) {
             return;
         }
@@ -543,7 +541,7 @@ export const AcademicSyncGate = ({
         );
 
         /*
-         * No consulta Supabase.
+         * No consulta la nube.
          *
          * Solo reintenta guardar si todavía existe
          * una modificación local pendiente.
@@ -605,9 +603,18 @@ export const AcademicSyncGate = ({
         queueLocalSave,
     ]);
 
-    if (
-        !isReady
-    ) {
+    if (user && (!isReady || !hasAccountInitialSyncLoaded(user.id))) {
+        if (initialSyncError) {
+            return (
+                <div className="academic-sync-loading" role="alert">
+                    <strong>No pudimos recuperar tu información</strong>
+                    <p>Revisa tu conexión y vuelve a intentar. Tus datos locales se conservan.</p>
+                    <button type="button" onClick={() => setRetryAttempt(attempt => attempt + 1)}>
+                        Reintentar
+                    </button>
+                </div>
+            );
+        }
         return (
             <div
                 className="academic-sync-loading"

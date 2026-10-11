@@ -3,16 +3,26 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.5"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "test": "node -e \"require('fs').rmSync('.test-dist',{recursive:true,force:true})\" && tsc -p tsconfig.tests.json && node --test .test-dist/tests/gradeCalculations.test.js",
+    "test": "node -e \"require('fs').rmSync('.test-dist',{recursive:true,force:true})\" && tsc -p tsconfig.tests.json && node --test .test-dist/tests/*.test.js",
+    "test:firebase": "npm run test && node .test-dist/tests/firebase.integration.js",
+    "test:alexa-firebase": "npm run test && node .test-dist/tests/alexaFirebase.integration.js",
     "check": "npm run lint && npm run test && npm run build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google-cloud/firestore": "9.3.1",
     "@supabase/supabase-js": "^2.110.7",
+    "@vercel/oidc": "4.0.0",
+    "firebase": "^13.0.0",
+    "firebase-admin": "14.5.0",
+    "google-auth-library": "11.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-icons": "^5.7.0",

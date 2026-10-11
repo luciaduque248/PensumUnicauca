@@ -1,8 +1,5 @@
 /* eslint-disable no-useless-assignment */
-import {
-    createClient,
-    type SupabaseClient,
-} from "@supabase/supabase-js";
+import { createAcademicApiClient, type AcademicApiClient, isSnapshotConflict } from "../server/academicApiClient.js";
 
 import {
     curriculum,
@@ -35,12 +32,6 @@ import type {
     ScheduleClass,
 } from "../src/types/schedule.js";
 
-interface AcademicSnapshotRow {
-    academic_data: unknown;
-    schema_version: number;
-    updated_at: string;
-}
-
 interface ParsedSchedule {
     classes: ScheduleClass[];
     isConfirmed: boolean;
@@ -64,7 +55,7 @@ interface GradeUpdateRequestBody {
 
 interface AuthenticatedContext {
     ok: true;
-    supabase: SupabaseClient;
+    academicClient: AcademicApiClient;
     userId: string;
 }
 
@@ -864,42 +855,6 @@ const createJsonResponse = (
     );
 };
 
-const createSupabaseClient = (
-    accessToken: string,
-): SupabaseClient | null => {
-    const supabaseUrl =
-        process.env.SUPABASE_URL;
-
-    const supabasePublishableKey =
-        process.env
-            .SUPABASE_PUBLISHABLE_KEY;
-
-    if (
-        !supabaseUrl ||
-        !supabasePublishableKey
-    ) {
-        return null;
-    }
-
-    return createClient(
-        supabaseUrl,
-        supabasePublishableKey,
-        {
-            auth: {
-                persistSession: false,
-                autoRefreshToken: false,
-                detectSessionInUrl: false,
-            },
-            global: {
-                headers: {
-                    Authorization:
-                        `Bearer ${accessToken}`,
-                },
-            },
-        },
-    );
-};
-
 const getAuthenticatedContext =
     async (
         request: Request,
@@ -923,14 +878,14 @@ const getAuthenticatedContext =
             };
         }
 
-        const supabase =
-            createSupabaseClient(
+        const academicClient =
+            createAcademicApiClient(
                 accessToken,
             );
 
-        if (!supabase) {
+        if (!academicClient) {
             console.error(
-                "[Alexa grades API] Faltan las variables de Supabase.",
+                "[Alexa grades API] Falta la configuración de autenticación.",
             );
 
             return {
@@ -952,7 +907,7 @@ const getAuthenticatedContext =
             data: userData,
             error: userError,
         } =
-            await supabase.auth
+            await academicClient.auth
                 .getUser(
                     accessToken,
                 );
@@ -978,48 +933,13 @@ const getAuthenticatedContext =
 
         return {
             ok: true,
-            supabase,
+            academicClient,
             userId:
                 userData.user.id,
         };
     };
 
-const getSnapshot =
-    async (
-        supabase: SupabaseClient,
-        userId: string,
-    ): Promise<{
-        snapshot: AcademicSnapshotRow | null;
-        error: unknown;
-    }> => {
-        const {
-            data,
-            error,
-        } =
-            await supabase
-                .from(
-                    "academic_snapshots",
-                )
-                .select(
-                    [
-                        "academic_data",
-                        "schema_version",
-                        "updated_at",
-                    ].join(","),
-                )
-                .eq(
-                    "user_id",
-                    userId,
-                )
-                .maybeSingle<
-                    AcademicSnapshotRow
-                >();
-
-        return {
-            snapshot: data,
-            error,
-        };
-    };
+const getSnapshot = (client: AcademicApiClient, userId: string) => client.getSnapshot(userId);
 
 const buildGradesResponse = (
     academicData:
@@ -1181,7 +1101,7 @@ const handleGetRequest =
             error,
         } =
             await getSnapshot(
-                authContext.supabase,
+                authContext.academicClient,
                 authContext.userId,
             );
 
@@ -1394,7 +1314,7 @@ const handlePostRequest =
             error: snapshotError,
         } =
             await getSnapshot(
-                authContext.supabase,
+                authContext.academicClient,
                 authContext.userId,
             );
 
@@ -1688,35 +1608,10 @@ const handlePostRequest =
                 nextGradeRecords,
         };
 
-        const updatedAt =
-            new Date().toISOString();
-
-        const {
-            error: saveError,
-        } =
-            await authContext.supabase
-                .from(
-                    "academic_snapshots",
-                )
-                .upsert(
-                    {
-                        user_id:
-                            authContext.userId,
-                        academic_data:
-                            nextAcademicData,
-                        schema_version:
-                            snapshot.schema_version ??
-                            1,
-                        updated_at:
-                            updatedAt,
-                    },
-                    {
-                        onConflict:
-                            "user_id",
-                    },
-                );
+        const { error: saveError, updatedAt } = await authContext.academicClient.saveSnapshot(authContext.userId, nextAcademicData, snapshot);
 
         if (saveError) {
+            if (isSnapshotConflict(saveError)) return createJsonResponse(request, { ok: false, code: "snapshot_conflict", error: "La información cambió mientras se guardaba la nota. Inténtalo de nuevo." }, 409);
             console.error(
                 "[Alexa grades API] No fue posible guardar la nota.",
                 saveError,

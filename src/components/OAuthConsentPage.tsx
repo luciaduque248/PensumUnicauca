@@ -792,7 +792,7 @@ function OAuthConsentPage() {
                     />
 
                     <span>
-                        Alexa solo utilizará esta conexión para leer la información de tu propia cuenta. No modificará materias, notas ni repitencias.
+                        Alexa utilizará esta conexión para consultar la información de tu propia cuenta y registrar notas cuando se lo pidas. No modificará materias ni repitencias.
                     </span>
                 </div>
 
