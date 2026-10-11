@@ -1,11 +1,9 @@
-import { getApps, initializeApp, applicationDefault } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 import { Firestore } from "@google-cloud/firestore";
 import { ExternalAccountClient, GoogleAuth } from "google-auth-library";
 import { getVercelOidcToken } from "@vercel/oidc";
 
 const PROJECT_ID = "mi-pensum-unicauca";
-let services: { auth: ReturnType<typeof getAuth>; db: Firestore } | undefined;
+let services: { auth: { getUser(uid: string): Promise<{ uid: string; disabled: boolean }> }; db: Firestore } | undefined;
 
 // Server only. Vercel uses federation; local checks can use private ADC.
 export function getFirebaseServer() {
@@ -13,7 +11,6 @@ export function getFirebaseServer() {
     const projectId = process.env.GCP_PROJECT_ID ?? PROJECT_ID;
     if (projectId !== PROJECT_ID) throw new Error("Unexpected Firebase project.");
     let googleAuth: GoogleAuth;
-    let credential;
     if (process.env.VERCEL) {
         const number = process.env.GCP_PROJECT_NUMBER;
         const pool = process.env.GCP_WORKLOAD_IDENTITY_POOL_ID;
@@ -31,18 +28,21 @@ export function getFirebaseServer() {
         if (!authClient) throw new Error("Invalid Firebase federation configuration.");
         authClient.scopes = ["https://www.googleapis.com/auth/cloud-platform"];
         googleAuth = new GoogleAuth({ authClient, projectId });
-        credential = { async getAccessToken() {
-            const result = await authClient.getAccessToken();
-            if (!result.token) throw new Error("Firebase server authentication failed.");
-            const expires = authClient.credentials.expiry_date ?? Date.now() + 300_000;
-            return { access_token: result.token, expires_in: Math.max(1, Math.floor((expires - Date.now()) / 1000)) };
-        }};
     } else {
         googleAuth = new GoogleAuth({ projectId, scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
-        credential = applicationDefault();
     }
-    const app = getApps().find(app => app.name === "pensum-server") ??
-        initializeApp({ projectId, credential }, "pensum-server");
-    services = { auth: getAuth(app), db: new Firestore({ projectId, auth: googleAuth }) };
+    // Official Auth lookup API avoids an Admin SDK CommonJS/ESM incompatibility
+    // in Vercel's loader. The service account only needs firebaseauth.users.get.
+    services = { auth: { async getUser(uid) {
+        if (!uid || uid.length > 128 || uid.includes("/")) throw new Error("Invalid Firebase UID.");
+        const response = await googleAuth.request<{ users?: Array<{ localId?: string; disabled?: boolean }> }>({
+            url: `https://identitytoolkit.googleapis.com/v1/projects/${projectId}/accounts:lookup`,
+            method: "POST", data: { localId: [uid] }, timeout: 15_000,
+        });
+        const user = response.data.users?.find(user => user.localId === uid);
+        if (!user) throw Object.assign(new Error("Firebase account not found."), { code: "auth/user-not-found" });
+        if (user.disabled !== undefined && typeof user.disabled !== "boolean") throw new Error("Invalid Firebase account state.");
+        return { uid, disabled: user.disabled === true };
+    }}, db: new Firestore({ projectId, auth: googleAuth }) };
     return services;
 }

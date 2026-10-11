@@ -3,7 +3,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { FieldValue } from "@google-cloud/firestore";
-import { deleteApp, getApps } from "firebase-admin/app";
+import { applicationDefault, deleteApp, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { getFirebaseServer } from "../server/firebaseServer.js";
 import { createAcademicApiClient, isSnapshotConflict } from "../server/academicApiClient.js";
 import { encodeFirebaseSnapshot, decodeFirebaseSnapshot } from "../src/utils/firebaseSnapshot.js";
@@ -17,7 +18,9 @@ if (process.env.FIREBASE_LIVE_CHECK !== "mi-pensum-unicauca") throw new Error("L
 process.env.ALEXA_DATA_PROVIDER = "firebase";
 process.env.SUPABASE_URL = "https://kdyjjbzahmyhbmuwrwzr.supabase.co";
 process.env.SUPABASE_PUBLISHABLE_KEY = "synthetic-test-key";
-const { auth, db } = getFirebaseServer();
+const { db } = getFirebaseServer();
+const fixtureApp = initializeApp({ projectId: "mi-pensum-unicauca", credential: applicationDefault() }, "pensum-fixtures");
+const auth = getAuth(fixtureApp);
 const owner = randomUUID(), other = randomUUID();
 const ownerRef = db.doc(`academic_snapshots/${owner}`), otherRef = db.doc(`academic_snapshots/${other}`);
 const realFetch = globalThis.fetch;
@@ -64,11 +67,13 @@ try {
     await auth.updateUser(owner, { disabled: false });
     const blank = new Request("https://example.com/api/account", { headers: { Authorization: "Bearer invalid" } });
     assert.equal((await account.fetch(blank)).status, 401);
-    console.log("PASS: five Alexa APIs read real Firestore; grades update own account; stale writes, other UID, disabled account and invalid token rejected.");
+    await auth.deleteUser(owner); createdOwner = false;
+    assert.equal((await account.fetch(request("account"))).status, 401);
+    console.log("PASS: five Alexa APIs read real Firestore; grades update own account; stale writes, other UID, disabled/deleted accounts and invalid token rejected.");
 } finally {
     globalThis.fetch = realFetch;
     const results = await Promise.allSettled([ownerRef.delete(), otherRef.delete(), ...(createdOwner ? [auth.deleteUser(owner)] : []), ...(createdOther ? [auth.deleteUser(other)] : [])]);
-    await db.terminate();await Promise.all(getApps().filter(a => a.name === "pensum-server").map(deleteApp));
+    await db.terminate();await deleteApp(fixtureApp);
     assert.ok(results.every(r => r.status === "fulfilled"), "Synthetic fixture cleanup failed.");
     console.log("Synthetic Firebase fixtures removed.");
 }
