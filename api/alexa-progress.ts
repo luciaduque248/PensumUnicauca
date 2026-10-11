@@ -1,6 +1,4 @@
-import {
-    createClient,
-} from "@supabase/supabase-js";
+import { createAcademicApiClient } from "../server/academicApiClient.js";
 
 import {
     curriculum,
@@ -11,12 +9,6 @@ import type {
     Subject,
     SubjectStatus,
 } from "../src/types/curriculum.js";
-
-interface AcademicSnapshotRow {
-    academic_data: unknown;
-    schema_version: number;
-    updated_at: string;
-}
 
 const SUBJECT_STATUSES_KEY =
     "pensum-subject-statuses";
@@ -223,34 +215,6 @@ const handleGetRequest =
     async (
         request: Request,
     ): Promise<Response> => {
-        const supabaseUrl =
-            process.env
-                .SUPABASE_URL;
-
-        const supabasePublishableKey =
-            process.env
-                .SUPABASE_PUBLISHABLE_KEY;
-
-        if (
-            !supabaseUrl ||
-            !supabasePublishableKey
-        ) {
-            console.error(
-                "[Alexa progress API] Faltan las variables SUPABASE_URL o SUPABASE_PUBLISHABLE_KEY.",
-            );
-
-            return createJsonResponse(
-                request,
-                {
-                    ok: false,
-
-                    error:
-                        "El servicio no está configurado correctamente.",
-                },
-                500,
-            );
-        }
-
         const accessToken =
             getBearerToken(
                 request,
@@ -269,36 +233,14 @@ const handleGetRequest =
             );
         }
 
-        const supabase =
-            createClient(
-                supabaseUrl,
-                supabasePublishableKey,
-                {
-                    auth: {
-                        persistSession:
-                            false,
-
-                        autoRefreshToken:
-                            false,
-
-                        detectSessionInUrl:
-                            false,
-                    },
-
-                    global: {
-                        headers: {
-                            Authorization:
-                                `Bearer ${accessToken}`,
-                        },
-                    },
-                },
-            );
+        const academicClient = createAcademicApiClient(accessToken);
+        if (!academicClient) return createJsonResponse(request, { ok: false, error: "El servicio no está configurado correctamente." }, 500);
 
         const {
             data: userData,
             error: userError,
         } =
-            await supabase.auth
+            await academicClient.auth
                 .getUser(
                     accessToken,
                 );
@@ -319,28 +261,7 @@ const handleGetRequest =
             );
         }
 
-        const {
-            data: snapshotData,
-            error: snapshotError,
-        } =
-            await supabase
-                .from(
-                    "academic_snapshots",
-                )
-                .select(
-                    [
-                        "academic_data",
-                        "schema_version",
-                        "updated_at",
-                    ].join(","),
-                )
-                .eq(
-                    "user_id",
-                    userData.user.id,
-                )
-                .maybeSingle<
-                    AcademicSnapshotRow
-                >();
+        const { snapshot: snapshotData, error: snapshotError } = await academicClient.getSnapshot(userData.user.id);
 
         if (snapshotError) {
             console.error(

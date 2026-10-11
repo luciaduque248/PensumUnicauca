@@ -1,7 +1,4 @@
-import {
-    createClient,
-    type SupabaseClient,
-} from "@supabase/supabase-js";
+import { createAcademicApiClient, type AcademicApiClient } from "../server/academicApiClient.js";
 
 import {
     curriculum,
@@ -13,12 +10,6 @@ import type {
     Subject,
     SubjectStatus,
 } from "../src/types/curriculum.js";
-
-interface AcademicSnapshotRow {
-    academic_data: unknown;
-    schema_version: number;
-    updated_at: string;
-}
 
 interface ParsedSubjectAttempt {
     repeatLevel: RepeatLevel;
@@ -42,7 +33,7 @@ interface ParsedStudentRegulatoryRecord {
 
 interface AuthenticatedContext {
     ok: true;
-    supabase: SupabaseClient;
+    academicClient: AcademicApiClient;
     userId: string;
 }
 
@@ -814,45 +805,6 @@ const createJsonResponse = (
     );
 };
 
-const createSupabaseClient = (
-    accessToken: string,
-): SupabaseClient | null => {
-    const supabaseUrl =
-        process.env.SUPABASE_URL;
-
-    const supabasePublishableKey =
-        process.env
-            .SUPABASE_PUBLISHABLE_KEY;
-
-    if (
-        !supabaseUrl ||
-        !supabasePublishableKey
-    ) {
-        return null;
-    }
-
-    return createClient(
-        supabaseUrl,
-        supabasePublishableKey,
-        {
-            auth: {
-                persistSession:
-                    false,
-                autoRefreshToken:
-                    false,
-                detectSessionInUrl:
-                    false,
-            },
-            global: {
-                headers: {
-                    Authorization:
-                        `Bearer ${accessToken}`,
-                },
-            },
-        },
-    );
-};
-
 const getAuthenticatedContext =
     async (
         request: Request,
@@ -878,14 +830,14 @@ const getAuthenticatedContext =
             };
         }
 
-        const supabase =
-            createSupabaseClient(
+        const academicClient =
+            createAcademicApiClient(
                 accessToken,
             );
 
-        if (!supabase) {
+        if (!academicClient) {
             console.error(
-                "[Alexa academic status API] Faltan las variables de Supabase.",
+                "[Alexa academic status API] Falta la configuración de autenticación.",
             );
 
             return {
@@ -907,7 +859,7 @@ const getAuthenticatedContext =
             data: userData,
             error: userError,
         } =
-            await supabase.auth
+            await academicClient.auth
                 .getUser(
                     accessToken,
                 );
@@ -933,50 +885,13 @@ const getAuthenticatedContext =
 
         return {
             ok: true,
-            supabase,
+            academicClient,
             userId:
                 userData.user.id,
         };
     };
 
-const getSnapshot =
-    async (
-        supabase: SupabaseClient,
-        userId: string,
-    ): Promise<{
-        snapshot:
-        AcademicSnapshotRow | null;
-        error: unknown;
-    }> => {
-        const {
-            data,
-            error,
-        } =
-            await supabase
-                .from(
-                    "academic_snapshots",
-                )
-                .select(
-                    [
-                        "academic_data",
-                        "schema_version",
-                        "updated_at",
-                    ].join(","),
-                )
-                .eq(
-                    "user_id",
-                    userId,
-                )
-                .maybeSingle<
-                    AcademicSnapshotRow
-                >();
-
-        return {
-            snapshot:
-                data,
-            error,
-        };
-    };
+const getSnapshot = (client: AcademicApiClient, userId: string) => client.getSnapshot(userId);
 
 const handleGetRequest =
     async (
@@ -997,7 +912,7 @@ const handleGetRequest =
             error,
         } =
             await getSnapshot(
-                authContext.supabase,
+                authContext.academicClient,
                 authContext.userId,
             );
 

@@ -32,7 +32,7 @@ La primera lectura se solicita al servidor; un fallo de conexión no se interpre
 ## Validación realizada
 El 10 de octubre de 2026 se ejecutó una prueba real con datos sintéticos en el proyecto indicado: registro y normalización de correo, inicio/cierre de sesión, observación de sesión, escritura con fecha de servidor, lectura posterior y recuperación después de volver a entrar. Se rechazaron la lectura sin sesión, lectura/escritura/borrado de otro usuario, listado de la colección, campos adicionales y un tipo inválido para `academic_data`. Las dos cuentas y el snapshot de prueba se eliminaron al terminar.
 
-`npm run check` verifica lint, catorce pruebas de cálculo/serialización/preparación de importación y el build. También se compiló con `VITE_BACKEND_PROVIDER=firebase`. `npm audit --omit=dev --audit-level=high` no encontró vulnerabilidades. Persisten el aviso existente del parser y el aviso de tamaño del bundle.
+`npm run check` verifica lint, diecisiete pruebas de cálculo/serialización/preparación de importación/autorización de APIs y el build. También se compiló con `VITE_BACKEND_PROVIDER=firebase`. `npm audit --omit=dev --audit-level=high` no encontró vulnerabilidades. Persisten el aviso existente del parser y el aviso de tamaño del bundle.
 
 La prueba real es optativa y crea cuentas sintéticas temporales; no se ejecuta en el check habitual:
 
@@ -54,6 +54,27 @@ Importar usuarios con la CLI autenticada y `--project mi-pensum-unicauca --hash-
 La propietaria completó la autorización OAuth de la CLI. Se confirmó acceso al proyecto indicado y Firestore Standard `(default)` en `nam5`, con `freeTier: true`. No se crearon claves de cuentas de servicio ni se activó facturación.
 
 La importación real utilizó Firebase Admin SDK con la autorización OAuth de la CLI. Antes se importó una cuenta sintética con bcrypt `$2a$10$`, se comprobó su inicio de sesión con el SDK cliente y se eliminó. La importación de estudiantes devolvió dos éxitos y cero errores. Los snapshots se crearon en un batch con precondición de inexistencia; se conservaron las fechas `updated_at` como Timestamp. La verificación administrativa posterior comparó los dos UIDs, correos, verificación, bloqueos, fechas de cuenta a la precisión de segundos expuesta por UserMetadata, y cada JSON académico completo. Finalizó a las 18:52:06 de Bogotá. No se probaron las contraseñas personales de estudiantes; la compatibilidad de importación e inicio de sesión se verificó con la cuenta sintética.
+
+La propietaria confirmó después que pudo entrar en el preview y que sus datos aparecen completos.
+
+## Preparación de Alexa con datos de Firebase
+Las cinco APIs académicas comparten `server/academicApiClient.ts`. `ALEXA_DATA_PROVIDER=firebase` cambia su almacenamiento a Firestore, independientemente de la variable del cliente web. La opción por defecto continúa siendo Supabase. No se ha activado esta variable en Vercel ni cambiado la Lambda o el servidor OAuth de Alexa.
+
+El token sigue verificándose con Supabase Auth. Para consultar Firebase, el mismo UID debe existir como cuenta activa en Firebase Authentication. Nunca se vinculan datos por correo ni se acepta un UID del cuerpo o la URL de la petición. El adaptador decodifica snapshots versión 2 para conservar las respuestas existentes de progreso, horario, notas y situación académica. El registro de una nota usa la revisión leída de Firestore como precondición; si otra escritura gana, devuelve `409 snapshot_conflict` y conserva los datos recientes.
+
+`server/firebaseServer.ts` prepara el acceso administrativo del servidor mediante OIDC de Vercel y Workload Identity Federation de Google, sin incluir credenciales en el cliente. La configuración prevista se limita al proyecto `pensum-unicauca` del equipo propietario y al entorno Preview; requiere una cuenta de servicio con acceso a datos Firestore y lectura de usuarios Firebase. El entorno local admite ADC privado para las pruebas. La identidad y los permisos de Vercel aún no se han creado: la revisión automática rechazó la creación del pool de identidad por ser un cambio de IAM que necesita autorización específica. La revisión posterior encontró cero pools y las APIs IAM/credenciales/STS seguían deshabilitadas. No se activó facturación ni se crearon claves de servicio.
+
+Las variables necesarias del servidor, únicamente en Preview para la rama de migración, son `ALEXA_DATA_PROVIDER`, `GCP_PROJECT_ID`, `GCP_PROJECT_NUMBER`, `GCP_SERVICE_ACCOUNT_EMAIL`, `GCP_WORKLOAD_IDENTITY_POOL_ID` y `GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID`. Antes de crear la federación debe verificarse su disponibilidad con Spark: la documentación de Google señala facturación habilitada como requisito previo. No habilitar facturación sin autorización; si el proyecto lo exige, detener esta alternativa y evaluar otra credencial de servidor con permisos mínimos.
+
+La pantalla de consentimiento aclara el registro de notas por voz, que ya existía en la Lambda; antes decía incorrectamente que Alexa solo leía y no modificaba notas.
+
+Las pruebas locales ahora incluyen rechazo de acceso sin token, token inválido, otro UID y configuración de proveedor desconocida. La prueba optativa `npm run test:alexa-firebase` requiere `FIREBASE_LIVE_CHECK=mi-pensum-unicauca` y ADC privado; utiliza Firebase real con cuentas temporales y simula únicamente la respuesta de verificación del token Supabase. No verifica un dispositivo Alexa, el flujo OAuth completo ni la federación de Vercel.
+
+La prueba real del servidor pasó: las cinco APIs consultaron Firestore, el POST de notas conservó las demás secciones y la cuenta ajena, una revisión vencida no sobrescribió la nueva, y se rechazaron cuentas deshabilitadas y tokens inválidos. Las dos cuentas sintéticas y sus documentos se eliminaron al terminar. En este entorno se corrigió un bloqueo del transporte REST utilizando el transporte gRPC del SDK oficial; los datos de estudiantes no se modificaron.
+
+Propuesta de permisos pendiente de autorización: una cuenta de servicio exclusiva del preview, `roles/datastore.user` para leer y guardar datos Firestore y `roles/firebaseauth.viewer` para comprobar cuentas activas. La federación deberá aceptar únicamente el sujeto de Vercel `owner:luciaduque248s-projects:project:pensum-unicauca:environment:preview`, con el emisor del equipo y su audiencia exacta. No conceder Owner, Editor, administración de usuarios ni acceso federado a producción. No activar el proveedor de datos Firebase del servidor hasta probar esos permisos en una petición real desde Vercel.
+
+Este puente conserva la dependencia de Supabase Auth. Para retirarlo por completo, diseñar y probar un servidor OAuth compatible con la vinculación y renovación de Alexa, actualizar su consola y probar una vinculación real. No confundir el inicio de sesión Firebase del navegador con un servidor OAuth para Alexa.
 
 ## Pendiente antes del cambio de producción
 1. Configurar/revisar los dominios autorizados, incluida la aplicación principal y el preview usado.

@@ -58,6 +58,8 @@ La Lambda de Alexa consume las funciones serverless de Mi Pensum:
 
 Todos los endpoints académicos requieren un `Authorization: Bearer <access_token>` válido. El token identifica al usuario de Supabase y las políticas RLS limitan el acceso a su propio snapshot académico.
 
+La rama de migración prepara un adaptador opcional de almacenamiento Firestore mediante `ALEXA_DATA_PROVIDER=firebase`, que verifica además que el UID exista y esté activo en Firebase. Todavía no está activado en Vercel y la vinculación OAuth conserva Supabase. El registro de notas en Firestore rechaza revisiones desactualizadas con `409 snapshot_conflict`. Véase `docs/FIREBASE_MIGRATION.md` para configuración, pruebas y bloqueos de despliegue.
+
 ## Account Linking
 
 Mi Pensum usa **Supabase Auth como servidor OAuth 2.1** para vincular la cuenta de Alexa con la cuenta web.
